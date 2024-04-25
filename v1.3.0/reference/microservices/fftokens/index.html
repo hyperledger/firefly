@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.18">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.19">
     
     
       
@@ -2142,6 +2142,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#websocket-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Websocket Commands
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#websocket-events" class="md-nav__link">
     <span class="md-ellipsis">
       Websocket Events
@@ -3395,6 +3404,8 @@
       
         
       
+        
+      
     
     
     
@@ -3466,6 +3477,27 @@
   
   <span class="md-ellipsis">
     v1.2.0 Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
   </span>
   
 
@@ -3601,6 +3633,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#websocket-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Websocket Commands
+    </span>
+  </a>
   
 </li>
       
@@ -3769,12 +3810,13 @@ existing ones).</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>{
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  &quot;type&quot;: &quot;fungible&quot;,
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  &quot;name&quot;: &quot;FFCoin&quot;,
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  &quot;symbol&quot;: &quot;FFC&quot;,
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  &quot;data&quot;: &quot;pool-metadata&quot;,
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  &quot;requestId&quot;: &quot;1&quot;,
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  &quot;config&quot;: {}
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>}
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  &quot;name&quot;: &quot;FFCoin&quot;,
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  &quot;symbol&quot;: &quot;FFC&quot;,
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  &quot;data&quot;: &quot;pool-metadata&quot;,
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  &quot;requestId&quot;: &quot;1&quot;,
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  &quot;config&quot;: {}
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -3794,6 +3836,11 @@ existing ones).</p>
 <td>signer</td>
 <td>string</td>
 <td>The signing identity to be used for the blockchain transaction, in a format understood by this connector.</td>
+</tr>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
 </tr>
 <tr>
 <td>name</td>
@@ -3824,7 +3871,7 @@ existing ones).</p>
 </table>
 <p><strong>Response</strong></p>
 <p>HTTP 200: pool creation was successful, and the pool details are returned in the response.</p>
-<p><em>See <a href="#token-pool-1">Response Types: Token Pool</a></em></p>
+<p><em>See <a href="#token-pool_1">Response Types: Token Pool</a></em></p>
 <p>HTTP 202: request was accepted, but pool will be created asynchronously, with "receipt" and "token-pool" events sent later on the websocket.</p>
 <p><em>See <a href="#async-request">Response Types: Async Request</a></em></p>
 <h3 id="post-activatepool"><code>POST /activatepool</code><a class="headerlink" href="#post-activatepool" title="Permanent link">&para;</a></h3>
@@ -3832,10 +3879,11 @@ existing ones).</p>
 <p>In a multiparty network, this step will be performed by every member after a successful token pool broadcast. It therefore also serves the purpose of validating the broadcast info - if the connector does not find a valid pool given the <code>poolLocator</code> and <code>config</code> information passed in to this call, the pool should not get confirmed.</p>
 <p><strong>Request</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>{
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  &quot;config&quot;: {}
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>}
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  &quot;config&quot;: {}
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -3846,6 +3894,11 @@ existing ones).</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>poolLocator</td>
 <td>string</td>
@@ -3865,7 +3918,7 @@ existing ones).</p>
 </table>
 <p><strong>Response</strong></p>
 <p>HTTP 200: pool activation was successful, and the pool details are returned in the response.</p>
-<p><em>See <a href="#token-pool-1">Response Types: Token Pool</a></em></p>
+<p><em>See <a href="#token-pool_1">Response Types: Token Pool</a></em></p>
 <p>HTTP 202: request was accepted, but pool will be activated asynchronously, with "receipt" and "token-pool" events sent later on the websocket.</p>
 <p><em>See <a href="#async-request">Response Types: Async Request</a></em></p>
 <p>HTTP 204: activation was successful - no separate receipt will be delivered, but "token-pool" event will be sent later on the websocket.</p>
@@ -3874,10 +3927,11 @@ existing ones).</p>
 <p>Deactivate a token pool to stop receiving events and delete all blockchain listeners related to that pool.</p>
 <p><strong>Request</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>{
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  &quot;config&quot;: {}
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>}
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  &quot;config&quot;: {}
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -3888,6 +3942,11 @@ existing ones).</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>poolLocator</td>
 <td>string</td>
@@ -3912,7 +3971,7 @@ existing ones).</p>
 <p><em>No body</em></p>
 <h3 id="post-checkinterface"><code>POST /checkinterface</code><a class="headerlink" href="#post-checkinterface" title="Permanent link">&para;</a></h3>
 <p>This is an optional (but recommended) API for token connectors. If implemented, support will be indicated by
-the presence of the <code>interfaceFormat</code> field in all <a href="#token-pool-1">Token Pool</a> responses.</p>
+the presence of the <code>interfaceFormat</code> field in all <a href="#token-pool_1">Token Pool</a> responses.</p>
 <p>In the case that a connector supports multiple variants of a given token standard (such as many different ways to
 structure "mint" or "burn" calls on an underlying smart contract), this API allows the connector to be provided with a full
 description of the interface methods in use for a given token pool, so the connector can determine which methods it knows
@@ -3998,17 +4057,18 @@ provide the proper subset of the interface for every future token operation (via
 <p>Mint new tokens.</p>
 <p><strong>Request</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>{
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  &quot;to&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  &quot;amount&quot;: &quot;10&quot;,
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  &quot;uri&quot;: &quot;ipfs://000000&quot;,
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  &quot;requestId&quot;: &quot;1&quot;,
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>  &quot;config&quot;: {},
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  &quot;interface&quot;: {}
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>}
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  &quot;to&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  &quot;amount&quot;: &quot;10&quot;,
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  &quot;uri&quot;: &quot;ipfs://000000&quot;,
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  &quot;requestId&quot;: &quot;1&quot;,
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  &quot;config&quot;: {},
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  &quot;interface&quot;: {}
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4019,6 +4079,11 @@ provide the proper subset of the interface for every future token operation (via
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>poolLocator</td>
 <td>string</td>
@@ -4078,16 +4143,17 @@ provide the proper subset of the interface for every future token operation (via
 <p>Burn tokens.</p>
 <p><strong>Request</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>{
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  &quot;from&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  &quot;amount&quot;: &quot;10&quot;,
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  &quot;requestId&quot;: &quot;1&quot;,
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  &quot;config&quot;: {},
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>  &quot;interface&quot;: {}
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>}
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  &quot;from&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  &quot;amount&quot;: &quot;10&quot;,
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  &quot;requestId&quot;: &quot;1&quot;,
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>  &quot;config&quot;: {},
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>  &quot;interface&quot;: {}
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4098,6 +4164,11 @@ provide the proper subset of the interface for every future token operation (via
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>poolLocator</td>
 <td>string</td>
@@ -4152,17 +4223,18 @@ provide the proper subset of the interface for every future token operation (via
 <p>Transfer tokens from one address to another.</p>
 <p><strong>Request</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>{
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  &quot;from&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  &quot;to&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  &quot;amount&quot;: &quot;1&quot;,
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  &quot;requestId&quot;: &quot;1&quot;,
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  &quot;config&quot;: {},
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  &quot;interface&quot;: {}
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>}
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  &quot;from&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  &quot;to&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  &quot;amount&quot;: &quot;1&quot;,
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  &quot;requestId&quot;: &quot;1&quot;,
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  &quot;config&quot;: {},
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>  &quot;interface&quot;: {}
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4173,6 +4245,11 @@ provide the proper subset of the interface for every future token operation (via
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>poolLocator</td>
 <td>string</td>
@@ -4232,15 +4309,16 @@ provide the proper subset of the interface for every future token operation (via
 <p>Approve another identity to manage tokens.</p>
 <p><strong>Request</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>{
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  &quot;operator&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  &quot;approved&quot;: true,
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  &quot;requestId&quot;: &quot;1&quot;,
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  &quot;data&quot;: &quot;approval-metadata&quot;,
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>  &quot;config&quot;: {},
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>  &quot;interface&quot;: {}
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>}
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  &quot;operator&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  &quot;approved&quot;: true,
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  &quot;requestId&quot;: &quot;1&quot;,
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>  &quot;data&quot;: &quot;approval-metadata&quot;,
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>  &quot;config&quot;: {},
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  &quot;interface&quot;: {}
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4251,6 +4329,11 @@ provide the proper subset of the interface for every future token operation (via
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>poolLocator</td>
 <td>string</td>
@@ -4296,72 +4379,79 @@ provide the proper subset of the interface for every future token operation (via
 <p><strong>Response</strong></p>
 <p>HTTP 202: request was accepted, but approval will occur asynchronously, with "receipt" and "token-approval" events sent later on the websocket.</p>
 <p><em>See <a href="#async-request">Response Types: Async Request</a></em></p>
+<h2 id="websocket-commands">Websocket Commands<a class="headerlink" href="#websocket-commands" title="Permanent link">&para;</a></h2>
+<p>In order to start listening for events on a certain namespace, the client needs to send the <code>start</code> command. Clients should send this command every time they connect, or after an automatic reconnect.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>{
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  &quot;type&quot;: &quot;start&quot;,
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  &quot;namespace&quot;: &quot;default&quot;
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>}
+</code></pre></div>
 <h2 id="websocket-events">Websocket Events<a class="headerlink" href="#websocket-events" title="Permanent link">&para;</a></h2>
 <p>A connector should expose a websocket at <code>/api/ws</code>. All emitted websocket events are a JSON string of the form:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>{
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  &quot;id&quot;: &quot;event-id&quot;,
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  &quot;event&quot;: &quot;event-name&quot;,
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  &quot;data&quot;: {}
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>{
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  &quot;id&quot;: &quot;event-id&quot;,
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  &quot;event&quot;: &quot;event-name&quot;,
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  &quot;data&quot;: {}
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>}
 </code></pre></div>
 <p>The <code>event</code> name will match one of the names listed below, and the <code>data</code> payload will correspond to the linked response object.</p>
 <p>All events <em>except the receipt event</em> must be acknowledged by sending an ack of the form:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>{
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  &quot;event&quot;: &quot;ack&quot;,
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  &quot;data&quot;: {
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    &quot;id&quot;: &quot;event-id&quot;
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  }
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>{
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  &quot;event&quot;: &quot;ack&quot;,
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  &quot;data&quot;: {
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    &quot;id&quot;: &quot;event-id&quot;
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  }
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>}
 </code></pre></div>
 <p>Many messages may also be batched into a single websocket event of the form:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>{
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  &quot;id&quot;: &quot;event-id&quot;,
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  &quot;event&quot;: &quot;batch&quot;,
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  &quot;data&quot;: {
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    &quot;events&quot;: [
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>      {
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>        &quot;event&quot;: &quot;event-name&quot;,
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>        &quot;data&quot;: {}
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>      },
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>      ...
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>    ]
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  }
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>{
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  &quot;id&quot;: &quot;event-id&quot;,
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  &quot;event&quot;: &quot;batch&quot;,
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  &quot;data&quot;: {
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    &quot;events&quot;: [
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>      {
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>        &quot;event&quot;: &quot;event-name&quot;,
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>        &quot;data&quot;: {}
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>      },
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>      ...
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    ]
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>  }
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>}
 </code></pre></div>
 <p>Batched messages must be acked all at once using the ID of the batch.</p>
 <h3 id="receipt"><code>receipt</code><a class="headerlink" href="#receipt" title="Permanent link">&para;</a></h3>
 <p>An asynchronous operation has completed.</p>
-<p><em>See <a href="#receipt-1">Response Types: Receipt</a></em></p>
+<p><em>See <a href="#receipt_1">Response Types: Receipt</a></em></p>
 <h3 id="token-pool"><code>token-pool</code><a class="headerlink" href="#token-pool" title="Permanent link">&para;</a></h3>
 <p>A new token pool has been created or activated.</p>
-<p><em>See <a href="#token-pool-1">Response Types: Token Pool</a></em></p>
+<p><em>See <a href="#token-pool_1">Response Types: Token Pool</a></em></p>
 <h3 id="token-mint"><code>token-mint</code><a class="headerlink" href="#token-mint" title="Permanent link">&para;</a></h3>
 <p>Tokens have been minted.</p>
-<p><em>See <a href="#token-transfer-1">Response Types: Token Transfer</a></em></p>
+<p><em>See <a href="#token-transfer_1">Response Types: Token Transfer</a></em></p>
 <h3 id="token-burn"><code>token-burn</code><a class="headerlink" href="#token-burn" title="Permanent link">&para;</a></h3>
 <p>Tokens have been burned.</p>
-<p><em>See <a href="#token-transfer-1">Response Types: Token Transfer</a></em></p>
+<p><em>See <a href="#token-transfer_1">Response Types: Token Transfer</a></em></p>
 <h3 id="token-transfer"><code>token-transfer</code><a class="headerlink" href="#token-transfer" title="Permanent link">&para;</a></h3>
 <p>Tokens have been transferred.</p>
-<p><em>See <a href="#token-transfer-1">Response Types: Token Transfer</a></em></p>
+<p><em>See <a href="#token-transfer_1">Response Types: Token Transfer</a></em></p>
 <h3 id="token-approval"><code>token-approval</code><a class="headerlink" href="#token-approval" title="Permanent link">&para;</a></h3>
 <p>Token approvals have changed.</p>
-<p><em>See <a href="#token-approval-1">Response Types: Token Approval</a></em></p>
+<p><em>See <a href="#token-approval_1">Response Types: Token Approval</a></em></p>
 <h2 id="response-types">Response Types<a class="headerlink" href="#response-types" title="Permanent link">&para;</a></h2>
 <h3 id="async-request">Async Request<a class="headerlink" href="#async-request" title="Permanent link">&para;</a></h3>
 <p>Many operations may happen asynchronously in the background, and will return only a request ID. This may be a request ID that was passed in, or if none was passed, will be randomly assigned. This ID can be used to correlate with a receipt event later received on the websocket.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>{
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  &quot;id&quot;: &quot;b84ab27d-0d50-42a6-9c26-2fda5eb901ba&quot;
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>{
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  &quot;id&quot;: &quot;b84ab27d-0d50-42a6-9c26-2fda5eb901ba&quot;
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>}
 </code></pre></div>
 <h3 id="receipt_1">Receipt<a class="headerlink" href="#receipt_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>  &quot;headers&quot;: {
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    &quot;type&quot;: &quot;&quot;,
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    &quot;requestId&quot;: &quot;&quot;
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  }
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  &quot;transactionHash&quot;: &quot;&quot;,
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>  &quot;errorMessage&quot;: &quot;&quot;
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>  &quot;headers&quot;: {
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    &quot;type&quot;: &quot;&quot;,
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    &quot;requestId&quot;: &quot;&quot;
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>  }
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>  &quot;transactionHash&quot;: &quot;&quot;,
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>  &quot;errorMessage&quot;: &quot;&quot;
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4395,18 +4485,19 @@ provide the proper subset of the interface for every future token operation (via
 </tbody>
 </table>
 <h3 id="token-pool_1">Token Pool<a class="headerlink" href="#token-pool_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>{
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  &quot;type&quot;: &quot;fungible&quot;,
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>  &quot;data&quot;: &quot;pool-metadata&quot;,
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>  &quot;standard&quot;: &quot;ERC20&quot;,
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>  &quot;interfaceFormat&quot;: &quot;abi&quot;,
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>  &quot;symbol&quot;: &quot;FFC&quot;,
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>  &quot;decimals&quot;: 18,
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>  &quot;info&quot;: {},
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>  &quot;blockchain&quot;: {}
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>{
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>  &quot;type&quot;: &quot;fungible&quot;,
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>  &quot;data&quot;: &quot;pool-metadata&quot;,
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>  &quot;standard&quot;: &quot;ERC20&quot;,
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>  &quot;interfaceFormat&quot;: &quot;abi&quot;,
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>  &quot;symbol&quot;: &quot;FFC&quot;,
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>  &quot;decimals&quot;: 18,
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>  &quot;info&quot;: {},
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>  &quot;blockchain&quot;: {}
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4417,6 +4508,11 @@ provide the proper subset of the interface for every future token operation (via
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>type</td>
 <td>string enum</td>
@@ -4472,19 +4568,20 @@ provide the proper subset of the interface for every future token operation (via
 <h3 id="token-transfer_1">Token Transfer<a class="headerlink" href="#token-transfer_1" title="Permanent link">&para;</a></h3>
 <p>Note that mint and burn operations are just specialized versions of transfer. A mint will omit the "from" field,
 while a burn will omit the "to" field.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>{
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  &quot;id&quot;: &quot;1&quot;,
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>  &quot;from&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>  &quot;to&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>  &quot;amount&quot;: &quot;1&quot;,
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>  &quot;uri&quot;: &quot;ipfs://000000&quot;,
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>  &quot;blockchain&quot;: {}
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>{
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>  &quot;id&quot;: &quot;1&quot;,
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>  &quot;from&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>  &quot;to&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>  &quot;amount&quot;: &quot;1&quot;,
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>  &quot;tokenIndex&quot;: &quot;1&quot;,
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>  &quot;uri&quot;: &quot;ipfs://000000&quot;,
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>  &quot;blockchain&quot;: {}
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4495,6 +4592,11 @@ while a burn will omit the "to" field.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>id</td>
 <td>string</td>
@@ -4553,18 +4655,19 @@ while a burn will omit the "to" field.</p>
 </tbody>
 </table>
 <h3 id="token-approval_1">Token Approval<a class="headerlink" href="#token-approval_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>{
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  &quot;id&quot;: &quot;1&quot;,
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>  &quot;operator&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>  &quot;approved&quot;: true,
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>  &quot;subject&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A:0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
-<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>  &quot;info&quot;: {},
-<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
-<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>  &quot;blockchain&quot;: {}
-<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>{
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>  &quot;namespace&quot;: &quot;default&quot;,
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>  &quot;id&quot;: &quot;1&quot;,
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>  &quot;data&quot;: &quot;transfer-metadata&quot;,
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>  &quot;poolLocator&quot;: &quot;id=F1&quot;,
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>  &quot;poolData&quot;: &quot;extra-pool-info&quot;,
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>  &quot;operator&quot;: &quot;0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>  &quot;approved&quot;: true,
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>  &quot;subject&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A:0xb107ed9caa1323b7bc36e81995a4658ec2251951&quot;,
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>  &quot;info&quot;: {},
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>  &quot;signer&quot;: &quot;0x0Ef1D0Dd56a8FB1226C0EaC374000B81D6c8304A&quot;,
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>  &quot;blockchain&quot;: {}
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>}
 </code></pre></div>
 <table>
 <thead>
@@ -4575,6 +4678,11 @@ while a burn will omit the "to" field.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>namespace</td>
+<td>string</td>
+<td>The namespace of the token pool</td>
+</tr>
 <tr>
 <td>id</td>
 <td>string</td>
@@ -4727,7 +4835,7 @@ while a burn will omit the "to" field.</p>
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.top", "navigation.tracking", "navigation.path", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.3220b9d7.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.dd8806f2.min.js"></script>
       
     
   </body>

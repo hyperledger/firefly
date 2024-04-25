@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.18">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.19">
     
     
       
@@ -3063,28 +3063,55 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dependencies" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      Dependencies
+      Prerequisites
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Dependencies">
+    <nav class="md-nav" aria-label="Prerequisites">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#macos" class="md-nav__link">
+  <a href="#git" class="md-nav__link">
     <span class="md-ellipsis">
-      macOS
+      git
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#linux" class="md-nav__link">
+  <a href="#python-3" class="md-nav__link">
     <span class="md-ellipsis">
-      Linux
+      Python 3
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Virtual environment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mkdocs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mkdocs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify Setup
     </span>
   </a>
   
@@ -3096,9 +3123,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#build-and-serve-the-docs-locally" class="md-nav__link">
+  <a href="#useful-mkdocs-commands" class="md-nav__link">
     <span class="md-ellipsis">
-      Build and serve the docs locally
+      Useful MkDocs Commands
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directory-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      Directory layout
     </span>
   </a>
   
@@ -3219,6 +3255,8 @@
       
         
       
+        
+      
     
     
     
@@ -3299,6 +3337,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3342,28 +3401,55 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dependencies" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      Dependencies
+      Prerequisites
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Dependencies">
+    <nav class="md-nav" aria-label="Prerequisites">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#macos" class="md-nav__link">
+  <a href="#git" class="md-nav__link">
     <span class="md-ellipsis">
-      macOS
+      git
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#linux" class="md-nav__link">
+  <a href="#python-3" class="md-nav__link">
     <span class="md-ellipsis">
-      Linux
+      Python 3
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Virtual environment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mkdocs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mkdocs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify Setup
     </span>
   </a>
   
@@ -3375,9 +3461,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#build-and-serve-the-docs-locally" class="md-nav__link">
+  <a href="#useful-mkdocs-commands" class="md-nav__link">
     <span class="md-ellipsis">
-      Build and serve the docs locally
+      Useful MkDocs Commands
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directory-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      Directory layout
     </span>
   </a>
   
@@ -3403,10 +3498,10 @@
 
 <h1 id="contributing-to-documentation">Contributing to Documentation<a class="headerlink" href="#contributing-to-documentation" title="Permanent link">&para;</a></h1>
 <p>This guide will walk you through setting up your machine for contributing to FireFly documentation. Documentation contributions are extremely valuable. If you discover something is missing in the docs, we would love to include your additions or clarifications to help the next person who has the same question.</p>
-<p>This doc site is generated by a set of <a href="https://daringfireball.net/projects/markdown/">Markdown</a> files in the main FireFly repository, under the <code>./docs</code> directory. You can browse the source for the current live site in GitHub here: <a href="https://github.com/hyperledger/firefly/tree/main/docs">https://github.com/hyperledger/firefly/tree/main/docs</a></p>
+<p>This doc site is generated by a set of <a href="https://daringfireball.net/projects/markdown/">Markdown</a> files in the main FireFly repository, under the <code>./doc-site</code> directory. You can browse the source for the current live site in GitHub here: <a href="https://github.com/hyperledger/firefly/tree/main/doc-site">https://github.com/hyperledger/firefly/tree/main/doc-site</a></p>
 <hr />
 <h2 id="process-for-updating-documentation">Process for updating documentation<a class="headerlink" href="#process-for-updating-documentation" title="Permanent link">&para;</a></h2>
-<p>The process for updating the documentation is really easy! You'll follow the same basic steps outlined in the same <a href="./#-make-changes">steps outlined in the Contributor's guide</a>. Here are the detailed steps for contributing to the docs:</p>
+<p>The process for updating the documentation is really easy! You'll follow the same basic steps outlined in the same <a href="../#-make-changes">steps outlined in the Contributor's guide</a>. Here are the detailed steps for contributing to the docs:</p>
 <ol>
 <li>Fork <a href="https://github.com/hyperledger/firefly">https://github.com/hyperledger/firefly</a></li>
 <li>Clone your fork locally to your computer</li>
@@ -3417,34 +3512,51 @@
 <li>Push your changes</li>
 <li><a href="https://github.com/hyperledger/firefly/compare">Open a Pull Request</a> to incorporate your changes back into the hyperledger/firefly repo</li>
 </ol>
-<h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h2>
-<p>The FireFly docs site uses GitHub pages, which uses a tool called Jekyll to convert Markdown files into HTML files that can be read in your browser. Basically that means in order to build and view the pages locally on your machine, you need to have Jekyll. Jekyll is a Ruby app, so you'll also need to have Ruby, and the Ruby bundler app to install Jekyll's dependencies. The good news is these things are very easy to set up.</p>
-<h3 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h3>
-<p>If you're using an Intel Mac, you are already good to go! macOS already comes with <code>ruby</code> and <code>bundle</code> installed and set up already. You don't need to do anything extra. However, it may be advisable to install a newer version of Ruby anyway.</p>
-<blockquote>
-<p><strong>NOTE:</strong> From the <a href="https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes">macOS Catalina 10.15 Release Notes</a>: Scripting language runtimes such as Python, Ruby, and Perl are included in macOS for compatibility with legacy software. Future versions of macOS won’t include scripting language runtimes by default, and might require you to install additional packages. If your software depends on scripting languages, it’s recommended that you bundle the runtime within the app. (49764202)</p>
-</blockquote>
-<p>If you're using an Apple Silicon based Mac, the version of Ruby that comes with macOS supports both Intel and ARM binaries which unfortunately ends up causing some problems when installing certain gems. We recommend installing Ruby with <code>brew</code> and setting it on your path. This will also give you a newer version of Ruby. To do this, run:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>brew install ruby
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>echo &#39;export PATH=&quot;/opt/homebrew/opt/ruby/bin:$PATH&quot;&#39; &gt;&gt; ~/.zshrc
+<hr />
+<p>This FireFly documentation site is based on the <a href="https://github.com/hyperledger-labs/documentation-template">Hyperledger documentation template</a>. The template utilizes MkDocs (documentation at <a href="https://www.mkdocs.org">mkdocs.org</a>) and the theme Material for MkDocs (documentation at <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>). Material adds a number of extra features to MkDocs, and Hyperledger repositories can take advantage of the theme's <a href="https://squidfunk.github.io/mkdocs-material/insiders/">Insiders</a> capabilities.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<p>To test the documents and update the published site, the following tools are needed:</p>
+<ul>
+<li>A Bash shell</li>
+<li>git</li>
+<li>Python 3</li>
+<li>The <a href="https://squidfunk.github.io/mkdocs-material/">Material for Mkdocs</a> theme.</li>
+<li>The <a href="https://github.com/jimporter/mike">Mike</a> MkDocs plugin for publishing versions to gh-pages.</li>
+<li>Not used locally, but referenced in the <code>mkdocs.yml</code> file and needed for
+    deploying the site to gh-pages.</li>
+</ul>
+<h3 id="git">git<a class="headerlink" href="#git" title="Permanent link">&para;</a></h3>
+<p><code>git</code> can be installed locally, as described in the <a href="https://github.com/git-guides/install-git">Install Git Guide from GitHub</a>.</p>
+<h3 id="python-3">Python 3<a class="headerlink" href="#python-3" title="Permanent link">&para;</a></h3>
+<p><code>Python 3</code> can be installed locally, as described in the <a href="https://www.python.org/about/gettingstarted/">Python Getting Started guide</a>.</p>
+<h3 id="virtual-environment">Virtual environment<a class="headerlink" href="#virtual-environment" title="Permanent link">&para;</a></h3>
+<p>It is recommended to install your Python dependencies in a virtual environment in case you have other conflicting Python installations on your machine. This also removes the need to install these packages globally on your computer.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>doc-site
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">source</span><span class="w"> </span>venv/bin/activate
 </code></pre></div>
-<h3 id="linux">Linux<a class="headerlink" href="#linux" title="Permanent link">&para;</a></h3>
-<p>You will need to install <code>ruby</code> and <code>bundle</code> and have them on your path to build and serve the docs locally. On Ubuntu, to install these, run the following commands:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo apt-get update
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>sudo apt-get install ruby ruby-bundler
+<h3 id="mkdocs">Mkdocs<a class="headerlink" href="#mkdocs" title="Permanent link">&para;</a></h3>
+<p>The Mkdocs-related items can be installed locally, as described in the <a href="https://squidfunk.github.io/mkdocs-material/">Material
+for Mkdocs</a> installation instructions. The short, case-specific version of those
+instructions follow:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 </code></pre></div>
-<h2 id="build-and-serve-the-docs-locally">Build and serve the docs locally<a class="headerlink" href="#build-and-serve-the-docs-locally" title="Permanent link">&para;</a></h2>
-<p>To build and serve the docs locally, from the project root, navigate to the docs directory:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>cd docs
+<h3 id="verify-setup">Verify Setup<a class="headerlink" href="#verify-setup" title="Permanent link">&para;</a></h3>
+<p>To verify your setup, check that you can run <code>mkdocs</code> by running the command <code>mkdocs --help</code> to see the help text.</p>
+<h2 id="useful-mkdocs-commands">Useful MkDocs Commands<a class="headerlink" href="#useful-mkdocs-commands" title="Permanent link">&para;</a></h2>
+<p>The commands you will usually use with <code>mkdocs</code> are:</p>
+<ul>
+<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
+<li><code>mkdocs build</code> - Build the documentation site.</li>
+<li><code>mkdocs -h</code> - Print help message and exit.</li>
+</ul>
+<h2 id="directory-layout">Directory layout<a class="headerlink" href="#directory-layout" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>mkdocs.yml     # The configuration file.
+docs/
+    index.md   # The documentation homepage.
+    SUMMARY.md # The main left nav
+    ...        # Other markdown pages, images and other files.
 </code></pre></div>
-<p>Install docs dependencies:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bundle install
-</code></pre></div>
-<p>And start the Jekyll test server:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>bundle exec jekyll serve --livereload
-</code></pre></div>
-<p>You should now be able to open <a href="http://127.0.0.1:4000/firefly/index.html">http://127.0.0.1:4000/firefly/index.html</a> in your browser and see a locally hosted version of the doc site.</p>
-<p>As you make changes to files in the <code>./docs</code> directory, Jekyll will automatically rebuild the pages, and notify you of any errors or warnings in your terminal. If you have a browser open, it will automatically reload when changes are made to pages.</p>
 
 
 
@@ -3545,7 +3657,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.top", "navigation.tracking", "navigation.path", "navigation.indexes"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.3220b9d7.min.js"></script>
+      <script src="../../assets/javascripts/bundle.dd8806f2.min.js"></script>
       
     
   </body>

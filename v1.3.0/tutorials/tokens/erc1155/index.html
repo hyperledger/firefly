@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.18">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.19">
     
     
       
@@ -3293,6 +3293,8 @@
       
         
       
+        
+      
     
     
     
@@ -3364,6 +3366,27 @@
   
   <span class="md-ellipsis">
     v1.2.0 Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../releasenotes/1.3_migration_guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    v1.3.0 Migration Guide
   </span>
   
 
@@ -3567,7 +3590,10 @@
 <img alt="Tokens Sandbox" src="../../../images/sandbox/sandbox_token_pool.png" /></p>
 <h2 id="create-a-pool-using-default-token-contract">Create a pool (using default token contract)<a class="headerlink" href="#create-a-pool-using-default-token-contract" title="Permanent link">&para;</a></h2>
 <p>After your stack is up and running, the first thing you need to do is create a token pool. Every application will need at least one token pool. At a minimum, you must always specify a <code>name</code> and <code>type</code> (<code>fungible</code> or <code>nonfungible</code>) for the pool.</p>
-<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools</code></p>
+<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the token pool is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the token pool, a subsequent API call would need to be made to <code>/tokens/pools/{nameOrId}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;testpool&quot;</span><span class="p">,</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fungible&quot;</span>
@@ -3583,7 +3609,10 @@
 <p>If you wish to use a contract that is already on the chain, it is recommended that you first upload the ABI for your specific contract by <a href="../../custom_contracts/ethereum/">creating a FireFly contract interface</a>. This step is optional if you're certain that your ERC-1155 ABI conforms to the default expectations of the token connector, but is generally recommended.</p>
 <p>See the <a href="https://github.com/hyperledger/firefly-tokens-erc1155/blob/main/README.md">README</a> of the token connector for details on what contract variants can currently be understood.</p>
 <p>You can pass a <code>config</code> object with an <code>address</code> when you make the request to create the token pool, and if you created a contract interface, you can include the <code>interface</code> ID as well.</p>
-<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools</code></p>
+<p><code>POST</code> <code>http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools?publish=true</code></p>
+<blockquote>
+<p><em>NOTE</em>: Without passing the query parameter <code>publish=true</code> when the token pool is created, it will initially be unpublished and not broadcasted to other members of the network (if configured in multi-party). To publish the token pool, a subsequent API call would need to be made to <code>/tokens/pools/{nameOrId}/publish</code></p>
+</blockquote>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;testpool&quot;</span><span class="p">,</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fungible&quot;</span><span class="p">,</span>
@@ -3819,7 +3848,7 @@ burn it - but each connector may define its own permission model.</p>
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.top", "navigation.tracking", "navigation.path", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.3220b9d7.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.dd8806f2.min.js"></script>
       
     
   </body>
