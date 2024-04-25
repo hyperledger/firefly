@@ -1,0 +1,48 @@
+name: ci 
+
+on:
+  push:
+    # Publish `main` as latest
+    branches:
+      - main
+
+    # Publish `v1.2.3` tags as releases
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch all commits/branches
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - uses: actions/cache@v2
+        with:
+          key: ${{ github.ref }}
+          path: .cache
+      - name: Install Python dependencies
+        run: pip install -r ./requirements.txt
+      - name: Configure git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy docs
+        run: |
+          # Strip git ref prefix from version
+          echo "${{ github.ref }}"
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^v//')
+          # If building from main, use latest as ALIAS
+          [ "$VERSION" == "main" ] && ALIAS=latest
+          echo $VERSION $ALIAS
+          mike deploy --push --update-aliases $VERSION $ALIAS
+          mike set-default latest

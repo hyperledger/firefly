@@ -505,6 +505,7 @@ func (cm *contractManager) addContractURLs(httpServerURL string, api *core.Contr
 		baseURL := fmt.Sprintf("%s/apis/%s", httpServerURL, api.Name)
 		api.URLs.OpenAPI = baseURL + "/api/swagger.json"
 		api.URLs.UI = baseURL + "/api"
+		api.URLs.API = baseURL
 	}
 }
 

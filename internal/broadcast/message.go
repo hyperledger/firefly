@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,6 +34,9 @@ func (bm *broadcastManager) NewBroadcast(in *core.MessageInOut) syncasync.Sender
 		msg: &data.NewMessage{
 			Message: in,
 		},
+	}
+	if bm.metrics.IsMetricsEnabled() {
+		bm.metrics.MessageSubmitted(&in.Message)
 	}
 	broadcast.setDefaults()
 	return broadcast
@@ -87,6 +90,7 @@ func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 func (s *broadcastSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
+	msg.Header.Group = nil
 	msg.Header.Namespace = s.mgr.namespace.NetworkName
 	msg.LocalNamespace = s.mgr.namespace.Name
 	msg.State = core.MessageStateReady

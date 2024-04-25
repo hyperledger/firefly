@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -137,7 +137,7 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 	}
 
 	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
-		core.TransactionTypeBatchPin,
+		true,
 		[]core.MessageType{
 			core.MessageTypeGroupInit,
 			core.MessageTypePrivate,
@@ -146,15 +146,8 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 		},
 		pm.dispatchPinnedBatch, bo)
 
-	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
-		core.TransactionTypeContractInvokePin,
-		[]core.MessageType{
-			core.MessageTypePrivate,
-		},
-		pm.dispatchPinnedBatch, bo)
-
 	ba.RegisterDispatcher(unpinnedPrivateDispatcherName,
-		core.TransactionTypeUnpinned,
+		false,
 		[]core.MessageType{
 			core.MessageTypePrivate,
 		},

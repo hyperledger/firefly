@@ -234,6 +234,7 @@ var (
 	ContractAPIPublished   = ffm("ContractAPI.published", "Indicates if the API is published to other members of the multiparty network")
 
 	// ContractURLs field descriptions
+	ContractURLsAPI     = ffm("ContractURLs.api", "The URL to use to invoke the API")
 	ContractURLsOpenAPI = ffm("ContractURLs.openapi", "The URL to download the OpenAPI v3 (Swagger) description for the API generated in JSON or YAML format")
 	ContractURLsUI      = ffm("ContractURLs.ui", "The URL to use in a web browser to access the SwaggerUI explorer/exerciser for the API")
 
@@ -472,6 +473,7 @@ var (
 	BatchFlushStatusLastFlushTime        = ffm("BatchFlushStatus.lastFlushStartTime", "The last time a flush was performed")
 	BatchFlushStatusFlushing             = ffm("BatchFlushStatus.flushing", "If a flush is in progress, this is the UUID of the batch being flushed")
 	BatchFlushStatusBlocked              = ffm("BatchFlushStatus.blocked", "True if the batch flush is in a retry loop, due to errors being returned by the plugins")
+	BatchFlushStatusCancelled            = ffm("BatchFlushStatus.cancelled", "True if the current batch flush has been cancelled")
 	BatchFlushStatusLastFlushError       = ffm("BatchFlushStatus.lastFlushError", "The last error received by this batch processor while flushing")
 	BatchFlushStatusLastFlushErrorTime   = ffm("BatchFlushStatus.lastFlushErrorTime", "The time of the last flush")
 	BatchFlushStatusAverageBatchBytes    = ffm("BatchFlushStatus.averageBatchBytes", "The average byte size of each batch")

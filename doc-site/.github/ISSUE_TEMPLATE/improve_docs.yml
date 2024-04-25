@@ -1,0 +1,31 @@
+name: "Documentation Issue"
+description: Issues related to documentation.
+title: "docs: "
+labels: [documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        _The more information you share, the faster we can help you._
+        Prior to opening the issue, please make sure that you:
+        - Use English (EN/US) to communicate.
+        - Search the [open issues](https://github.com/hyperledger-labs/documentation-template/issues) to avoid duplicating the issue.
+
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current State
+      description: Describe the current state of the documentation.
+      placeholder: |
+        The documentation for the API in this page (url) is missing ...
+    validations:
+      required: true
+  - type: textarea
+    id: desired-state
+    attributes:
+      label: Desired State
+      description: Describe the desired state the documentation should be in.
+      placeholder: |
+        Add here ...
+    validations:
+      required: true
