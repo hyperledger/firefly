@@ -328,3 +328,294 @@ func TestGetStatusNodeError(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 }
+
+func TestGetMultipartyStatusMultipartyNotEnabled(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	or.config.Multiparty.Enabled = false
+
+	_, err := or.GetMultipartyStatus(or.ctx)
+	assert.Regexp(t, "FF10469", err)
+
+}
+
+func TestGetMultipartyStatusUnregistered(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return(nil, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Org.Status)
+	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
+	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+
+}
+
+func TestGetMultipartyStatusRegisteringOrg(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+
+	msgID := fftypes.NewUUID()
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{{
+		Header: core.MessageHeader{
+			ID: msgID,
+		},
+	}}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, core.NamespaceRegistrationStatusRegistering, mpStatus.Org.Status)
+	assert.Equal(t, msgID, mpStatus.Org.RegistrationMessageID)
+	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
+	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+
+}
+
+func TestGetMultipartyStatusMessageErrorRegisteringOrg(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	_, err := or.GetMultipartyStatus(or.ctx)
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestGetMultipartyStatusRegisteringNode(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(nil, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	msgID := fftypes.NewUUID()
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{{
+		Header: core.MessageHeader{
+			ID: msgID,
+		},
+	}}, nil, nil)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
+	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Equal(t, core.NamespaceRegistrationStatusRegistering, mpStatus.Node.Status)
+	assert.Equal(t, msgID, mpStatus.Node.RegistrationMessageID)
+
+}
+
+func TestGetMultipartyStatusMessageErrorRegisteringNode(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(nil, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	_, err := or.GetMultipartyStatus(or.ctx)
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestGetMultipartyStatusUnregisteredNode(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(nil, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return(nil, nil, nil)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
+	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
+	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+
+}
+
+func TestGetMultipartyStatusRegistered(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			Parent: orgID,
+		},
+	}, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
+	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Node.Status)
+	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+
+}
+
+func TestGetMultipartyStatusErrorStatus(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	_, err := or.GetMultipartyStatus(or.ctx)
+	assert.Regexp(t, "pop", err)
+
+}

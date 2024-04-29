@@ -27,6 +27,19 @@ type NamespaceStatus struct {
 	Multiparty NamespaceStatusMultiparty `ffstruct:"NamespaceStatus" json:"multiparty"`
 }
 
+type NamespaceRegistrationStatus = fftypes.FFEnum
+
+var (
+	// entity is not yet registered
+	NamespaceRegistrationStatusUnregistered = fftypes.FFEnumValue("namespaceregistrationstatus", "unregistered")
+	// entity is not yet registered but a registration is in progress
+	NamespaceRegistrationStatusRegistering = fftypes.FFEnumValue("namespaceregistrationstatus", "registering")
+	// entity is registered
+	NamespaceRegistrationStatusRegistered = fftypes.FFEnumValue("namespaceregistrationstatus", "registered")
+	// entity registration status couldn't be determined
+	NamespaceRegistrationStatusUnknown = fftypes.FFEnumValue("namespaceregistrationstatus", "unknown")
+)
+
 // NamespaceStatusNode is the information about the local node, returned in the namespace status
 type NamespaceStatusNode struct {
 	Name       string        `ffstruct:"NamespaceStatusNode" json:"name"`
@@ -64,4 +77,19 @@ type NamespaceStatusPlugin struct {
 type NamespaceStatusMultiparty struct {
 	Enabled   bool                 `ffstruct:"NamespaceStatusMultiparty" json:"enabled"`
 	Contracts *MultipartyContracts `ffstruct:"NamespaceStatusMultiparty" json:"contract,omitempty"`
+}
+
+type NamespaceMultipartyStatusOrg struct {
+	Status                NamespaceRegistrationStatus `ffstruct:"NamespaceStatusOrg" json:"status"`
+	RegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusOrg" json:"registrationMessageId,omitempty"`
+}
+
+type NamespaceMultipartyStatusNode struct {
+	Status                NamespaceRegistrationStatus `ffstruct:"NamespaceStatusNode" json:"status"`
+	RegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusNode" json:"registrationMessageId,omitempty"`
+}
+
+type NamespaceMultipartyStatus struct {
+	Org  NamespaceMultipartyStatusOrg  `ffstruct:"NamespaceMultipartyStatus" json:"org"`
+	Node NamespaceMultipartyStatusNode `ffstruct:"NamespaceMultipartyStatus" json:"node"`
 }

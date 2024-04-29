@@ -430,16 +430,20 @@ var (
 	NamespaceMultiparty = ffm("NamespaceStatus.multiparty", "Information about the multi-party system configured on this namespace")
 
 	// NamespaceStatusNode field descriptions
-	NamespaceStatusNodeName       = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
-	NamespaceStatusNodeRegistered = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
-	NamespaceStatusNodeID         = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
+	NamespaceStatusNodeName                  = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
+	NamespaceStatusNodeRegistered            = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
+	NamespaceStatusNodeStatus                = ffm("NamespaceStatusNode.status", "The status of the node registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
+	NamespaceStatusNodeRegistrationMessageID = ffm("NamespaceStatusNode.registrationMessageId", "The ID of the message that broadcase the identity claim to the network")
+	NamespaceStatusNodeID                    = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
 
 	// NamespaceStatusOrg field descriptions
-	NamespaceStatusOrgName       = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
-	NamespaceStatusOrgRegistered = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
-	NamespaceStatusOrgDID        = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
-	NamespaceStatusOrgID         = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
-	NamespaceStatusOrgVerifiers  = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
+	NamespaceStatusOrgName                  = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
+	NamespaceStatusOrgRegistered            = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
+	NamespaceStatusOrgStatus                = ffm("NamespaceStatusOrg.status", "The status of the organization registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
+	NamespaceStatusOrgRegistrationMessageID = ffm("NamespaceStatusOrg.registrationMessageId", "The ID of the message that broadcase the identity claim to the network")
+	NamespaceStatusOrgDID                   = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
+	NamespaceStatusOrgID                    = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
+	NamespaceStatusOrgVerifiers             = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
 
 	// NamespaceStatusDefaults field descriptions
 	NamespaceStatusDefaultsNamespace = ffm("NamespaceStatusDefaults.namespace", "The default namespace on this node")

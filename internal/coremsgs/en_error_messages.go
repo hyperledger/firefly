@@ -307,4 +307,5 @@ var (
 	MsgCannotCancelBatchType                 = ffe("FF10466", "Cannot cancel batch of type: %s", 400)
 	MsgErrorLoadingBatch                     = ffe("FF10467", "Error loading batch messages")
 	MsgBatchNotDispatching                   = ffe("FF10468", "Batch %s is not currently dispatching - current: %s", 400)
+	MsgMultipartyNotEnabled                  = ffe("FF10469", "Cannot retrieve multiparty status as multiparty is not enabled", 400)
 )

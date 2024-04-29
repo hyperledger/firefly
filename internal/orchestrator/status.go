@@ -18,8 +18,11 @@ package orchestrator
 
 import (
 	"context"
+	"database/sql/driver"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -128,4 +131,71 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 	}
 
 	return status, nil
+}
+
+// TODO can we assume that the first message here is the earliest pending registration attempt?
+// or do we need to dig into the message data to validate more fields?
+func (or *orchestrator) getRegistrationMessage(ctx context.Context) (msg *core.Message, err error) {
+	fb := database.MessageQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("type", core.MessageTypeDefinition),
+		fb.Eq("tag", core.SystemTagIdentityClaim),
+		fb.Eq("author", core.FireFlyOrgDIDPrefix+or.config.Multiparty.Org.Name),
+		fb.In("state", []driver.Value{core.MessageStateStaged, core.MessageStateReady, core.MessageStateSent, core.MessageStatePending}),
+	).Sort("created").Limit(1)
+	msgs, _, err := or.database().GetMessages(ctx, or.namespace.Name, filter)
+	if err != nil {
+		return nil, err
+	}
+	if len(msgs) > 0 {
+		return msgs[0], nil
+	}
+	return nil, nil
+}
+
+func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core.NamespaceMultipartyStatus, err error) {
+
+	if !or.config.Multiparty.Enabled {
+		return nil, i18n.NewError(ctx, coremsgs.MsgMultipartyNotEnabled)
+	}
+
+	status, err := or.GetStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mpStatus = &core.NamespaceMultipartyStatus{
+		Org:  core.NamespaceMultipartyStatusOrg{},
+		Node: core.NamespaceMultipartyStatusNode{},
+	}
+
+	if status.Org.Registered {
+		mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistered
+		if status.Node.Registered {
+			mpStatus.Node.Status = core.NamespaceRegistrationStatusRegistered
+		} else {
+			msg, err := or.getRegistrationMessage(ctx)
+			if err != nil {
+				return nil, err
+			}
+			mpStatus.Node.Status = core.NamespaceRegistrationStatusUnregistered
+			if msg != nil {
+				mpStatus.Node.RegistrationMessageID = msg.Header.ID
+				mpStatus.Node.Status = core.NamespaceRegistrationStatusRegistering
+			}
+		}
+	} else {
+		msg, err := or.getRegistrationMessage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		mpStatus.Org.Status = core.NamespaceRegistrationStatusUnregistered
+		if msg != nil {
+			mpStatus.Org.RegistrationMessageID = msg.Header.ID
+			mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistering
+		}
+		mpStatus.Node.Status = core.NamespaceRegistrationStatusUnregistered
+	}
+
+	return mpStatus, nil
 }

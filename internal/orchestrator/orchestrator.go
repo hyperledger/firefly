@@ -76,6 +76,7 @@ type Orchestrator interface {
 
 	// Status
 	GetStatus(ctx context.Context) (*core.NamespaceStatus, error)
+	GetMultipartyStatus(ctx context.Context) (*core.NamespaceMultipartyStatus, error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, filter ffapi.AndFilter) ([]*core.Subscription, *ffapi.FilterResult, error)
