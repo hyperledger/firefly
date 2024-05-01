@@ -338,9 +338,10 @@ func TestGetMultipartyStatusMultipartyNotEnabled(t *testing.T) {
 
 	or.config.Multiparty.Enabled = false
 
-	_, err := or.GetMultipartyStatus(or.ctx)
-	assert.Regexp(t, "FF10469", err)
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
 
+	assert.Equal(t, false, mpStatus.Enabled)
 }
 
 func TestGetMultipartyStatusUnregistered(t *testing.T) {
@@ -362,6 +363,7 @@ func TestGetMultipartyStatusUnregistered(t *testing.T) {
 	mpStatus, err := or.GetMultipartyStatus(or.ctx)
 	assert.NoError(t, err)
 
+	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Org.Status)
 	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
@@ -393,6 +395,7 @@ func TestGetMultipartyStatusRegisteringOrg(t *testing.T) {
 	mpStatus, err := or.GetMultipartyStatus(or.ctx)
 	assert.NoError(t, err)
 
+	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistering, mpStatus.Org.Status)
 	assert.Equal(t, msgID, mpStatus.Org.RegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
@@ -461,6 +464,7 @@ func TestGetMultipartyStatusRegisteringNode(t *testing.T) {
 	mpStatus, err := or.GetMultipartyStatus(or.ctx)
 	assert.NoError(t, err)
 
+	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
 	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistering, mpStatus.Node.Status)
@@ -540,6 +544,7 @@ func TestGetMultipartyStatusUnregisteredNode(t *testing.T) {
 	mpStatus, err := or.GetMultipartyStatus(or.ctx)
 	assert.NoError(t, err)
 
+	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
 	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
@@ -584,6 +589,7 @@ func TestGetMultipartyStatusRegistered(t *testing.T) {
 	mpStatus, err := or.GetMultipartyStatus(or.ctx)
 	assert.NoError(t, err)
 
+	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
 	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Node.Status)

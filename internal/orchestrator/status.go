@@ -20,9 +20,7 @@ import (
 	"context"
 	"database/sql/driver"
 
-	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -133,8 +131,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 	return status, nil
 }
 
-// TODO can we assume that the first message here is the earliest pending registration attempt?
-// or do we need to dig into the message data to validate more fields?
+// Get the earliest incomplete identity claim message for this org, if it exists
 func (or *orchestrator) getRegistrationMessage(ctx context.Context) (msg *core.Message, err error) {
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
@@ -155,8 +152,11 @@ func (or *orchestrator) getRegistrationMessage(ctx context.Context) (msg *core.M
 
 func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core.NamespaceMultipartyStatus, err error) {
 
+	mpStatus = &core.NamespaceMultipartyStatus{
+		Enabled: or.config.Multiparty.Enabled,
+	}
 	if !or.config.Multiparty.Enabled {
-		return nil, i18n.NewError(ctx, coremsgs.MsgMultipartyNotEnabled)
+		return mpStatus, nil
 	}
 
 	status, err := or.GetStatus(ctx)
@@ -164,10 +164,9 @@ func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core
 		return nil, err
 	}
 
-	mpStatus = &core.NamespaceMultipartyStatus{
-		Org:  core.NamespaceMultipartyStatusOrg{},
-		Node: core.NamespaceMultipartyStatusNode{},
-	}
+	mpStatus.Org = core.NamespaceMultipartyStatusOrg{}
+	mpStatus.Node = core.NamespaceMultipartyStatusNode{}
+	mpStatus.Contracts = or.namespace.Contracts
 
 	if status.Org.Registered {
 		mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistered

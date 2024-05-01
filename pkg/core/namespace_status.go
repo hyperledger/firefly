@@ -90,6 +90,8 @@ type NamespaceMultipartyStatusNode struct {
 }
 
 type NamespaceMultipartyStatus struct {
-	Org  NamespaceMultipartyStatusOrg  `ffstruct:"NamespaceMultipartyStatus" json:"org"`
-	Node NamespaceMultipartyStatusNode `ffstruct:"NamespaceMultipartyStatus" json:"node"`
+	Enabled   bool                          `ffstruct:"NamespaceMultipartyStatus" json:"enabled"`
+	Org       NamespaceMultipartyStatusOrg  `ffstruct:"NamespaceMultipartyStatus" json:"org"`
+	Node      NamespaceMultipartyStatusNode `ffstruct:"NamespaceMultipartyStatus" json:"node"`
+	Contracts *MultipartyContracts          `ffstruct:"NamespaceMultipartyStatus" json:"contracts,omitempty"`
 }

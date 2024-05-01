@@ -433,14 +433,14 @@ var (
 	NamespaceStatusNodeName                  = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
 	NamespaceStatusNodeRegistered            = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
 	NamespaceStatusNodeStatus                = ffm("NamespaceStatusNode.status", "The status of the node registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
-	NamespaceStatusNodeRegistrationMessageID = ffm("NamespaceStatusNode.registrationMessageId", "The ID of the message that broadcase the identity claim to the network")
+	NamespaceStatusNodeRegistrationMessageID = ffm("NamespaceStatusNode.registrationMessageId", "The ID of the message that broadcast the identity claim to the network")
 	NamespaceStatusNodeID                    = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
 
 	// NamespaceStatusOrg field descriptions
 	NamespaceStatusOrgName                  = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
 	NamespaceStatusOrgRegistered            = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
 	NamespaceStatusOrgStatus                = ffm("NamespaceStatusOrg.status", "The status of the organization registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
-	NamespaceStatusOrgRegistrationMessageID = ffm("NamespaceStatusOrg.registrationMessageId", "The ID of the message that broadcase the identity claim to the network")
+	NamespaceStatusOrgRegistrationMessageID = ffm("NamespaceStatusOrg.registrationMessageId", "The ID of the message that broadcast the identity claim to the network")
 	NamespaceStatusOrgDID                   = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
 	NamespaceStatusOrgID                    = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
 	NamespaceStatusOrgVerifiers             = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
@@ -464,6 +464,12 @@ var (
 	// NamespaceStatusMultiparty field descriptions
 	NamespaceMultipartyEnabled  = ffm("NamespaceStatusMultiparty.enabled", "Whether multi-party mode is enabled for this namespace")
 	NamespaceMultipartyContract = ffm("NamespaceStatusMultiparty.contract", "Information about the multi-party smart contract configured for this namespace")
+
+	// NamespaceMultipartyStatus field descriptions
+	NamespaceMultipartyStatusEnabled   = ffm("NamespaceMultipartyStatus.enabled", "The name of the plugin")
+	NamespaceMultipartyStatusNode      = ffm("NamespaceMultipartyStatus.node", "Details of the local node")
+	NamespaceMultipartyStatusOrg       = ffm("NamespaceMultipartyStatus.org", "Details of the root organization identity registered for this namespace on the local node")
+	NamespaceMultipartyStatusContracts = ffm("NamespaceMultipartyStatus.contracts", "Information about the active and terminated multi-party smart contracts configured for this namespace")
 
 	// BatchManagerStatus field descriptions
 	BatchManagerStatusProcessors = ffm("BatchManagerStatus.processors", "An array of currently active batch processors")
