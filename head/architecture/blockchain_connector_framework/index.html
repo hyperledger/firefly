@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.19">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.20">
     
     
       
@@ -1712,6 +1712,8 @@
       
         
       
+        
+      
     
     
     
@@ -1773,6 +1775,27 @@
   
   <span class="md-ellipsis">
     API Query Syntax
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/blockchain_operation_errors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Blockchain Operation Errors
   </span>
   
 
@@ -1968,10 +1991,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_12" >
         
           
-          <label class="md-nav__link" for="__nav_5_11" id="__nav_5_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_12" id="__nav_5_12_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1982,8 +2005,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_12">
             <span class="md-nav__icon md-icon"></span>
             Microservices
           </label>
@@ -2084,10 +2107,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_13" >
         
           
-          <label class="md-nav__link" for="__nav_5_12" id="__nav_5_12_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_13" id="__nav_5_13_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2098,8 +2121,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_12_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_12">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_13">
             <span class="md-nav__icon md-icon"></span>
             Types
           </label>
@@ -2826,39 +2849,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#blockchain-error-messages" class="md-nav__link">
-    <span class="md-ellipsis">
-      Blockchain error messages
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Blockchain error messages">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#format-of-a-firefly-evmconnect-error-message" class="md-nav__link">
-    <span class="md-ellipsis">
-      Format of a firefly-evmconnect error message
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#retrieving-evm-blockchain-transaction-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Retrieving EVM blockchain transaction errors
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -3493,39 +3483,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#blockchain-error-messages" class="md-nav__link">
-    <span class="md-ellipsis">
-      Blockchain error messages
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Blockchain error messages">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#format-of-a-firefly-evmconnect-error-message" class="md-nav__link">
-    <span class="md-ellipsis">
-      Format of a firefly-evmconnect error message
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#retrieving-evm-blockchain-transaction-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Retrieving EVM blockchain transaction errors
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -3736,96 +3693,6 @@ for different types of blockchain events.</p>
 <li>Determines the final order based on order of confirmation on the blockchain</li>
 </ul>
 <p><a href="../../images/firefly_connector_toolkit_event_streams.jpg"><img alt="FireFly Connector Toolkit Event Streams" src="../../images/firefly_connector_toolkit_event_streams.jpg" /></a></p>
-<h2 id="blockchain-error-messages">Blockchain error messages<a class="headerlink" href="#blockchain-error-messages" title="Permanent link">&para;</a></h2>
-<p>The receipt for a FireFly blockchain operation contains an <code>extraInfo</code> section that records additional information about the transaction. For example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&quot;receipt&quot;: {
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  ...
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  &quot;extraInfo&quot;: [
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    {
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>      {
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        &quot;contractAddress&quot;:&quot;0x87ae94ab290932c4e6269648bb47c86978af4436&quot;,
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        &quot;cumulativeGasUsed&quot;:&quot;33812&quot;,
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        &quot;from&quot;:&quot;0x2b1c769ef5ad304a4889f2a07a6617cd935849ae&quot;,
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        &quot;to&quot;:&quot;0x302259069aaa5b10dc6f29a9a3f72a8e52837cc3&quot;,
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        &quot;gasUsed&quot;:&quot;33812&quot;,
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        &quot;status&quot;:&quot;0&quot;,
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        &quot;errorMessage&quot;:&quot;Not enough tokens&quot;,
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>      }
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    }
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  ],
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>  ...
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>},
-</code></pre></div>
-<p>The <code>errorMessage</code> field can be be set by a blockchain connector to provide FireFly and the end-user with more information about the reason why a tranasction failed. The blockchain connector can choose what information to include in <code>errorMessage</code> field. It may be set to an error message relating to the blockchain connector itself or an error message passed back from the blockchain or smart contract that was invoked.</p>
-<h3 id="format-of-a-firefly-evmconnect-error-message">Format of a <code>firefly-evmconnect</code> error message<a class="headerlink" href="#format-of-a-firefly-evmconnect-error-message" title="Permanent link">&para;</a></h3>
-<p>The following section describes the way that the <code>firefly-evmconnect</code> plugin uses the <code>errorMessage</code> field. This serves both as an explanation of how EVM-based transaction errors will be formatted, and as a guide that other blockchain connectors may decide to follow.</p>
-<p>The <code>errorMessage</code> field for a <code>firefly-evmconnect</code> transaction may contain one of the following:</p>
-<ol>
-<li>
-<p>An error message from the FireFly blockchain connector</p>
-</li>
-<li>
-<p>For example <code>"FF23054", "Error return value unavailable"</code></p>
-</li>
-<li>
-<p>A decoded error string from the blockchain transaction</p>
-</li>
-<li>
-<p>For example <code>Not enough tokens</code></p>
-</li>
-<li>
-<p>This could be an error string from a smart contract e.g. <code>require(requestedTokens &lt;= allowance, "Not enough tokens");</code></p>
-</li>
-<li>
-<p>An un-decoded byte string from the blockchain transaction</p>
-</li>
-<li>
-<p>For example</p>
-</li>
-</ol>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>FF23053: Error return value for custom error: 0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010
-</code></pre></div>
-<ul>
-<li>This could be a custom error from a smart contract e.g.</li>
-</ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>error AllowanceTooSmall(uint256 requested, uint256 allowance);
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>...
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>revert AllowanceTooSmall({ requested: 100, allowance: 20 });
-</code></pre></div>
-<ul>
-<li>If an error reason cannot be decoded the <code>returnValue</code> of the <code>extraInfo</code> will be set to the raw byte string. For example:</li>
-</ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&quot;receipt&quot;: {
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  ...
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  &quot;extraInfo&quot;: [
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>     {
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>       {
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>         &quot;contractAddress&quot;:&quot;0x87ae94ab290932c4e6269648bb47c86978af4436&quot;,
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>         &quot;cumulativeGasUsed&quot;:&quot;33812&quot;,
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>         &quot;from&quot;:&quot;0x2b1c769ef5ad304a4889f2a07a6617cd935849ae&quot;,
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>         &quot;to&quot;:&quot;0x302259069aaa5b10dc6f29a9a3f72a8e52837cc3&quot;,
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>         &quot;gasUsed&quot;:&quot;33812&quot;,
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>         &quot;status&quot;:&quot;0&quot;,
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>         &quot;errorMessage&quot;:&quot;FF23053: Error return value for custom error: 0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010&quot;,
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>         &quot;returnValue&quot;:&quot;0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010&quot;
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>       }
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>     }
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>  ],
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>  ...
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>},
-</code></pre></div>
-<h3 id="retrieving-evm-blockchain-transaction-errors">Retrieving EVM blockchain transaction errors<a class="headerlink" href="#retrieving-evm-blockchain-transaction-errors" title="Permanent link">&para;</a></h3>
-<p>The ability of a blockchain connector such as <code>firefly-evmconnect</code> to retrieve the reason for a transaction failure, is dependent on by the configuration of the blockchain it is connected to. For an EVM blockchain the reason why a transaction failed is recorded with the <code>REVERT</code> op code, with a <code>REASON</code> set to the reason for the failure. By default, most EVM clients do not store this reason in the transaction receipt. This is typically to reduce resource consumption such as memory usage in the client. It is usually possible to configure an EVM client to store the revert reason in the transaction receipt. For example Hyperledger Besu™ provides the <code>--revert-reason-enabled</code> configuration option. If the transaction receipt does not contain the revert reason it is possible to request that an EVM client re-run the transaction and return a trace of all of the op-codes, including the final <code>REVERT</code> <code>REASON</code>. This can be a resource intensive request to submit to an EVM client, and is only available on archive nodes or for very recent blocks.</p>
-<p>The <code>firefly-evmconnect</code> blockchain connector attempts to obtain the reason for a transaction revert and include it in the <code>extraInfo</code> field. It uses the following mechanisms, in this order:</p>
-<ol>
-<li>Checks if the blockchain transaction receipt contains the revert reason.</li>
-<li>If the revert reason is not in the receipt, and the <code>connector.traceTXForRevertReason</code> configuration option is set to <code>true</code>, calls <code>debug_traceTransaction</code> to obtain a full trace of the transaction and extract the revert reason. By default, <code>connector.traceTXForRevertReason</code> is set to <code>false</code> to avoid submitting high-resource requests to the EVM client.</li>
-</ol>
-<p>If the revert reason can be obtained using either mechanism above, the revert reason bytes are decoded in the following way:</p>
-<ul>
-<li>Attempts to decode the bytes as the standard <code>Error(string)</code> signature format and includes the decoded string in the <code>errorMessage</code></li>
-<li>If the reason is not a standard <code>Error(String)</code> error, sets the <code>errorMessage</code> to <code>FF23053: Error return value for custom error: &lt;raw hex string&gt;</code> and includes the raw byte string in the <code>returnValue</code> field.</li>
-</ul>
 
 
 

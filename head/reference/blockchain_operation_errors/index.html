@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../create_custom_identity/">
+        <link rel="prev" href="../api_query_syntax/">
       
       
-        <link rel="next" href="../events/">
+        <link rel="next" href="../blockchain_operation_status/">
       
       
       <link rel="icon" href="../../assets/favicon.ico">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Define a datatype - Hyperledger FireFly</title>
+        <title>Blockchain Operation Errors - Hyperledger FireFly</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#define-a-datatype" class="md-skip">
+        <a href="#blockchain-error-messages" class="md-skip">
           Skip to content
         </a>
       
@@ -133,7 +133,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Define a datatype
+              Blockchain Operation Errors
             
           </span>
         </div>
@@ -904,10 +904,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -936,11 +934,11 @@
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
@@ -954,7 +952,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Tutorials
@@ -968,7 +966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../basic_auth/" class="md-nav__link">
+      <a href="../../tutorials/basic_auth/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -989,7 +987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../broadcast_data/" class="md-nav__link">
+      <a href="../../tutorials/broadcast_data/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1010,7 +1008,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../create_custom_identity/" class="md-nav__link">
+      <a href="../../tutorials/create_custom_identity/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1028,30 +1026,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Define a datatype
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../tutorials/define_datatype/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1060,95 +1038,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#quick-reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      Quick reference
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#additional-info" class="md-nav__link">
-    <span class="md-ellipsis">
-      Additional info
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Additional info">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-1-broadcast-new-datatype" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example 1: Broadcast new datatype
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-message-response" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example message response
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lookup-the-confirmed-data-type" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lookup the confirmed data type
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-private-send-referring-to-the-datatype" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example private send referring to the datatype
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#defining-datatypes-using-the-sandbox" class="md-nav__link">
-    <span class="md-ellipsis">
-      Defining Datatypes using the Sandbox
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1161,7 +1050,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../events/" class="md-nav__link">
+      <a href="../../tutorials/events/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1182,7 +1071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../private_send/" class="md-nav__link">
+      <a href="../../tutorials/private_send/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1203,7 +1092,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../query_messages/" class="md-nav__link">
+      <a href="../../tutorials/query_messages/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1224,7 +1113,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rotate_dx_certs/" class="md-nav__link">
+      <a href="../../tutorials/rotate_dx_certs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1281,7 +1170,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../chains/" class="md-nav__link ">
+            <a href="../../tutorials/chains/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1314,7 +1203,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/arbitrum/" class="md-nav__link">
+      <a href="../../tutorials/chains/arbitrum/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1335,7 +1224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/avalanche/" class="md-nav__link">
+      <a href="../../tutorials/chains/avalanche/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1356,7 +1245,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/binance_smart_chain/" class="md-nav__link">
+      <a href="../../tutorials/chains/binance_smart_chain/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1377,7 +1266,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/fabric_test_network/" class="md-nav__link">
+      <a href="../../tutorials/chains/fabric_test_network/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1398,7 +1287,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/moonbeam/" class="md-nav__link">
+      <a href="../../tutorials/chains/moonbeam/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1419,7 +1308,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/optimism/" class="md-nav__link">
+      <a href="../../tutorials/chains/optimism/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1440,7 +1329,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/polygon_testnet/" class="md-nav__link">
+      <a href="../../tutorials/chains/polygon_testnet/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1461,7 +1350,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/tezos_testnet/" class="md-nav__link">
+      <a href="../../tutorials/chains/tezos_testnet/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1482,7 +1371,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chains/zksync_testnet/" class="md-nav__link">
+      <a href="../../tutorials/chains/zksync_testnet/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1537,7 +1426,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../custom_contracts/" class="md-nav__link ">
+            <a href="../../tutorials/custom_contracts/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1570,7 +1459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../custom_contracts/ethereum/" class="md-nav__link">
+      <a href="../../tutorials/custom_contracts/ethereum/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1591,7 +1480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../custom_contracts/fabric/" class="md-nav__link">
+      <a href="../../tutorials/custom_contracts/fabric/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1612,7 +1501,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../custom_contracts/pinning/" class="md-nav__link">
+      <a href="../../tutorials/custom_contracts/pinning/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1633,7 +1522,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../custom_contracts/tezos/" class="md-nav__link">
+      <a href="../../tutorials/custom_contracts/tezos/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1686,7 +1575,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../tokens/" class="md-nav__link ">
+            <a href="../../tutorials/tokens/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -1719,7 +1608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tokens/erc1155/" class="md-nav__link">
+      <a href="../../tutorials/tokens/erc1155/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1740,7 +1629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tokens/erc20/" class="md-nav__link">
+      <a href="../../tutorials/tokens/erc20/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1761,7 +1650,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tokens/erc721/" class="md-nav__link">
+      <a href="../../tutorials/tokens/erc721/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1794,8 +1683,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1828,11 +1719,11 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -1846,7 +1737,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Reference
@@ -1860,7 +1751,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api_post_syntax/" class="md-nav__link">
+      <a href="../api_post_syntax/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1881,7 +1772,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/api_query_syntax/" class="md-nav__link">
+      <a href="../api_query_syntax/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1899,10 +1790,28 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../reference/blockchain_operation_errors/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Blockchain Operation Errors
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1911,6 +1820,75 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#blockchain-error-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Blockchain Error Messages
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-error-format-with-hyperledger-firefly-13-and-hyperledger-besu-2430" class="md-nav__link">
+    <span class="md-ellipsis">
+      Default Error Format With Hyperledger FireFly 1.3 and Hyperledger Besu 24.3.0
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-retrieval-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Retrieval Details
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Retrieval Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#format-of-a-firefly-evmconnect-error-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      Format of a firefly-evmconnect Error Message
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieving-evm-blockchain-transaction-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retrieving EVM Blockchain Transaction Errors
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1923,7 +1901,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/blockchain_operation_status/" class="md-nav__link">
+      <a href="../blockchain_operation_status/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1944,7 +1922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1965,7 +1943,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/events/" class="md-nav__link">
+      <a href="../events/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1986,7 +1964,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/firefly_interface_format/" class="md-nav__link">
+      <a href="../firefly_interface_format/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2007,7 +1985,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/idempotency/" class="md-nav__link">
+      <a href="../idempotency/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2028,7 +2006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/identities/" class="md-nav__link">
+      <a href="../identities/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2049,7 +2027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/namespaces/" class="md-nav__link">
+      <a href="../namespaces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2070,7 +2048,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/tls/" class="md-nav__link">
+      <a href="../tls/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2130,7 +2108,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/microservices/fftokens/" class="md-nav__link">
+      <a href="../microservices/fftokens/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2246,7 +2224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/batch/" class="md-nav__link">
+      <a href="../types/batch/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2267,7 +2245,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/blockchainevent/" class="md-nav__link">
+      <a href="../types/blockchainevent/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2288,7 +2266,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/contractapi/" class="md-nav__link">
+      <a href="../types/contractapi/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2309,7 +2287,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/contractlistener/" class="md-nav__link">
+      <a href="../types/contractlistener/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2330,7 +2308,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/data/" class="md-nav__link">
+      <a href="../types/data/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2351,7 +2329,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/datatype/" class="md-nav__link">
+      <a href="../types/datatype/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2372,7 +2350,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/event/" class="md-nav__link">
+      <a href="../types/event/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2393,7 +2371,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/ffi/" class="md-nav__link">
+      <a href="../types/ffi/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2414,7 +2392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/group/" class="md-nav__link">
+      <a href="../types/group/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2435,7 +2413,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/identity/" class="md-nav__link">
+      <a href="../types/identity/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2456,7 +2434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/message/" class="md-nav__link">
+      <a href="../types/message/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2477,7 +2455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/namespace/" class="md-nav__link">
+      <a href="../types/namespace/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2498,7 +2476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/nextpin/" class="md-nav__link">
+      <a href="../types/nextpin/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2519,7 +2497,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/operation/" class="md-nav__link">
+      <a href="../types/operation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2540,7 +2518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/operationwithdetail/" class="md-nav__link">
+      <a href="../types/operationwithdetail/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2561,7 +2539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/simpletypes/" class="md-nav__link">
+      <a href="../types/simpletypes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2582,7 +2560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/subscription/" class="md-nav__link">
+      <a href="../types/subscription/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2603,7 +2581,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/tokenapproval/" class="md-nav__link">
+      <a href="../types/tokenapproval/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2624,7 +2602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/tokenpool/" class="md-nav__link">
+      <a href="../types/tokenpool/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2645,7 +2623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/tokentransfer/" class="md-nav__link">
+      <a href="../types/tokentransfer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2666,7 +2644,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/transaction/" class="md-nav__link">
+      <a href="../types/transaction/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2687,7 +2665,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/verifier/" class="md-nav__link">
+      <a href="../types/verifier/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2708,7 +2686,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/wsack/" class="md-nav__link">
+      <a href="../types/wsack/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2729,7 +2707,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/wserror/" class="md-nav__link">
+      <a href="../types/wserror/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2750,7 +2728,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/types/wsstart/" class="md-nav__link">
+      <a href="../types/wsstart/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3387,8 +3365,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -3397,28 +3373,46 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-reference" class="md-nav__link">
+  <a href="#blockchain-error-messages" class="md-nav__link">
     <span class="md-ellipsis">
-      Quick reference
+      Blockchain Error Messages
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#additional-info" class="md-nav__link">
+  <a href="#default-error-format-with-hyperledger-firefly-13-and-hyperledger-besu-2430" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional info
+      Default Error Format With Hyperledger FireFly 1.3 and Hyperledger Besu 24.3.0
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Additional info">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-retrieval-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Retrieval Details
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Retrieval Details">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#example-1-broadcast-new-datatype" class="md-nav__link">
+  <a href="#format-of-a-firefly-evmconnect-error-message" class="md-nav__link">
     <span class="md-ellipsis">
-      Example 1: Broadcast new datatype
+      Format of a firefly-evmconnect Error Message
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#retrieving-evm-blockchain-transaction-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Retrieving EVM Blockchain Transaction Errors
     </span>
   </a>
   
@@ -3426,42 +3420,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-message-response" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example message response
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lookup-the-confirmed-data-type" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lookup the confirmed data type
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-private-send-referring-to-the-datatype" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example private send referring to the datatype
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#defining-datatypes-using-the-sandbox" class="md-nav__link">
-    <span class="md-ellipsis">
-      Defining Datatypes using the Sandbox
-    </span>
-  </a>
   
 </li>
       
@@ -3483,168 +3441,95 @@
   
 
 
-<h1 id="define-a-datatype">Define a datatype<a class="headerlink" href="#define-a-datatype" title="Permanent link">&para;</a></h1>
-<h2 id="quick-reference">Quick reference<a class="headerlink" href="#quick-reference" title="Permanent link">&para;</a></h2>
-<p>As your use case matures, it is important to agree formal datatypes between
-the parties. These <em>canonical</em> datatypes need to be defined and versioned, so that
-each member can extract and transform data from their internal systems into
-this datatype.</p>
-<p>Datatypes are broadcast to the network so everybody refers to the same
-JSON schema when validating their data. The broadcast must complete
-before a datatype can be used by an application to upload/broadcast/send data.
-The same system of broadcast within FireFly is used to broadcast definitions
-of datatypes, as is used to broadcast the data itself.</p>
-<h2 id="additional-info">Additional info<a class="headerlink" href="#additional-info" title="Permanent link">&para;</a></h2>
+  <h1>Blockchain Operation Errors</h1>
+
+<h2 id="blockchain-error-messages">Blockchain Error Messages<a class="headerlink" href="#blockchain-error-messages" title="Permanent link">&para;</a></h2>
+<p>The receipt for a FireFly blockchain operation contains an <code>extraInfo</code> section that records additional information about the transaction. For example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&quot;receipt&quot;: {
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  ...
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  &quot;extraInfo&quot;: [
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    {
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>      {
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        &quot;contractAddress&quot;:&quot;0x87ae94ab290932c4e6269648bb47c86978af4436&quot;,
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        &quot;cumulativeGasUsed&quot;:&quot;33812&quot;,
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        &quot;from&quot;:&quot;0x2b1c769ef5ad304a4889f2a07a6617cd935849ae&quot;,
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        &quot;to&quot;:&quot;0x302259069aaa5b10dc6f29a9a3f72a8e52837cc3&quot;,
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        &quot;gasUsed&quot;:&quot;33812&quot;,
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        &quot;status&quot;:&quot;0&quot;,
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        &quot;errorMessage&quot;:&quot;Not enough tokens&quot;, 
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>      }
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    }
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  ],
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>  ...
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>},
+</code></pre></div>
+<p>The <code>errorMessage</code> field can be be set by a blockchain connector to provide FireFly and the end-user with more information about the reason why a tranasction failed. The blockchain connector can choose what information to include in <code>errorMessage</code> field. It may be set to an error message relating to the blockchain connector itself or an error message passed back from the blockchain or smart contract that was invoked.</p>
+<h2 id="default-error-format-with-hyperledger-firefly-13-and-hyperledger-besu-2430">Default Error Format With Hyperledger FireFly 1.3 and Hyperledger Besu 24.3.0<a class="headerlink" href="#default-error-format-with-hyperledger-firefly-13-and-hyperledger-besu-2430" title="Permanent link">&para;</a></h2>
+<p>If FireFly is configured to connect to a Besu EVM client, and Besu has been configured with the <code>revert-reason-enabled=true</code> setting (note - the default value for Besu is <code>false</code>) error messages passed to FireFly from the blockchain client itself will be set correctly in the FireFly blockchain operation. For example:</p>
 <ul>
-<li>Key Concepts: <a href="../../overview/multiparty/broadcast/">Broadcast / shared data</a></li>
-<li>Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewDatatype" data-proofer-ignore>POST /api/v1/namespaces/{ns}/datatypes</a></li>
+<li><code>"errorMessage":"Not enough tokens"</code> for a revert error string from a smart contract</li>
 </ul>
-<h3 id="example-1-broadcast-new-datatype">Example 1: Broadcast new datatype<a class="headerlink" href="#example-1-broadcast-new-datatype" title="Permanent link">&para;</a></h3>
-<p><code>POST</code> <code>/api/v1/namespaces/{ns}/datatypes</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;widget&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.0.2&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">&quot;$id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://example.com/widget.schema.json&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://json-schema.org/draft/2020-12/schema&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Widget&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The unique identifier for the widget.&quot;</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="p">},</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The person&#39;s last name.&quot;</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="p">}</span>
-</code></pre></div>
-<h2 id="example-message-response">Example message response<a class="headerlink" href="#example-message-response" title="Permanent link">&para;</a></h2>
-<p>Status: <code>202 Accepted</code> - a broadcast message has been sent, and on confirmation the new
-datatype will be created (unless it conflicts with another definition with the same
-<code>name</code> and <code>version</code> that was ordered onto the blockchain before this definition).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;header&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;727f7d3a-d07e-4e80-95af-59f8d2ac7531&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// this is the ID of the message, not the data type</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;definition&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// a special type for system broadcasts</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;txtype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;batch_pin&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the broadcast is pinned to the chain</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">&quot;author&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0x0a65365587a65ce44938eab5a765fe8bc6532bdf&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the local identity</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">&quot;created&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2021-07-01T21:06:26.9997478Z&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the time the broadcast was sent</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">&quot;namespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ff_system&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the data/message broadcast happens on the system namespace</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="nt">&quot;topic&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="s2">&quot;ff_ns_default&quot;</span><span class="w"> </span><span class="c1">// the namespace itself is used in the topic</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="p">],</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="nt">&quot;tag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ff_define_datatype&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// a tag instructing FireFly to process this as a datatype definition</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="nt">&quot;datahash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;56bd677e3e070ba62f547237edd7a90df5deaaf1a42e7d6435ec66a587c14370&quot;</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">  </span><span class="nt">&quot;hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5b6593720243831ba9e4ad002c550e95c63704b2c9dbdf31135d7d9207f8cae8&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ready&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// this message is stored locally but not yet confirmed</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;7539a0ab-78d8-4d42-b283-7e316b3afed3&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// this data object in the ff_system namespace, contains the schema</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">      </span><span class="nt">&quot;hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;22ba1cdf84f2a4aaffac665c83ff27c5431c0004dc72a9bf031ae35a75ac5aef&quot;</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">  </span><span class="p">]</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="p">}</span>
-</code></pre></div>
-<h2 id="lookup-the-confirmed-data-type">Lookup the confirmed data type<a class="headerlink" href="#lookup-the-confirmed-data-type" title="Permanent link">&para;</a></h2>
-<p><code>GET</code> <code>/api/v1/namespaces/default/datatypes?name=widget&amp;version=0.0.2</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">[</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p">{</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;421c94b1-66ce-4ba0-9794-7e03c63df29d&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// an ID allocated to the datatype</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;727f7d3a-d07e-4e80-95af-59f8d2ac7531&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the message that broadcast this data type</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">&quot;validator&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;json&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the type of validator that this datatype can be used for (this one is JSON Schema)</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">&quot;namespace&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the namespace of the datatype</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;widget&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the name of the datatype</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.0.2&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// the version of the data type</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">&quot;hash&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a4dceb79a21937ca5ea9fa22419011ca937b4b8bc563d690cea3114af9abce2c&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// hash of the schema itself</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="nt">&quot;created&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2021-07-01T21:06:26.983986Z&quot;</span><span class="p">,</span><span class="w"> </span><span class="c1">// time it was confirmed</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">      </span><span class="c1">// the JSON schema itself</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">&quot;$id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://example.com/widget.schema.json&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">      </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://json-schema.org/draft/2020-12/schema&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Widget&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">          </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The unique identifier for the widget.&quot;</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">          </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The person&#39;s last name.&quot;</span>
-<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="p">]</span>
-</code></pre></div>
-<h2 id="example-private-send-referring-to-the-datatype">Example private send referring to the datatype<a class="headerlink" href="#example-private-send-referring-to-the-datatype" title="Permanent link">&para;</a></h2>
-<p>Once confirmed, a piece of data can be assigned that datatype and all FireFly nodes
-will verify it against the schema. On a sending node, the data will be rejected at upload/send
-time if it does not conform. On other nodes, bad data results in a <code>message_rejected</code> event
-(rather than <code>message_confirmed</code>) for any message that arrives referring to that data.</p>
-<p><code>POST</code> <code>/api/v1/namespaces/default/send/message</code></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;header&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&quot;tag&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;new_widget_created&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">&quot;topic&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;widget_id_12345&quot;</span><span class="p">]</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="nt">&quot;group&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">&quot;members&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="p">{</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="nt">&quot;identity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;org_1&quot;</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="p">]</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">  </span><span class="p">},</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">  </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">      </span><span class="nt">&quot;datatype&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;widget&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">        </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.0.2&quot;</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">      </span><span class="p">},</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">      </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;widget_id_12345&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;superwidget&quot;</span>
-<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">  </span><span class="p">]</span>
-<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="p">}</span>
-</code></pre></div>
-<h2 id="defining-datatypes-using-the-sandbox">Defining Datatypes using the Sandbox<a class="headerlink" href="#defining-datatypes-using-the-sandbox" title="Permanent link">&para;</a></h2>
-<p>You can also define a datatype through the <a href="../../gettingstarted/sandbox/">FireFly Sandbox</a>.</p>
-<p>To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack.</p>
-<p>In the sandbox, enter the datatype's name, version, and JSON Schema as seen in the screenshot below.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;widget&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.0.2&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">&quot;$id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://example.com/widget.schema.json&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://json-schema.org/draft/2020-12/schema&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Widget&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The unique identifier for the widget.&quot;</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="p">},</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">        </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The person&#39;s last name.&quot;</span>
-<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">      </span><span class="p">}</span>
-<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="p">}</span>
-</code></pre></div>
-<p><img alt="Defining a Datatype" src="../../images/define_a_datatype.png" /></p>
-<p>Notice how the <code>data</code> field in the center panel updates in real time.</p>
-<p>Click the blue <code>Run</code> button. This should return a <code>202</code> response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds.</p>
-<p><img alt="Message Broadcast" src="../../images/message_broadcast_sample_result.png" /></p>
-<p>Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see that you've successfully defined your datatype</p>
-<p><img alt="Successful Transaction" src="../../images/firefly_first_successful_transaction.png" /></p>
+<p>If the smart contract uses a custom error type, Besu will return the revert reason to FireFly as a hexadecimal string but FireFly will be unable to decode it into. In this case the blockchain operation error message and return values will be set to:</p>
+<ul>
+<li><code>"errorMessage":"FF23053: Error return value for custom error: &lt;revert hex string&gt;</code></li>
+<li><code>"returnValue":"&lt;revert hex string&gt;"</code></li>
+</ul>
+<p>A future update to FireFly could be made to automatically decode custom error revert reasons if FireFly knows the ABI for the custom error. See <a href="https://github.com/hyperledger/firefly/issues/1466">FireFly issue 1466</a> which describes the current limitation.</p>
+<p>If FireFly is configured to connect to Besu without <code>revert-reason-enabled=true</code> the error message will be set to:</p>
+<ul>
+<li><code>"errorMessage":"FF23054: Error return value unavailable"</code></li>
+</ul>
+<h2 id="error-retrieval-details">Error Retrieval Details<a class="headerlink" href="#error-retrieval-details" title="Permanent link">&para;</a></h2>
+<p>The precise format of the error message in a blockchain operation can vary based on different factors. The sections below describe in detail how the error message is populted, with specific references to the <code>firefly-evmconnect</code> blockchain connector.</p>
+<h3 id="format-of-a-firefly-evmconnect-error-message">Format of a <code>firefly-evmconnect</code> Error Message<a class="headerlink" href="#format-of-a-firefly-evmconnect-error-message" title="Permanent link">&para;</a></h3>
+<p>The following section describes the way that the <code>firefly-evmconnect</code> plugin uses the <code>errorMessage</code> field. This serves both as an explanation of how EVM-based transaction errors will be formatted, and as a guide that other blockchain connectors may decide to follow.</p>
+<p>The <code>errorMessage</code> field for a <code>firefly-evmconnect</code> transaction may contain one of the following:</p>
+<ol>
+<li>An error message from the FireFly blockchain connector</li>
+<li>For example <code>"FF23054: Error return value unavailable"</code></li>
+<li>A decoded error string from the blockchain transaction</li>
+<li>For example <code>Not enough tokens</code></li>
+<li>This could be an error string from a smart contract e.g. <code>require(requestedTokens &lt;= allowance, "Not enough tokens");</code></li>
+<li>An un-decoded byte string from the blockchain transaction</li>
+<li>For example 
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>FF23053: Error return value for custom error: 0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010
+</code></pre></div></li>
+<li>This could be a custom error from a smart contract e.g.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>error AllowanceTooSmall(uint256 requested, uint256 allowance);
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>...
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>revert AllowanceTooSmall({ requested: 100, allowance: 20 });
+</code></pre></div></li>
+<li>If an error reason cannot be decoded the <code>returnValue</code> of the <code>extraInfo</code> will be set to the raw byte string. For example:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&quot;receipt&quot;: {
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  ...
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  &quot;extraInfo&quot;: [
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>     {
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>       {
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>         &quot;contractAddress&quot;:&quot;0x87ae94ab290932c4e6269648bb47c86978af4436&quot;,
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>         &quot;cumulativeGasUsed&quot;:&quot;33812&quot;,
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>         &quot;from&quot;:&quot;0x2b1c769ef5ad304a4889f2a07a6617cd935849ae&quot;,
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>         &quot;to&quot;:&quot;0x302259069aaa5b10dc6f29a9a3f72a8e52837cc3&quot;,
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>         &quot;gasUsed&quot;:&quot;33812&quot;,
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>         &quot;status&quot;:&quot;0&quot;,
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>         &quot;errorMessage&quot;:&quot;FF23053: Error return value for custom error: 0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010&quot;, 
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>         &quot;returnValue&quot;:&quot;0x1320fa6a00000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000010&quot;
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>       }
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>     }
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>  ],
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>  ...
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>},
+</code></pre></div></li>
+</ol>
+<h3 id="retrieving-evm-blockchain-transaction-errors">Retrieving EVM Blockchain Transaction Errors<a class="headerlink" href="#retrieving-evm-blockchain-transaction-errors" title="Permanent link">&para;</a></h3>
+<p>The ability of a blockchain connector such as <code>firefly-evmconnect</code> to retrieve the reason for a transaction failure, is dependent on by the configuration of the blockchain it is connected to. For an EVM blockchain the reason why a transaction failed is recorded with the <code>REVERT</code> op code, with a <code>REASON</code> set to the reason for the failure. By default, most EVM clients do not store this reason in the transaction receipt. This is typically to reduce resource consumption such as memory usage in the client. It is usually possible to configure an EVM client to store the revert reason in the transaction receipt. For example Hyperledger Besu™ provides the <code>--revert-reason-enabled</code> configuration option. If the transaction receipt does not contain the revert reason it is possible to request that an EVM client re-run the transaction and return a trace of all of the op-codes, including the final <code>REVERT</code> <code>REASON</code>. This can be a resource intensive request to submit to an EVM client, and is only available on archive nodes or for very recent blocks.</p>
+<p>The <code>firefly-evmconnect</code> blockchain connector attempts to obtain the reason for a transaction revert and include it in the <code>extraInfo</code> field. It uses the following mechanisms, in this order:</p>
+<ol>
+<li>Checks if the blockchain transaction receipt contains the revert reason.</li>
+<li>If the revert reason is not in the receipt, and the <code>connector.traceTXForRevertReason</code> configuration option is set to <code>true</code>, calls <code>debug_traceTransaction</code> to obtain a full trace of the transaction and extract the revert reason. By default, <code>connector.traceTXForRevertReason</code> is set to <code>false</code> to avoid submitting high-resource requests to the EVM client.</li>
+</ol>
+<p>If the revert reason can be obtained using either mechanism above, the revert reason bytes are decoded in the following way:
+  - Attempts to decode the bytes as the standard <code>Error(string)</code> signature format and includes the decoded string in the <code>errorMessage</code>
+  - If the reason is not a standard <code>Error(String)</code> error, sets the <code>errorMessage</code> to <code>FF23053: Error return value for custom error: &lt;raw hex string&gt;</code> and includes the raw byte string in the <code>returnValue</code> field.</p>
 
 
 
@@ -3685,7 +3570,7 @@ time if it does not conform. On other nodes, bad data results in a <code>message
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../create_custom_identity/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Create a custom identity">
+          <a href="../api_query_syntax/" class="md-footer__link md-footer__link--prev" aria-label="Previous: API Query Syntax">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -3695,20 +3580,20 @@ time if it does not conform. On other nodes, bad data results in a <code>message
                 Previous
               </span>
               <div class="md-ellipsis">
-                Create a custom identity
+                API Query Syntax
               </div>
             </div>
           </a>
         
         
           
-          <a href="../events/" class="md-footer__link md-footer__link--next" aria-label="Next: Listen for events">
+          <a href="../blockchain_operation_status/" class="md-footer__link md-footer__link--next" aria-label="Next: Blockchain Operation Status">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Listen for events
+                Blockchain Operation Status
               </div>
             </div>
             <div class="md-footer__button md-icon">
