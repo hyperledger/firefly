@@ -381,11 +381,15 @@ func TestGetMultipartyStatusRegisteringOrg(t *testing.T) {
 	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
 
 	msgID := fftypes.NewUUID()
-	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{{
+	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID: msgID,
 		},
-	}}, nil, nil)
+	}
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{msg}, nil, nil)
+	or.mdm.On("GetMessageDataCached", or.ctx, mock.Anything).Return(core.DataArray{
+		{Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:org/org1","type":"org"}}`)},
+	}, true, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
 	or.config.Multiparty.Node.Name = "node1"
@@ -400,6 +404,71 @@ func TestGetMultipartyStatusRegisteringOrg(t *testing.T) {
 	assert.Equal(t, msgID, mpStatus.Org.RegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
 	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+
+}
+
+func TestGetMultipartyStatusMismatchedOrgRegistration(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+
+	msgID := fftypes.NewUUID()
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: msgID,
+		},
+	}
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{msg}, nil, nil)
+	or.mdm.On("GetMessageDataCached", or.ctx, mock.Anything).Return(core.DataArray{
+		{Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:org/node1","type":"node"}}`)},
+	}, true, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, true, mpStatus.Enabled)
+	assert.Equal(t, core.NamespaceRegistrationStatusUnknown, mpStatus.Org.Status)
+	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Equal(t, core.NamespaceRegistrationStatusUnknown, mpStatus.Node.Status)
+	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+}
+
+func TestGetMultipartyStatusOrgBadMessage(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+
+	msgID := fftypes.NewUUID()
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			ID: msgID,
+		},
+	}
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{msg}, nil, nil)
+	or.mdm.On("GetMessageDataCached", or.ctx, mock.Anything).Return(core.DataArray{
+		{Value: fftypes.JSONAnyPtr(`invalid`)},
+	}, true, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	_, err := or.GetMultipartyStatus(or.ctx)
+	assert.Regexp(t, "FF10471", err)
 
 }
 
@@ -460,6 +529,9 @@ func TestGetMultipartyStatusRegisteringNode(t *testing.T) {
 			ID: msgID,
 		},
 	}}, nil, nil)
+	or.mdm.On("GetMessageDataCached", or.ctx, mock.Anything).Return(core.DataArray{
+		{Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:node/node1","type":"node"}}`)},
+	}, true, nil)
 
 	mpStatus, err := or.GetMultipartyStatus(or.ctx)
 	assert.NoError(t, err)
@@ -469,6 +541,99 @@ func TestGetMultipartyStatusRegisteringNode(t *testing.T) {
 	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistering, mpStatus.Node.Status)
 	assert.Equal(t, msgID, mpStatus.Node.RegistrationMessageID)
+
+}
+
+func TestGetMultipartyStatusMismatchedNodeRegistration(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(nil, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	msgID := fftypes.NewUUID()
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{{
+		Header: core.MessageHeader{
+			ID: msgID,
+		},
+	}}, nil, nil)
+	or.mdm.On("GetMessageDataCached", or.ctx, mock.Anything).Return(core.DataArray{
+		{Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:org/org1","type":"org"}}`)},
+	}, true, nil)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, true, mpStatus.Enabled)
+	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
+	assert.Equal(t, core.NamespaceRegistrationStatusUnknown, mpStatus.Node.Status)
+	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+}
+func TestGetMultipartyStatusNodeBadMessage(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(nil, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	msgID := fftypes.NewUUID()
+	or.mdi.On("GetMessages", or.ctx, "ns", mock.Anything).Return([]*core.Message{{
+		Header: core.MessageHeader{
+			ID: msgID,
+		},
+	}}, nil, nil)
+	or.mdm.On("GetMessageDataCached", or.ctx, mock.Anything).Return(core.DataArray{
+		{Value: fftypes.JSONAnyPtr(`invalid`)},
+	}, true, nil)
+
+	_, err := or.GetMultipartyStatus(or.ctx)
+	assert.Regexp(t, "FF10471", err)
 
 }
 
@@ -623,5 +788,82 @@ func TestGetMultipartyStatusErrorStatus(t *testing.T) {
 
 	_, err := or.GetMultipartyStatus(or.ctx)
 	assert.Regexp(t, "pop", err)
+
+}
+
+func TestCheckRegistrationType(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+
+	msg := core.MessageInOut{
+		InlineData: []*core.DataRefOrValue{{
+			Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:org/org1","type":"org"}}`),
+		}},
+	}
+	match, err := or.checkRegistrationType(or.ctx, &msg, core.IdentityTypeOrg)
+	assert.NoError(t, err)
+	assert.True(t, match)
+
+	msg = core.MessageInOut{
+		InlineData: []*core.DataRefOrValue{{
+			Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:node/node1","type":"node"}}`),
+		}},
+	}
+	match, err = or.checkRegistrationType(or.ctx, &msg, core.IdentityTypeNode)
+	assert.NoError(t, err)
+	assert.True(t, match)
+
+	msg = core.MessageInOut{
+		InlineData: []*core.DataRefOrValue{{
+			Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:node/node1","type":"org"}}`),
+		}},
+	}
+	match, err = or.checkRegistrationType(or.ctx, &msg, core.IdentityTypeNode)
+	assert.NoError(t, err)
+	assert.False(t, match)
+
+	msg = core.MessageInOut{
+		InlineData: []*core.DataRefOrValue{{
+			Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:node/node1","type":"custom"}}`),
+		}},
+	}
+	match, err = or.checkRegistrationType(or.ctx, &msg, core.IdentityTypeCustom)
+	assert.Regexp(t, "FF10470", err)
+	assert.False(t, match)
+
+	msg = core.MessageInOut{
+		InlineData: []*core.DataRefOrValue{{
+			Value: fftypes.JSONAnyPtr(`{"identity":{"did":"did:firefly:node/node1","type":"custom"}}`),
+		}},
+	}
+	match, err = or.checkRegistrationType(or.ctx, &msg, core.IdentityTypeCustom)
+	assert.Regexp(t, "FF10470", err)
+	assert.False(t, match)
+
+	msg = core.MessageInOut{
+		InlineData: []*core.DataRefOrValue{{
+			Value: fftypes.JSONAnyPtr(`notvalid`),
+		}},
+	}
+	match, err = or.checkRegistrationType(or.ctx, &msg, core.IdentityTypeCustom)
+	assert.Regexp(t, "FF10471", err)
+	assert.False(t, match)
+
+	msg = core.MessageInOut{
+		Message: core.Message{},
+	}
+	match, err = or.checkRegistrationType(or.ctx, &msg, core.IdentityTypeCustom)
+	assert.Regexp(t, "FF10469", err)
+	assert.False(t, match)
+
+	match, err = or.checkRegistrationType(or.ctx, nil, core.IdentityTypeCustom)
+	assert.Regexp(t, "FF10469", err)
+	assert.False(t, match)
 
 }

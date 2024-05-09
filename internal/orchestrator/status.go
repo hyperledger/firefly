@@ -19,8 +19,11 @@ package orchestrator
 import (
 	"context"
 	"database/sql/driver"
+	"encoding/json"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -132,15 +135,15 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 }
 
 // Get the earliest incomplete identity claim message for this org, if it exists
-func (or *orchestrator) getRegistrationMessage(ctx context.Context) (msg *core.Message, err error) {
+func (or *orchestrator) getRegistrationMessage(ctx context.Context) (msg *core.MessageInOut, err error) {
 	fb := database.MessageQueryFactory.NewFilter(ctx)
-	filter := fb.And(
+	filter := fb.Sort("created").Limit(1).And(
 		fb.Eq("type", core.MessageTypeDefinition),
 		fb.Eq("tag", core.SystemTagIdentityClaim),
 		fb.Eq("author", core.FireFlyOrgDIDPrefix+or.config.Multiparty.Org.Name),
 		fb.In("state", []driver.Value{core.MessageStateStaged, core.MessageStateReady, core.MessageStateSent, core.MessageStatePending}),
-	).Sort("created").Limit(1)
-	msgs, _, err := or.database().GetMessages(ctx, or.namespace.Name, filter)
+	)
+	msgs, _, err := or.GetMessagesWithData(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +151,28 @@ func (or *orchestrator) getRegistrationMessage(ctx context.Context) (msg *core.M
 		return msgs[0], nil
 	}
 	return nil, nil
+}
+
+// Ensure the given registration message correlates with the expected type
+func (or *orchestrator) checkRegistrationType(ctx context.Context, msg *core.MessageInOut, expectedType core.IdentityType) (match bool, err error) {
+	if msg != nil && msg.InlineData != nil && len(msg.InlineData) > 0 {
+		var identity core.IdentityClaim
+		err := json.Unmarshal([]byte(*msg.InlineData[0].Value), &identity)
+		if err != nil {
+			return false, i18n.WrapError(ctx, err, coremsgs.MsgUnableToParseRegistrationData, err)
+		}
+		var did string
+		switch expectedType {
+		case core.IdentityTypeOrg:
+			did = core.FireFlyOrgDIDPrefix + or.config.Multiparty.Org.Name
+		case core.IdentityTypeNode:
+			did = core.FireFlyNodeDIDPrefix + or.config.Multiparty.Node.Name
+		default:
+			return false, i18n.NewError(ctx, coremsgs.MsgUnexpectedRegistrationType, expectedType)
+		}
+		return identity.Identity.DID == did && identity.Identity.Type == expectedType, nil
+	}
+	return false, i18n.NewError(ctx, coremsgs.MsgNoMessageInlineData, or.config.Multiparty.Org.Name)
 }
 
 func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core.NamespaceMultipartyStatus, err error) {
@@ -179,8 +204,16 @@ func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core
 			}
 			mpStatus.Node.Status = core.NamespaceRegistrationStatusUnregistered
 			if msg != nil {
-				mpStatus.Node.RegistrationMessageID = msg.Header.ID
-				mpStatus.Node.Status = core.NamespaceRegistrationStatusRegistering
+				match, err := or.checkRegistrationType(ctx, msg, core.IdentityTypeNode)
+				if err != nil {
+					return nil, err
+				}
+				if match {
+					mpStatus.Node.RegistrationMessageID = msg.Header.ID
+					mpStatus.Node.Status = core.NamespaceRegistrationStatusRegistering
+				} else {
+					mpStatus.Node.Status = core.NamespaceRegistrationStatusUnknown
+				}
 			}
 		}
 	} else {
@@ -189,11 +222,20 @@ func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core
 			return nil, err
 		}
 		mpStatus.Org.Status = core.NamespaceRegistrationStatusUnregistered
-		if msg != nil {
-			mpStatus.Org.RegistrationMessageID = msg.Header.ID
-			mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistering
-		}
 		mpStatus.Node.Status = core.NamespaceRegistrationStatusUnregistered
+		if msg != nil {
+			match, err := or.checkRegistrationType(ctx, msg, core.IdentityTypeOrg)
+			if err != nil {
+				return nil, err
+			}
+			if match {
+				mpStatus.Org.RegistrationMessageID = msg.Header.ID
+				mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistering
+			} else {
+				mpStatus.Org.Status = core.NamespaceRegistrationStatusUnknown
+				mpStatus.Node.Status = core.NamespaceRegistrationStatusUnknown
+			}
+		}
 	}
 
 	return mpStatus, nil
