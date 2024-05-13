@@ -940,9 +940,9 @@ func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.
 	return f.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (f *Fabric) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, error) {
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, core.ContractListenerStatus, error) {
 	// Fabconnect does not currently provide any additional status info for listener subscriptions.
-	return true, nil, nil
+	return true, nil, core.ContractListenerStatusUnknown, nil
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

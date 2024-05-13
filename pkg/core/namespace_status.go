@@ -90,8 +90,17 @@ type NamespaceMultipartyStatusNode struct {
 }
 
 type NamespaceMultipartyStatus struct {
-	Enabled   bool                          `ffstruct:"NamespaceMultipartyStatus" json:"enabled"`
-	Org       NamespaceMultipartyStatusOrg  `ffstruct:"NamespaceMultipartyStatus" json:"org"`
-	Node      NamespaceMultipartyStatusNode `ffstruct:"NamespaceMultipartyStatus" json:"node"`
-	Contracts *MultipartyContracts          `ffstruct:"NamespaceMultipartyStatus" json:"contracts,omitempty"`
+	Enabled   bool                                 `ffstruct:"NamespaceMultipartyStatus" json:"enabled"`
+	Org       NamespaceMultipartyStatusOrg         `ffstruct:"NamespaceMultipartyStatus" json:"org"`
+	Node      NamespaceMultipartyStatusNode        `ffstruct:"NamespaceMultipartyStatus" json:"node"`
+	Contracts *MultipartyContractsWithActiveStatus `ffstruct:"NamespaceMultipartyStatus" json:"contracts,omitempty"`
+}
+
+type MinimalListenerCheckpoint struct {
+	Block int64 `json:"block"`
+}
+
+type MinimalListenerStatus struct {
+	Checkpoint MinimalListenerCheckpoint `json:"checkpoint"`
+	Catchup    bool                      `json:"catchup"`
 }

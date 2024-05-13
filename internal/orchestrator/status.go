@@ -191,7 +191,20 @@ func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core
 
 	mpStatus.Org = core.NamespaceMultipartyStatusOrg{}
 	mpStatus.Node = core.NamespaceMultipartyStatusNode{}
-	mpStatus.Contracts = or.namespace.Contracts
+	mpStatus.Contracts = &core.MultipartyContractsWithActiveStatus{
+		Active: &core.MultipartyContractWithStatus{
+			MultipartyContract: *or.namespace.Contracts.Active,
+			Status:             core.ContractListenerStatusUnknown,
+		},
+		Terminated: or.namespace.Contracts.Terminated,
+	}
+
+	log.L(ctx).Debugf("Looking up listener status with subscription ID: %s", mpStatus.Contracts.Active.Info.Subscription)
+	ok, _, listenerStatus, err := or.blockchain().GetContractListenerStatus(ctx, or.namespace.Name, mpStatus.Contracts.Active.Info.Subscription, false)
+	if !ok || err != nil {
+		return nil, err
+	}
+	mpStatus.Contracts.Active.Status = listenerStatus
 
 	if status.Org.Registered {
 		mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistered

@@ -3250,8 +3250,9 @@ func TestGetContractListenerStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	_, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "id", true)
-	assert.Nil(t, status)
+	_, detail, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "id", true)
+	assert.Nil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusUnknown, status)
 	assert.NoError(t, err)
 }
 
