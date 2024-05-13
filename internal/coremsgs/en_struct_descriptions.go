@@ -466,7 +466,7 @@ var (
 	NamespaceMultipartyContract = ffm("NamespaceStatusMultiparty.contract", "Information about the multi-party smart contract configured for this namespace")
 
 	// NamespaceMultipartyStatus field descriptions
-	NamespaceMultipartyStatusEnabled   = ffm("NamespaceMultipartyStatus.enabled", "The name of the plugin")
+	NamespaceMultipartyStatusEnabled   = ffm("NamespaceMultipartyStatus.enabled", "Whether multi-party mode is enabled for this namespace")
 	NamespaceMultipartyStatusNode      = ffm("NamespaceMultipartyStatus.node", "Details of the local node")
 	NamespaceMultipartyStatusOrg       = ffm("NamespaceMultipartyStatus.org", "Details of the root organization identity registered for this namespace on the local node")
 	NamespaceMultipartyStatusContracts = ffm("NamespaceMultipartyStatus.contracts", "Information about the active and terminated multi-party smart contracts configured for this namespace")
