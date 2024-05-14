@@ -14,11 +14,11 @@ There aren't any out of the box bridges to connect two separate chains together,
 
 The recommended way to deploy smart contracts on Ethereum chains is by using FireFly's built in API. For a step by step example of how to do this you can refer to the [Smart Contract Tutorial](../tutorials/custom_contracts/ethereum.md#contract-deployment) for Ethereum based chains.
 
-For Fabric networks, please refer to the [Fabric chaincode lifecycle docs](https://hyperledger-fabric.readthedocs.io/en/latest/chaincode_lifecycle.md) for detailed instructions on how to deploy and manage Fabric chaincode.
+For Fabric networks, please refer to the [Fabric chaincode lifecycle docs](https://hyperledger-fabric.readthedocs.io/en/latest/chaincode_lifecycle.html) for detailed instructions on how to deploy and manage Fabric chaincode.
 
 ## 🦊 Can I connect FireFly to MetaMask?
 
-Yes! Before you set up MetaMask you'll likely want to create some tokens that you can use to send between wallets on your FF network. Go to the tokens tab in your FireFly node's UI, create a token pool, and then mint some tokens. Once you've done this, follow the steps listed [here](https://hyperledger.github.io/firefly/tutorials/tokens/erc721.html#use-metamask) to set up MetaMask on your network.
+Yes! Before you set up MetaMask you'll likely want to create some tokens that you can use to send between wallets on your FF network. Go to the tokens tab in your FireFly node's UI, create a token pool, and then mint some tokens. Once you've done this, follow the steps listed [here](https://hyperledger.github.io/firefly/latest/tutorials/tokens/erc721/#use-metamask) to set up MetaMask on your network.
 
 ## 🚀 Connect with us on Discord
 
