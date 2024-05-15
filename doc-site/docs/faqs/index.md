@@ -18,7 +18,7 @@ For Fabric networks, please refer to the [Fabric chaincode lifecycle docs](https
 
 ## 🦊 Can I connect FireFly to MetaMask?
 
-Yes! Before you set up MetaMask you'll likely want to create some tokens that you can use to send between wallets on your FF network. Go to the tokens tab in your FireFly node's UI, create a token pool, and then mint some tokens. Once you've done this, follow the steps listed [here](https://hyperledger.github.io/firefly/latest/tutorials/tokens/erc721/#use-metamask) to set up MetaMask on your network.
+Yes! Before you set up MetaMask you'll likely want to create some tokens that you can use to send between wallets on your FF network. Go to the tokens tab in your FireFly node's UI, create a token pool, and then mint some tokens. Once you've done this, follow the steps listed [here](../tutorials/tokens/erc721#use-metamask) to set up MetaMask on your network.
 
 ## 🚀 Connect with us on Discord
 
