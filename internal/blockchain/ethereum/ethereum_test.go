@@ -159,7 +159,7 @@ func newTestStreamManager(client *resty.Client) *streamManager {
 	return newStreamManager(client, cache.NewUmanagedCache(context.Background(), 100, 5*time.Minute), defaultBatchSize, defaultBatchTimeout)
 }
 
-func mockNetworkVersion(t *testing.T, version int) func(req *http.Request) (*http.Response, error) {
+func mockNetworkVersion(version int) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
 		readBody, _ := req.GetBody()
 		var body map[string]interface{}
@@ -591,7 +591,7 @@ func TestEthCacheInitFail(t *testing.T) {
 			"registeredAs": "firefly",
 		}),
 	)
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(1))
 
 	e, cancel := newTestEthereum()
 	resetConf(e)
@@ -639,7 +639,7 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 			"registeredAs": "firefly",
 		}),
 	)
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(1))
 
 	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -675,7 +675,7 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 			assert.Equal(t, "es12345/ns1", body["stream"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(1))
 
 	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -877,7 +877,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 2))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(2))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
@@ -936,7 +936,7 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 		}))
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(1))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
@@ -994,7 +994,7 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 		}))
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(1))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
@@ -1052,7 +1052,7 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 		}))
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", Name: "topic1/ns1"}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 2))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(2))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
 
@@ -1164,7 +1164,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			res, err := mockNetworkVersion(t, 2)(req)
+			res, err := mockNetworkVersion(2)(req)
 			if res != nil || err != nil {
 				return res, err
 			}
@@ -1208,7 +1208,7 @@ func TestSubmitBatchPinV1(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			res, err := mockNetworkVersion(t, 1)(req)
+			res, err := mockNetworkVersion(1)(req)
 			if res != nil || err != nil {
 				return res, err
 			}
@@ -1278,7 +1278,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			res, err := mockNetworkVersion(t, 2)(req)
+			res, err := mockNetworkVersion(2)(req)
 			if res != nil || err != nil {
 				return res, err
 			}
@@ -1359,7 +1359,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			res, err := mockNetworkVersion(t, 2)(req)
+			res, err := mockNetworkVersion(2)(req)
 			if res != nil || err != nil {
 				return res, err
 			}
@@ -1397,7 +1397,7 @@ func TestSubmitBatchPinError(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			res, err := mockNetworkVersion(t, 2)(req)
+			res, err := mockNetworkVersion(2)(req)
 			if res != nil || err != nil {
 				return res, err
 			}
@@ -1415,10 +1415,17 @@ func TestVerifyEthAddress(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	_, err := e.ResolveSigningKey(context.Background(), "0x12345", blockchain.ResolveKeyIntentSign)
+	_, err := e.ResolveSigningKey(context.Background(), "", blockchain.ResolveKeyIntentSign)
+	assert.Regexp(t, "FF10354", err)
+
+	key, err := e.ResolveSigningKey(context.Background(), "", blockchain.ResolveKeyIntentQuery)
+	assert.NoError(t, err)
+	assert.Empty(t, key)
+
+	_, err = e.ResolveSigningKey(context.Background(), "0x12345", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10141", err)
 
-	key, err := e.ResolveSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6", blockchain.ResolveKeyIntentSign)
+	key, err = e.ResolveSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6", blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", key)
 
@@ -3547,7 +3554,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			res, err := mockNetworkVersion(t, 2)(req)
+			res, err := mockNetworkVersion(2)(req)
 			if res != nil || err != nil {
 				return res, err
 			}
@@ -3576,7 +3583,7 @@ func TestSubmitNetworkActionV1(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
-			res, err := mockNetworkVersion(t, 1)(req)
+			res, err := mockNetworkVersion(1)(req)
 			if res != nil || err != nil {
 				return res, err
 			}
@@ -4021,7 +4028,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, subscription{
 			ID: "sub1",
 		}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(2))
 
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -4075,7 +4082,7 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, subscription{
 			ID: "sub1",
 		}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(1))
 
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -4120,7 +4127,7 @@ func TestAddFireflySubscriptionEventstreamFail(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, subscription{
 			ID: "sub1",
 		}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(1))
 
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -4161,7 +4168,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(2))
 
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -4245,7 +4252,7 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(500, `pop`))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(2))
 
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)

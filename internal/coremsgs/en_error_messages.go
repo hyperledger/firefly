@@ -203,7 +203,7 @@ var (
 	MsgIdentityNotNode                       = ffe("FF10351", "Identity '%s' with DID '%s' is not a node", 400)
 	MsgBlockchainKeyNotSet                   = ffe("FF10352", "No blockchain key specified", 400)
 	MsgNoVerifierForIdentity                 = ffe("FF10353", "No %s verifier registered for identity %s", 400)
-	MsgNodeMissingBlockchainKey              = ffe("FF10354", "No default signing key or organization signing key configured for this namespace", 400)
+	MsgNodeMissingBlockchainKey              = ffe("FF10354", "No signing key was specified, and no default signing key or organization signing key is configured for this namespace", 400)
 	MsgAuthorRegistrationMismatch            = ffe("FF10355", "Verifier '%s' cannot be used for signing with author '%s'. Verifier registered to '%s'", 400)
 	MsgAuthorMissingForKey                   = ffe("FF10356", "Key '%s' has not been registered by any identity, and a separate 'author' was not supplied", 404)
 	MsgAuthorIncorrectForRootReg             = ffe("FF10357", "Author namespace '%s' and DID '%s' combination invalid for root organization registration", 400)

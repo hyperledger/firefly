@@ -283,6 +283,10 @@ func (t *Tezos) RemoveFireflySubscription(ctx context.Context, subID string) {
 }
 
 func (t *Tezos) ResolveSigningKey(ctx context.Context, key string, intent blockchain.ResolveKeyIntent) (resolved string, err error) {
+	// Key is always required
+	if key == "" {
+		return "", i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+	}
 	if !t.addressResolveAlways {
 		// If there's no address resolver plugin, or addressResolveAlways is false,
 		// we check if it's already an tezos address - in which case we can just return it.
