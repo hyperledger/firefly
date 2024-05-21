@@ -563,6 +563,11 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string, 
 	//       currently pluggable to external identity resolution systems (as is the case for
 	//       ethereum blockchain connectors).
 
+	// Key is always required
+	if signingKeyInput == "" {
+		return "", i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+	}
+
 	// we expand the short user name into the fully qualified onchain identity:
 	// mspid::x509::{ecert DN}::{CA DN}	return signingKeyInput, nil
 	if !fullIdentityPattern.MatchString(signingKeyInput) {
@@ -646,7 +651,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) buildBatchPinInput(ctx context.Context, version int, namespace string, batch *blockchain.BatchPin) (prefixItems []*PrefixItem, pinInput map[string]interface{}) {
+func (f *Fabric) buildBatchPinInput(version int, namespace string, batch *blockchain.BatchPin) (prefixItems []*PrefixItem, pinInput map[string]interface{}) {
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		hashes[i] = hexFormatB32(v)
@@ -687,7 +692,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, s
 		return err
 	}
 
-	prefixItems, pinInput := f.buildBatchPinInput(ctx, version, networkNamespace, batch)
+	prefixItems, pinInput := f.buildBatchPinInput(version, networkNamespace, batch)
 
 	input, _ := jsonEncodeInput(pinInput)
 	_, err = f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, prefixItems, input, nil)
@@ -801,7 +806,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 	}
 
 	if batch != nil {
-		_, batchPin := f.buildBatchPinInput(ctx, 2, "", batch)
+		_, batchPin := f.buildBatchPinInput(2, "", batch)
 		if input == nil {
 			input = make(map[string]interface{})
 		}
