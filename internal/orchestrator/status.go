@@ -172,7 +172,7 @@ func (or *orchestrator) checkRegistrationType(ctx context.Context, msg *core.Mes
 		}
 		return identity.Identity.DID == did && identity.Identity.Type == expectedType, nil
 	}
-	return false, i18n.NewError(ctx, coremsgs.MsgNoMessageInlineData, or.config.Multiparty.Org.Name)
+	return false, i18n.NewError(ctx, coremsgs.MsgNoRegistrationMessageData, or.config.Multiparty.Org.Name)
 }
 
 func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core.NamespaceMultipartyStatus, err error) {
@@ -191,20 +191,20 @@ func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core
 
 	mpStatus.Org = core.NamespaceMultipartyStatusOrg{}
 	mpStatus.Node = core.NamespaceMultipartyStatusNode{}
-	mpStatus.Contracts = &core.MultipartyContractsWithActiveStatus{
-		Active: &core.MultipartyContractWithStatus{
+	mpStatus.Contracts = &core.MultipartyContractsWithActiveStatus{}
+	if or.namespace.Contracts != nil {
+		mpStatus.Contracts.Active = &core.MultipartyContractWithStatus{
 			MultipartyContract: *or.namespace.Contracts.Active,
 			Status:             core.ContractListenerStatusUnknown,
-		},
-		Terminated: or.namespace.Contracts.Terminated,
+		}
+		mpStatus.Contracts.Terminated = or.namespace.Contracts.Terminated
+		log.L(ctx).Debugf("Looking up listener status with subscription ID: %s", mpStatus.Contracts.Active.Info.Subscription)
+		ok, _, listenerStatus, err := or.blockchain().GetContractListenerStatus(ctx, or.namespace.Name, mpStatus.Contracts.Active.Info.Subscription, false)
+		if !ok || err != nil {
+			return nil, err
+		}
+		mpStatus.Contracts.Active.Status = listenerStatus
 	}
-
-	log.L(ctx).Debugf("Looking up listener status with subscription ID: %s", mpStatus.Contracts.Active.Info.Subscription)
-	ok, _, listenerStatus, err := or.blockchain().GetContractListenerStatus(ctx, or.namespace.Name, mpStatus.Contracts.Active.Info.Subscription, false)
-	if !ok || err != nil {
-		return nil, err
-	}
-	mpStatus.Contracts.Active.Status = listenerStatus
 
 	if status.Org.Registered {
 		mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistered
@@ -222,7 +222,7 @@ func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core
 					return nil, err
 				}
 				if match {
-					mpStatus.Node.RegistrationMessageID = msg.Header.ID
+					mpStatus.Node.PendingRegistrationMessageID = msg.Header.ID
 					mpStatus.Node.Status = core.NamespaceRegistrationStatusRegistering
 				} else {
 					mpStatus.Node.Status = core.NamespaceRegistrationStatusUnknown
@@ -242,7 +242,7 @@ func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core
 				return nil, err
 			}
 			if match {
-				mpStatus.Org.RegistrationMessageID = msg.Header.ID
+				mpStatus.Org.PendingRegistrationMessageID = msg.Header.ID
 				mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistering
 			} else {
 				mpStatus.Org.Status = core.NamespaceRegistrationStatusUnknown

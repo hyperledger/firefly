@@ -365,9 +365,9 @@ func TestGetMultipartyStatusUnregistered(t *testing.T) {
 
 	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Org.Status)
-	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Org.PendingRegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
-	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Node.PendingRegistrationMessageID)
 
 }
 
@@ -401,9 +401,9 @@ func TestGetMultipartyStatusRegisteringOrg(t *testing.T) {
 
 	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistering, mpStatus.Org.Status)
-	assert.Equal(t, msgID, mpStatus.Org.RegistrationMessageID)
+	assert.Equal(t, msgID, mpStatus.Org.PendingRegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
-	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Node.PendingRegistrationMessageID)
 
 }
 
@@ -437,9 +437,9 @@ func TestGetMultipartyStatusMismatchedOrgRegistration(t *testing.T) {
 
 	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnknown, mpStatus.Org.Status)
-	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Org.PendingRegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnknown, mpStatus.Node.Status)
-	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Node.PendingRegistrationMessageID)
 }
 
 func TestGetMultipartyStatusOrgBadMessage(t *testing.T) {
@@ -538,9 +538,9 @@ func TestGetMultipartyStatusRegisteringNode(t *testing.T) {
 
 	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
-	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Org.PendingRegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistering, mpStatus.Node.Status)
-	assert.Equal(t, msgID, mpStatus.Node.RegistrationMessageID)
+	assert.Equal(t, msgID, mpStatus.Node.PendingRegistrationMessageID)
 
 }
 
@@ -590,7 +590,7 @@ func TestGetMultipartyStatusMismatchedNodeRegistration(t *testing.T) {
 	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnknown, mpStatus.Node.Status)
-	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Node.PendingRegistrationMessageID)
 }
 func TestGetMultipartyStatusNodeBadMessage(t *testing.T) {
 	or := newTestOrchestrator()
@@ -711,9 +711,9 @@ func TestGetMultipartyStatusUnregisteredNode(t *testing.T) {
 
 	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
-	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Org.PendingRegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusUnregistered, mpStatus.Node.Status)
-	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Node.PendingRegistrationMessageID)
 
 }
 
@@ -756,9 +756,9 @@ func TestGetMultipartyStatusRegistered(t *testing.T) {
 
 	assert.Equal(t, true, mpStatus.Enabled)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Org.Status)
-	assert.Nil(t, mpStatus.Org.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Org.PendingRegistrationMessageID)
 	assert.Equal(t, core.NamespaceRegistrationStatusRegistered, mpStatus.Node.Status)
-	assert.Nil(t, mpStatus.Node.RegistrationMessageID)
+	assert.Nil(t, mpStatus.Node.PendingRegistrationMessageID)
 
 }
 
@@ -865,5 +865,105 @@ func TestCheckRegistrationType(t *testing.T) {
 	match, err = or.checkRegistrationType(or.ctx, nil, core.IdentityTypeCustom)
 	assert.Regexp(t, "FF10469", err)
 	assert.False(t, match)
+
+}
+
+func TestGetMultipartyActiveListenerStatus(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			Parent: orgID,
+		},
+	}, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+	or.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{
+			Info: core.MultipartyContractInfo{
+				Subscription: "sub1",
+			},
+		},
+		Terminated: []*core.MultipartyContract{},
+	}
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	or.mbi.On("GetContractListenerStatus", or.ctx, "ns", "sub1", false).Return(true, nil, core.ContractListenerStatusSynced, nil)
+
+	mpStatus, err := or.GetMultipartyStatus(or.ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, core.ContractListenerStatusSynced, mpStatus.Contracts.Active.Status)
+
+}
+
+func TestGetMultipartyErrorActiveListenerStatus(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+
+	orgID := fftypes.NewUUID()
+
+	or.mim.On("GetRootOrg", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
+		},
+	}, nil)
+	or.mim.On("GetLocalNode", or.ctx).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			Parent: orgID,
+		},
+	}, nil)
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
+			Value: "0x12345",
+		}},
+	}, nil, nil)
+
+	or.config.Multiparty.Org.Name = "org1"
+	or.config.Multiparty.Node.Name = "node1"
+	or.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{
+			Info: core.MultipartyContractInfo{
+				Subscription: "sub1",
+			},
+		},
+		Terminated: []*core.MultipartyContract{},
+	}
+
+	or.mem.On("GetPlugins").Return(mockEventPlugins)
+
+	or.mbi.On("GetContractListenerStatus", or.ctx, "ns", "sub1", false).Return(false, nil, core.ContractListenerStatusUnknown, fmt.Errorf("pop"))
+
+	_, err := or.GetMultipartyStatus(or.ctx)
+	assert.Regexp(t, "pop", err)
 
 }

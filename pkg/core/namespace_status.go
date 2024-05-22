@@ -80,13 +80,13 @@ type NamespaceStatusMultiparty struct {
 }
 
 type NamespaceMultipartyStatusOrg struct {
-	Status                NamespaceRegistrationStatus `ffstruct:"NamespaceStatusOrg" json:"status"`
-	RegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusOrg" json:"registrationMessageId,omitempty"`
+	Status                       NamespaceRegistrationStatus `ffstruct:"NamespaceStatusOrg" json:"status"`
+	PendingRegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusOrg" json:"pendingRegistrationMessageId,omitempty"`
 }
 
 type NamespaceMultipartyStatusNode struct {
-	Status                NamespaceRegistrationStatus `ffstruct:"NamespaceStatusNode" json:"status"`
-	RegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusNode" json:"registrationMessageId,omitempty"`
+	Status                       NamespaceRegistrationStatus `ffstruct:"NamespaceStatusNode" json:"status"`
+	PendingRegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusNode" json:"pendingRegistrationMessageId,omitempty"`
 }
 
 type NamespaceMultipartyStatus struct {
@@ -94,13 +94,4 @@ type NamespaceMultipartyStatus struct {
 	Org       NamespaceMultipartyStatusOrg         `ffstruct:"NamespaceMultipartyStatus" json:"org"`
 	Node      NamespaceMultipartyStatusNode        `ffstruct:"NamespaceMultipartyStatus" json:"node"`
 	Contracts *MultipartyContractsWithActiveStatus `ffstruct:"NamespaceMultipartyStatus" json:"contracts,omitempty"`
-}
-
-type MinimalListenerCheckpoint struct {
-	Block int64 `json:"block"`
-}
-
-type MinimalListenerStatus struct {
-	Checkpoint MinimalListenerCheckpoint `json:"checkpoint"`
-	Catchup    bool                      `json:"catchup"`
 }
