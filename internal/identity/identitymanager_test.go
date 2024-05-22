@@ -203,9 +203,12 @@ func TestResolveInputSigningIdentityNoKey(t *testing.T) {
 	mmp := im.multiparty.(*multipartymocks.Manager)
 	mmp.On("RootOrg").Return(multiparty.RootOrg{})
 
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "", blockchain.ResolveKeyIntentSign).Return("", fmt.Errorf("pop"))
+
 	msgIdentity := &core.SignerRef{}
 	err := im.ResolveInputSigningIdentity(ctx, msgIdentity)
-	assert.Regexp(t, "FF10354", err)
+	assert.EqualError(t, err, "pop")
 
 	mmp.AssertExpectations(t)
 
@@ -740,8 +743,11 @@ func TestResolveInputSigningKeyNoDefault(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 	im.multiparty = nil
 
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "", blockchain.ResolveKeyIntentSign).Return("", fmt.Errorf("pop"))
+
 	_, err := im.ResolveInputSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
-	assert.Regexp(t, "FF10354", err)
+	assert.EqualError(t, err, "pop")
 
 }
 
