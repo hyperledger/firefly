@@ -13,7 +13,8 @@ RUN apk add make=4.4.1-r2 \
     gcc=13.2.1_git20231014-r0 \
     build-base=0.5-r3 \
     curl=8.5.0-r0 \
-    git=2.43.0-r0
+    git=2.43.4-r0 \
+    libc6-compat
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -27,7 +28,6 @@ ADD --chown=1001:0 . .
 RUN make build
 
 FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
-RUN apk add gcompat=1.1.0-r4
 WORKDIR /firefly/smart_contracts/fabric/firefly-go
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -38,9 +38,9 @@ USER 1001
 ADD --chown=1001:0 smart_contracts/fabric/firefly-go .
 RUN GO111MODULE=on go mod vendor
 WORKDIR /tmp/fabric
-RUN wget https://github.com/hyperledger/fabric/releases/download/v2.3.2/hyperledger-fabric-linux-amd64-2.3.2.tar.gz
+RUN curl https://github.com/hyperledger/fabric/releases/download/v2.3.2/hyperledger-fabric-linux-amd64-2.3.2.tar.gz -L --output hyperledger-fabric-linux-amd64-2.3.2.tar.gz
 RUN tar -zxf hyperledger-fabric-linux-amd64-2.3.2.tar.gz
-RUN touch core.yaml
+ENV FABRIC_CFG_PATH /tmp/fabric/config/
 RUN ./bin/peer lifecycle chaincode package /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz --path /firefly/smart_contracts/fabric/firefly-go --lang golang --label firefly_1.0
 
 FROM $SOLIDITY_BUILDER_TAG AS solidity-builder
@@ -68,7 +68,7 @@ ARG UI_TAG
 ARG UI_RELEASE
 RUN apk add --update --no-cache \
     sqlite=3.44.2-r0 \
-    postgresql16-client=16.2-r1 \
+    postgresql16-client=16.3-r0 \
     curl=8.5.0-r0 \
     jq=1.7.1-r0
 WORKDIR /firefly
