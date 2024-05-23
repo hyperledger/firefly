@@ -44,7 +44,7 @@
       "image": "golang:1.21-alpine3.19"
     },
     "fabric-builder": {
-      "image": "golang:1.21-alpine3.19",
+      "image": "golang:1.21", 
       "platform": "linux/x86_64"
     },
     "solidity-builder": {
