@@ -23,7 +23,7 @@ Your development environment will come with:
 
 FireFly CLI                   |  FireFly Explorer UI                | FireFly Sandbox  |
 :----------------------------:|:-----------------------------------:|:----------------:|
-[![CLI](./images/firefly_cli.png)]([https://link-to-your-documentation.com](https://hyperledger.github.io/firefly/latest/gettingstarted/firefly_cli/#install-the-firefly-cli)) | [![UI](./images/firefly_explorer.png)](https://github.com/hyperledger/firefly-ui) | [![Sandbox](./images/firefly_sandbox.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/sandbox/#use-the-sandbox) |
+[![CLI](./images/firefly_cli.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/firefly_cli/#install-the-firefly-cli) | [![UI](./images/firefly_explorer.png)](https://github.com/hyperledger/firefly-ui) | [![Sandbox](./images/firefly_sandbox.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/sandbox/#use-the-sandbox) |
 
 ## Engage with the community
 
