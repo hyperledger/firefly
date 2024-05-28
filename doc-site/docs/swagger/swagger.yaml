@@ -27440,6 +27440,10 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                          status:
+                            description: The status of the contract listener. One
+                              of 'syncing', 'synced', or 'unknown'
+                            type: string
                         type: object
                       terminated:
                         description: Previously-terminated FireFly smart contracts
@@ -27480,14 +27484,14 @@ paths:
                         type: array
                     type: object
                   enabled:
-                    description: The name of the plugin
+                    description: Whether multi-party mode is enabled for this namespace
                     type: boolean
                   node:
                     description: Details of the local node
                     properties:
-                      registrationMessageId:
-                        description: The ID of the message that broadcast the identity
-                          claim to the network
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
                         format: uuid
                         type: string
                       status:
@@ -27499,9 +27503,9 @@ paths:
                     description: Details of the root organization identity registered
                       for this namespace on the local node
                     properties:
-                      registrationMessageId:
-                        description: The ID of the message that broadcast the identity
-                          claim to the network
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
                         format: uuid
                         type: string
                       status:
@@ -36730,6 +36734,10 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                          status:
+                            description: The status of the contract listener. One
+                              of 'syncing', 'synced', or 'unknown'
+                            type: string
                         type: object
                       terminated:
                         description: Previously-terminated FireFly smart contracts
@@ -36770,14 +36778,14 @@ paths:
                         type: array
                     type: object
                   enabled:
-                    description: The name of the plugin
+                    description: Whether multi-party mode is enabled for this namespace
                     type: boolean
                   node:
                     description: Details of the local node
                     properties:
-                      registrationMessageId:
-                        description: The ID of the message that broadcast the identity
-                          claim to the network
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
                         format: uuid
                         type: string
                       status:
@@ -36789,9 +36797,9 @@ paths:
                     description: Details of the root organization identity registered
                       for this namespace on the local node
                     properties:
-                      registrationMessageId:
-                        description: The ID of the message that broadcast the identity
-                          claim to the network
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
                         format: uuid
                         type: string
                       status:

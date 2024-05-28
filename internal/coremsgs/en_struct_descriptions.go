@@ -415,6 +415,7 @@ var (
 	MultipartyContractFirstEvent   = ffm("MultipartyContract.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors")
 	MultipartyContractLocation     = ffm("MultipartyContract.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
 	MultipartyContractSubscription = ffm("MultipartyContract.subscription", "The backend identifier of the subscription for the FireFly BatchPin contract")
+	MultipartyContractStatus       = ffm("MultipartyContract.status", "The status of the contract listener. One of 'syncing', 'synced', or 'unknown'")
 	MultipartyContractInfo         = ffm("MultipartyContract.info", "Additional info about the current status of the multi-party contract")
 	NetworkActionType              = ffm("NetworkAction.type", "The action to be performed")
 
@@ -433,14 +434,14 @@ var (
 	NamespaceStatusNodeName                  = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
 	NamespaceStatusNodeRegistered            = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
 	NamespaceStatusNodeStatus                = ffm("NamespaceStatusNode.status", "The status of the node registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
-	NamespaceStatusNodeRegistrationMessageID = ffm("NamespaceStatusNode.registrationMessageId", "The ID of the message that broadcast the identity claim to the network")
+	NamespaceStatusNodeRegistrationMessageID = ffm("NamespaceStatusNode.pendingRegistrationMessageId", "The ID of the pending message that broadcast the identity claim to the network")
 	NamespaceStatusNodeID                    = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
 
 	// NamespaceStatusOrg field descriptions
 	NamespaceStatusOrgName                  = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
 	NamespaceStatusOrgRegistered            = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
 	NamespaceStatusOrgStatus                = ffm("NamespaceStatusOrg.status", "The status of the organization registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
-	NamespaceStatusOrgRegistrationMessageID = ffm("NamespaceStatusOrg.registrationMessageId", "The ID of the message that broadcast the identity claim to the network")
+	NamespaceStatusOrgRegistrationMessageID = ffm("NamespaceStatusOrg.pendingRegistrationMessageId", "The ID of the pending message that broadcast the identity claim to the network")
 	NamespaceStatusOrgDID                   = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
 	NamespaceStatusOrgID                    = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
 	NamespaceStatusOrgVerifiers             = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
