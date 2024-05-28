@@ -1,0 +1,27 @@
+name: Check URLs validity
+
+on:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Run URLChecker
+      uses: urlstechie/urlchecker-action@0.0.34
+      with:
+        file_types: .md
+        force_pass: true
+        save: results.csv
+    - name: Check that results exist
+      run: cat results.csv
+    - name: Upload check results
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: urlchecker-results
+        path: results.csv
