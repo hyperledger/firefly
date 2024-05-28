@@ -905,11 +905,11 @@ func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *cor
 	return e.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, detail interface{}, status core.ContractListenerStatus, err error) {
 	esID := e.streamID[namespace]
 	sub, err := e.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil || sub.Stream != esID {
-		return false, nil, err
+		return false, nil, core.ContractListenerStatusUnknown, err
 	}
 
 	checkpoint := &ListenerStatus{
@@ -921,7 +921,13 @@ func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, sub
 		},
 	}
 
-	return true, checkpoint, nil
+	// reduce checkpoint data to a single enum
+	status = core.ContractListenerStatusSynced
+	if sub.Catchup {
+		status = core.ContractListenerStatusSyncing
+	}
+
+	return true, checkpoint, status, nil
 }
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

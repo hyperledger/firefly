@@ -27377,6 +27377,149 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/status/multiparty:
+    get:
+      description: Gets the registration status of this organization and node on the
+        configured multiparty network
+      operationId: getStatusMultipartyNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  contracts:
+                    description: Information about the active and terminated multi-party
+                      smart contracts configured for this namespace
+                    properties:
+                      active:
+                        description: The currently active FireFly smart contract
+                        properties:
+                          firstEvent:
+                            description: A blockchain specific string, such as a block
+                              number, to start listening from. The special strings
+                              'oldest' and 'newest' are supported by all blockchain
+                              connectors
+                            type: string
+                          index:
+                            description: The index of this contract in the config
+                              file
+                            type: integer
+                          info:
+                            description: Additional info about the current status
+                              of the multi-party contract
+                            properties:
+                              finalEvent:
+                                description: The identifier for the final blockchain
+                                  event received from this contract before termination
+                                type: string
+                              subscription:
+                                description: The backend identifier of the subscription
+                                  for the FireFly BatchPin contract
+                                type: string
+                              version:
+                                description: The version of this multiparty contract
+                                type: integer
+                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          status:
+                            description: The status of the contract listener. One
+                              of 'syncing', 'synced', or 'unknown'
+                            type: string
+                        type: object
+                      terminated:
+                        description: Previously-terminated FireFly smart contracts
+                        items:
+                          description: Previously-terminated FireFly smart contracts
+                          properties:
+                            firstEvent:
+                              description: A blockchain specific string, such as a
+                                block number, to start listening from. The special
+                                strings 'oldest' and 'newest' are supported by all
+                                blockchain connectors
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              description: Additional info about the current status
+                                of the multi-party contract
+                              properties:
+                                finalEvent:
+                                  description: The identifier for the final blockchain
+                                    event received from this contract before termination
+                                  type: string
+                                subscription:
+                                  description: The backend identifier of the subscription
+                                    for the FireFly BatchPin contract
+                                  type: string
+                                version:
+                                  description: The version of this multiparty contract
+                                  type: integer
+                              type: object
+                            location:
+                              description: A blockchain specific contract identifier.
+                                For example an Ethereum contract address, or a Fabric
+                                chaincode name and channel
+                          type: object
+                        type: array
+                    type: object
+                  enabled:
+                    description: Whether multi-party mode is enabled for this namespace
+                    type: boolean
+                  node:
+                    description: Details of the local node
+                    properties:
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
+                        format: uuid
+                        type: string
+                      status:
+                        description: The status of the node registration, one of 'unregistered',
+                          'registering', 'registered', and 'unknown'
+                        type: string
+                    type: object
+                  org:
+                    description: Details of the root organization identity registered
+                      for this namespace on the local node
+                    properties:
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
+                        format: uuid
+                        type: string
+                      status:
+                        description: The status of the organization registration,
+                          one of 'unregistered', 'registering', 'registered', and
+                          'unknown'
+                        type: string
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/subscriptions:
     get:
       description: Gets a list of subscriptions
@@ -36529,6 +36672,142 @@ paths:
                           type: object
                       type: object
                     type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /status/multiparty:
+    get:
+      description: Gets the registration status of this organization and node on the
+        configured multiparty network
+      operationId: getStatusMultiparty
+      parameters:
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  contracts:
+                    description: Information about the active and terminated multi-party
+                      smart contracts configured for this namespace
+                    properties:
+                      active:
+                        description: The currently active FireFly smart contract
+                        properties:
+                          firstEvent:
+                            description: A blockchain specific string, such as a block
+                              number, to start listening from. The special strings
+                              'oldest' and 'newest' are supported by all blockchain
+                              connectors
+                            type: string
+                          index:
+                            description: The index of this contract in the config
+                              file
+                            type: integer
+                          info:
+                            description: Additional info about the current status
+                              of the multi-party contract
+                            properties:
+                              finalEvent:
+                                description: The identifier for the final blockchain
+                                  event received from this contract before termination
+                                type: string
+                              subscription:
+                                description: The backend identifier of the subscription
+                                  for the FireFly BatchPin contract
+                                type: string
+                              version:
+                                description: The version of this multiparty contract
+                                type: integer
+                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          status:
+                            description: The status of the contract listener. One
+                              of 'syncing', 'synced', or 'unknown'
+                            type: string
+                        type: object
+                      terminated:
+                        description: Previously-terminated FireFly smart contracts
+                        items:
+                          description: Previously-terminated FireFly smart contracts
+                          properties:
+                            firstEvent:
+                              description: A blockchain specific string, such as a
+                                block number, to start listening from. The special
+                                strings 'oldest' and 'newest' are supported by all
+                                blockchain connectors
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              description: Additional info about the current status
+                                of the multi-party contract
+                              properties:
+                                finalEvent:
+                                  description: The identifier for the final blockchain
+                                    event received from this contract before termination
+                                  type: string
+                                subscription:
+                                  description: The backend identifier of the subscription
+                                    for the FireFly BatchPin contract
+                                  type: string
+                                version:
+                                  description: The version of this multiparty contract
+                                  type: integer
+                              type: object
+                            location:
+                              description: A blockchain specific contract identifier.
+                                For example an Ethereum contract address, or a Fabric
+                                chaincode name and channel
+                          type: object
+                        type: array
+                    type: object
+                  enabled:
+                    description: Whether multi-party mode is enabled for this namespace
+                    type: boolean
+                  node:
+                    description: Details of the local node
+                    properties:
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
+                        format: uuid
+                        type: string
+                      status:
+                        description: The status of the node registration, one of 'unregistered',
+                          'registering', 'registered', and 'unknown'
+                        type: string
+                    type: object
+                  org:
+                    description: Details of the root organization identity registered
+                      for this namespace on the local node
+                    properties:
+                      pendingRegistrationMessageId:
+                        description: The ID of the pending message that broadcast
+                          the identity claim to the network
+                        format: uuid
+                        type: string
+                      status:
+                        description: The status of the organization registration,
+                          one of 'unregistered', 'registering', 'registered', and
+                          'unknown'
+                        type: string
+                    type: object
                 type: object
           description: Success
         default:

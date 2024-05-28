@@ -307,4 +307,7 @@ var (
 	MsgCannotCancelBatchType                 = ffe("FF10466", "Cannot cancel batch of type: %s", 400)
 	MsgErrorLoadingBatch                     = ffe("FF10467", "Error loading batch messages")
 	MsgBatchNotDispatching                   = ffe("FF10468", "Batch %s is not currently dispatching - current: %s", 400)
+	MsgNoRegistrationMessageData             = ffe("FF10469", "Unable to check message registration data for org %s", 500)
+	MsgUnexpectedRegistrationType            = ffe("FF10470", "Unexpected type checking registration status: %s", 500)
+	MsgUnableToParseRegistrationData         = ffe("FF10471", "Unable to parse registration message data: %s", 500)
 )

@@ -1073,8 +1073,8 @@ func TestAddContractListenerVerifyOk(t *testing.T) {
 	})).Return([]*core.ContractListener{}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1108,8 +1108,8 @@ func TestAddContractListenerVerifyUpdateFail(t *testing.T) {
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1143,8 +1143,8 @@ func TestAddContractListenerVerifyAddFail(t *testing.T) {
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, nil)
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
@@ -1173,7 +1173,7 @@ func TestAddContractListenerVerifyGetFail(t *testing.T) {
 	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(false, nil, fmt.Errorf("pop"))
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(false, nil, core.ContractListenerStatusUnknown, fmt.Errorf("pop"))
 
 	err := cm.verifyListeners(ctx)
 	assert.Regexp(t, "pop", err)
@@ -2879,7 +2879,7 @@ func TestGetContractListenerByNameOrIDWithStatus(t *testing.T) {
 	id := fftypes.NewUUID()
 	backendID := "testID"
 	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{Namespace: "ns1", BackendID: backendID}, nil)
-	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(true, fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), nil)
+	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(true, fftypes.JSONAnyPtr(fftypes.JSONObject{}.String()), core.ContractListenerStatusSynced, nil)
 
 	_, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
 	assert.NoError(t, err)
@@ -2904,7 +2904,7 @@ func TestGetContractListenerByNameOrIDWithStatusPluginFail(t *testing.T) {
 	id := fftypes.NewUUID()
 	backendID := "testID"
 	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{Namespace: "ns1", BackendID: backendID}, nil)
-	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(false, nil, fmt.Errorf("pop"))
+	mbi.On("GetContractListenerStatus", context.Background(), "ns1", backendID, false).Return(false, nil, core.ContractListenerStatusUnknown, fmt.Errorf("pop"))
 
 	listener, err := cm.GetContractListenerByNameOrIDWithStatus(context.Background(), id.String())
 

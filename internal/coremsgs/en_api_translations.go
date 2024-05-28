@@ -132,6 +132,7 @@ var (
 	APIEndpointsGetNextPins                     = ffm("api.endpoints.getNextPins", "Queries the list of next-pins that determine the next masked message sequence for each member of a privacy group, on each context/topic")
 	APIEndpointsGetWebSockets                   = ffm("api.endpoints.getStatusWebSockets", "Gets a list of the current WebSocket connections to this node")
 	APIEndpointsGetStatus                       = ffm("api.endpoints.getStatus", "Gets the status of this namespace")
+	APIEndpointsGetMultipartyStatus             = ffm("api.endpoints.getMultipartyStatus", "Gets the registration status of this organization and node on the configured multiparty network")
 	APIEndpointsGetSubscriptionByID             = ffm("api.endpoints.getSubscriptionByID", "Gets a subscription by its ID")
 	APIEndpointsGetSubscriptionEventsFiltered   = ffm("api.endpoints.getSubscriptionEventsFiltered", "Gets a collection of events filtered by the subscription for further filtering")
 	APIEndpointsGetSubscriptions                = ffm("api.endpoints.getSubscriptions", "Gets a list of subscriptions")

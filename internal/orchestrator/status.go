@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -18,8 +18,12 @@ package orchestrator
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -128,4 +132,124 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 	}
 
 	return status, nil
+}
+
+// Get the earliest incomplete identity claim message for this org, if it exists
+func (or *orchestrator) getRegistrationMessage(ctx context.Context) (msg *core.MessageInOut, err error) {
+	fb := database.MessageQueryFactory.NewFilter(ctx)
+	filter := fb.Sort("created").Limit(1).And(
+		fb.Eq("type", core.MessageTypeDefinition),
+		fb.Eq("tag", core.SystemTagIdentityClaim),
+		fb.Eq("author", core.FireFlyOrgDIDPrefix+or.config.Multiparty.Org.Name),
+		fb.In("state", []driver.Value{core.MessageStateStaged, core.MessageStateReady, core.MessageStateSent, core.MessageStatePending}),
+	)
+	msgs, _, err := or.GetMessagesWithData(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if len(msgs) > 0 {
+		return msgs[0], nil
+	}
+	return nil, nil
+}
+
+// Ensure the given registration message correlates with the expected type
+func (or *orchestrator) checkRegistrationType(ctx context.Context, msg *core.MessageInOut, expectedType core.IdentityType) (match bool, err error) {
+	if msg != nil && msg.InlineData != nil && len(msg.InlineData) > 0 {
+		var identity core.IdentityClaim
+		err := json.Unmarshal([]byte(*msg.InlineData[0].Value), &identity)
+		if err != nil {
+			return false, i18n.WrapError(ctx, err, coremsgs.MsgUnableToParseRegistrationData, err)
+		}
+		var did string
+		switch expectedType {
+		case core.IdentityTypeOrg:
+			did = core.FireFlyOrgDIDPrefix + or.config.Multiparty.Org.Name
+		case core.IdentityTypeNode:
+			did = core.FireFlyNodeDIDPrefix + or.config.Multiparty.Node.Name
+		default:
+			return false, i18n.NewError(ctx, coremsgs.MsgUnexpectedRegistrationType, expectedType)
+		}
+		return identity.Identity.DID == did && identity.Identity.Type == expectedType, nil
+	}
+	return false, i18n.NewError(ctx, coremsgs.MsgNoRegistrationMessageData, or.config.Multiparty.Org.Name)
+}
+
+func (or *orchestrator) GetMultipartyStatus(ctx context.Context) (mpStatus *core.NamespaceMultipartyStatus, err error) {
+
+	mpStatus = &core.NamespaceMultipartyStatus{
+		Enabled: or.config.Multiparty.Enabled,
+	}
+	if !or.config.Multiparty.Enabled {
+		return mpStatus, nil
+	}
+
+	status, err := or.GetStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mpStatus.Org = core.NamespaceMultipartyStatusOrg{}
+	mpStatus.Node = core.NamespaceMultipartyStatusNode{}
+	mpStatus.Contracts = &core.MultipartyContractsWithActiveStatus{}
+	if or.namespace.Contracts != nil {
+		mpStatus.Contracts.Active = &core.MultipartyContractWithStatus{
+			MultipartyContract: *or.namespace.Contracts.Active,
+			Status:             core.ContractListenerStatusUnknown,
+		}
+		mpStatus.Contracts.Terminated = or.namespace.Contracts.Terminated
+		log.L(ctx).Debugf("Looking up listener status with subscription ID: %s", mpStatus.Contracts.Active.Info.Subscription)
+		ok, _, listenerStatus, err := or.blockchain().GetContractListenerStatus(ctx, or.namespace.Name, mpStatus.Contracts.Active.Info.Subscription, false)
+		if !ok || err != nil {
+			return nil, err
+		}
+		mpStatus.Contracts.Active.Status = listenerStatus
+	}
+
+	if status.Org.Registered {
+		mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistered
+		if status.Node.Registered {
+			mpStatus.Node.Status = core.NamespaceRegistrationStatusRegistered
+		} else {
+			msg, err := or.getRegistrationMessage(ctx)
+			if err != nil {
+				return nil, err
+			}
+			mpStatus.Node.Status = core.NamespaceRegistrationStatusUnregistered
+			if msg != nil {
+				match, err := or.checkRegistrationType(ctx, msg, core.IdentityTypeNode)
+				if err != nil {
+					return nil, err
+				}
+				if match {
+					mpStatus.Node.PendingRegistrationMessageID = msg.Header.ID
+					mpStatus.Node.Status = core.NamespaceRegistrationStatusRegistering
+				} else {
+					mpStatus.Node.Status = core.NamespaceRegistrationStatusUnknown
+				}
+			}
+		}
+	} else {
+		msg, err := or.getRegistrationMessage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		mpStatus.Org.Status = core.NamespaceRegistrationStatusUnregistered
+		mpStatus.Node.Status = core.NamespaceRegistrationStatusUnregistered
+		if msg != nil {
+			match, err := or.checkRegistrationType(ctx, msg, core.IdentityTypeOrg)
+			if err != nil {
+				return nil, err
+			}
+			if match {
+				mpStatus.Org.PendingRegistrationMessageID = msg.Header.ID
+				mpStatus.Org.Status = core.NamespaceRegistrationStatusRegistering
+			} else {
+				mpStatus.Org.Status = core.NamespaceRegistrationStatusUnknown
+				mpStatus.Node.Status = core.NamespaceRegistrationStatusUnknown
+			}
+		}
+	}
+
+	return mpStatus, nil
 }

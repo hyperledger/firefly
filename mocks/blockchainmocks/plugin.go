@@ -240,7 +240,7 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 }
 
 // GetContractListenerStatus provides a mock function with given fields: ctx, namespace, subID, okNotFound
-func (_m *Plugin) GetContractListenerStatus(ctx context.Context, namespace string, subID string, okNotFound bool) (bool, interface{}, error) {
+func (_m *Plugin) GetContractListenerStatus(ctx context.Context, namespace string, subID string, okNotFound bool) (bool, interface{}, fftypes.FFEnum, error) {
 	ret := _m.Called(ctx, namespace, subID, okNotFound)
 
 	if len(ret) == 0 {
@@ -249,8 +249,9 @@ func (_m *Plugin) GetContractListenerStatus(ctx context.Context, namespace strin
 
 	var r0 bool
 	var r1 interface{}
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) (bool, interface{}, error)); ok {
+	var r2 fftypes.FFEnum
+	var r3 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) (bool, interface{}, fftypes.FFEnum, error)); ok {
 		return rf(ctx, namespace, subID, okNotFound)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) bool); ok {
@@ -267,13 +268,19 @@ func (_m *Plugin) GetContractListenerStatus(ctx context.Context, namespace strin
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, string, string, bool) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, bool) fftypes.FFEnum); ok {
 		r2 = rf(ctx, namespace, subID, okNotFound)
 	} else {
-		r2 = ret.Error(2)
+		r2 = ret.Get(2).(fftypes.FFEnum)
 	}
 
-	return r0, r1, r2
+	if rf, ok := ret.Get(3).(func(context.Context, string, string, bool) error); ok {
+		r3 = rf(ctx, namespace, subID, okNotFound)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }
 
 // GetFFIParamValidator provides a mock function with given fields: ctx
