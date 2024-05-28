@@ -17,6 +17,7 @@ jobs:
         file_types: .md
         force_pass: true
         save: results.csv
+        exclude_patterns: 127.0.0.1,localhost,ipfs_,ca_org,ethconnect_,dataexchange_
     - name: Check that results exist
       run: cat results.csv
     - name: Upload check results
