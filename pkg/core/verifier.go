@@ -26,6 +26,8 @@ import (
 type VerifierType = fftypes.FFEnum
 
 var (
+	// VerifierTypeCardanoAddress is a Cardano address string
+	VerifierTypeCardanoAddress = fftypes.FFEnumValue("verifiertype", "cardano_address")
 	// VerifierTypeEthAddress is an Ethereum (secp256k1) address string
 	VerifierTypeEthAddress = fftypes.FFEnumValue("verifiertype", "ethereum_address")
 	// VerifierTypeTezosAddress is a Tezos (ed25519) address string

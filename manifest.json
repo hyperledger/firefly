@@ -1,4 +1,8 @@
 {
+  "cardanoconnect": {
+    "image": "cardanoconnect",
+    "local": true
+  },
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
     "tag": "v3.3.2",
