@@ -75,6 +75,8 @@ func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *core.Id
 
 func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
 	switch verifier.Type {
+	case core.VerifierTypeCardanoAddress:
+		return nm.generateCardanoAddressVerifier(identity, verifier)
 	case core.VerifierTypeEthAddress:
 		return nm.generateEthAddressVerifier(identity, verifier)
 	case core.VerifierTypeTezosAddress:
@@ -86,6 +88,15 @@ func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *c
 	default:
 		log.L(ctx).Warnf("Unknown verifier type '%s' on verifier '%s' of DID '%s' (%s) - cannot add to DID document", verifier.Type, verifier.Value, identity.DID, identity.ID)
 		return nil
+	}
+}
+
+func (nm *networkMap) generateCardanoAddressVerifier(identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
+	return &VerificationMethod{
+		ID:                  verifier.Hash.String(),
+		Type:                "PaymentVerificationKeyShelley_ed25519", // hope that it's safe to assume we always use Shelley
+		Controller:          identity.DID,
+		BlockchainAccountID: verifier.Value,
 	}
 }
 
