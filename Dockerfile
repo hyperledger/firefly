@@ -68,8 +68,9 @@ ARG UI_TAG
 ARG UI_RELEASE
 # Makes an assumption that that base image is ubuntu based 
 # so it uses apt
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update -y \
-  && apt install -y curl jq sqlite postgresql \
+  && apt install -y jq sqlite postgresql \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
