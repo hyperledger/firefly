@@ -54,6 +54,7 @@ type Cardano struct {
 	capabilities       *blockchain.Capabilities
 	callbacks          common.BlockchainCallbacks
 	client             *resty.Client
+	streams            *streamManager
 	wsconn             wsclient.WSClient
 	cardanoconnectConf config.Section
 	subs               common.FireflySubscriptions
@@ -83,6 +84,10 @@ func (c *Cardano) Init(ctx context.Context, cancelCtx context.CancelFunc, conf c
 	c.callbacks = common.NewBlockchainCallbacks()
 	c.subs = common.NewFireflySubscriptions()
 
+	if cardanoconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", cardanoconnectConf)
+	}
+
 	wsConfig, err := wsclient.GenerateConfig(ctx, cardanoconnectConf)
 	if err == nil {
 		c.client, err = ffresty.New(c.ctx, cardanoconnectConf)
@@ -105,9 +110,18 @@ func (c *Cardano) Init(ctx context.Context, cancelCtx context.CancelFunc, conf c
 		return err
 	}
 
+	c.streams = newStreamManager(c.client, c.cardanoconnectConf.GetUint(CardanoconnectConfigBatchSize), uint(c.cardanoconnectConf.GetDuration(CardanoconnectConfigBatchTimeout).Milliseconds()))
+
+	stream, err := c.streams.ensureEventStream(c.ctx, c.pluginTopic)
+	if err != nil {
+		return err
+	}
+
+	log.L(c.ctx).Infof("Event stream: %s (topic=%s)", stream.ID, c.pluginTopic)
+
 	go c.eventLoop()
 
-	return nil
+	return c.wsconn.Connect()
 }
 
 func (c *Cardano) StartNamespace(ctx context.Context, namespace string) (err error) {
@@ -126,10 +140,6 @@ func (c *Cardano) SetHandler(namespace string, handler blockchain.Callbacks) {
 
 func (c *Cardano) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
 	c.callbacks.SetOperationalHandler(namespace, handler)
-}
-
-func (c *Cardano) Start() (err error) {
-	return c.wsconn.Connect()
 }
 
 func (c *Cardano) Capabilities() *blockchain.Capabilities {

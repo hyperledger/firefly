@@ -22,15 +22,26 @@ import (
 )
 
 const (
+	defaultBatchSize    = 50
+	defaultBatchTimeout = 500
+)
+
+const (
 	// CardanoconnectConfigKey is a sub-key in the config to contain all the cardanoconnect specific config
 	CardanoconnectConfigKey = "cardanoconnect"
 	// CardanoconnectConfigTopic is the websocket listen topic that the node should register on, which is important if there are multiple
 	// nodes using a single cardanoconnect
 	CardanoconnectConfigTopic = "topic"
+	// CardanoconnectConfigBatchSize is the batch size to configure on event streams, when auto-defining them
+	CardanoconnectConfigBatchSize = "batchSize"
+	// CardanoconnectConfigBatchTimeout is the batch timeout to configure on event streams, when auto-defining them
+	CardanoconnectConfigBatchTimeout = "batchTimeout"
 )
 
 func (c *Cardano) InitConfig(config config.Section) {
 	c.cardanoconnectConf = config.SubSection(CardanoconnectConfigKey)
 	wsclient.InitConfig(c.cardanoconnectConf)
 	c.cardanoconnectConf.AddKnownKey(CardanoconnectConfigTopic)
+	c.cardanoconnectConf.AddKnownKey(CardanoconnectConfigBatchSize, defaultBatchSize)
+	c.cardanoconnectConf.AddKnownKey(CardanoconnectConfigBatchTimeout, defaultBatchTimeout)
 }
