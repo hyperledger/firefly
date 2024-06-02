@@ -60,6 +60,11 @@ type Cardano struct {
 	subs               common.FireflySubscriptions
 }
 
+type ffiMethodAndErrors struct {
+	method *fftypes.FFIMethod
+	errors []*fftypes.FFIError
+}
+
 type cardanoWSCommandPayload struct {
 	Type  string `json:"type"`
 	Topic string `json:"topic,omitempty"`
@@ -175,7 +180,9 @@ func (c *Cardano) DeployContract(ctx context.Context, nsOpID, signingKey string,
 }
 
 func (c *Cardano) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
-	return errors.New("ValidateInvokeRequest not supported")
+	// No additional validation beyond what is enforced by Contract Manager
+	_, _, err := c.recoverFFI(ctx, parsedMethod)
+	return err
 }
 
 func (c *Cardano) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) (bool, error) {
@@ -186,8 +193,11 @@ func (c *Cardano) QueryContract(ctx context.Context, signingKey string, location
 	return nil, errors.New("QueryContract not supported")
 }
 
-func (c *Cardano) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errorz []*fftypes.FFIError) (interface{}, error) {
-	return nil, errors.New("ParseInterface not supported")
+func (c *Cardano) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
+	return &ffiMethodAndErrors{
+		method: method,
+		errors: errors,
+	}, nil
 }
 
 func (c *Cardano) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
@@ -301,6 +311,14 @@ func (c *Cardano) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 		err = w.Send(ctx, b)
 	}
 	return err
+}
+
+func (c *Cardano) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
+	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
+	if !ok || methodInfo.method == nil {
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
+	}
+	return methodInfo.method, methodInfo.errors, nil
 }
 
 func (c *Cardano) eventLoop() {
