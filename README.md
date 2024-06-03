@@ -197,7 +197,7 @@ Other repositories you might be interested in containing those microservice comp
   │       │   │ aggregator    │    * Integrates with shared storage interface [Ss] plugin
   │       │   │               │    * Integrates with blockchain interface [Bi] plugin
   │       │   │               │  - Ensures valid events are dispatched only once all data is available
-  │       │   └──────┬────────┘    * Context awareness, to prevent block-the-world scenarios
+  │       │   └──────┬────────┘    * Context aware, to prevent block-the-world scenarios
   │       │          │
   │       │   ┌──────┴────────┐  - Subscription manager
   │       │   │           [Sm]│    * Creation and management of subscriptions
