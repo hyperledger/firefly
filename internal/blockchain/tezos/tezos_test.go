@@ -559,7 +559,10 @@ func TestVerifyTezosAddress(t *testing.T) {
 	tz, cancel := newTestTezos()
 	defer cancel()
 
-	_, err := tz.ResolveSigningKey(context.Background(), "tz1err", blockchain.ResolveKeyIntentSign)
+	_, err := tz.ResolveSigningKey(context.Background(), "", blockchain.ResolveKeyIntentSign)
+	assert.Regexp(t, "FF10354", err)
+
+	_, err = tz.ResolveSigningKey(context.Background(), "tz1err", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10142", err)
 
 	key, err := tz.ResolveSigningKey(context.Background(), "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN", blockchain.ResolveKeyIntentSign)
