@@ -9,11 +9,12 @@ ARG GIT_REF
 FROM $FIREFLY_BUILDER_TAG AS firefly-builder
 ARG BUILD_VERSION
 ARG GIT_REF
-RUN apk add make=4.4.1-r2 \
-    gcc=13.2.1_git20231014-r0 \
-    build-base=0.5-r3 \
-    curl=8.5.0-r0 \
-    git=2.43.4-r0
+
+# Makes an assumption that that base image is debian based 
+# so it uses apt
+RUN apt update -y \
+  && apt install -y make gcc curl git
+
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -27,7 +28,6 @@ ADD --chown=1001:0 . .
 RUN make build
 
 FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
-RUN apk add gcompat=1.1.0-r4
 WORKDIR /firefly/smart_contracts/fabric/firefly-go
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
@@ -40,7 +40,7 @@ RUN GO111MODULE=on go mod vendor
 WORKDIR /tmp/fabric
 RUN wget https://github.com/hyperledger/fabric/releases/download/v2.3.2/hyperledger-fabric-linux-amd64-2.3.2.tar.gz
 RUN tar -zxf hyperledger-fabric-linux-amd64-2.3.2.tar.gz
-RUN touch core.yaml
+ENV FABRIC_CFG_PATH /tmp/fabric/config/
 RUN ./bin/peer lifecycle chaincode package /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz --path /firefly/smart_contracts/fabric/firefly-go --lang golang --label firefly_1.0
 
 FROM $SOLIDITY_BUILDER_TAG AS solidity-builder
@@ -63,20 +63,19 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --exit-code 1
 
-FROM alpine:3.19
+FROM ${BASE_TAG}
 ARG UI_TAG
 ARG UI_RELEASE
-RUN apk add --update --no-cache sqlite postgresql-client curl jq
 # Makes an assumption that that base image is ubuntu based 
 # so it uses apt
-# ARG DEBIAN_FRONTEND=noninteractive
-# RUN apt update -y \
-#   && apt install -y jq sqlite postgresql \
-#   && rm -rf /var/lib/apt/lists/*
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt update -y \
+  && apt install -y jq sqlite postgresql \
+  && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
-RUN chgrp -R 0 /firefly \
-    && chmod -R g+rwX /firefly \
-    && mkdir /etc/firefly \
+RUN chgrp -R 0 /firefly/ \
+    && chmod -R g+rwX /firefly/ \
+    && mkdir /etc/firefly/ \
     && chgrp -R 0 /etc/firefly \
     && chmod -R g+rwX /etc/firefly
 RUN curl -sL "https://github.com/golang-migrate/migrate/releases/download/$(curl -sL https://api.github.com/repos/golang-migrate/migrate/releases/latest | jq -r '.name')/migrate.linux-amd64.tar.gz" | tar xz \
@@ -90,8 +89,6 @@ ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_T
 RUN mkdir /firefly/frontend \
     && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 COPY --from=SBOM /sbom.spdx.json /sbom.spdx.json
-RUN ln -s /firefly/firefly /usr/bin/firefly \
-    && chgrp -R 0 /firefly/ \
-    && chmod -R g+rwX /firefly/
+RUN ln -s /firefly/firefly /usr/bin/firefly
 USER 1001
-ENTRYPOINT [ "firefly" ]
+ENTRYPOINT [ "/usr/bin/firefly" ]
