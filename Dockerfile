@@ -63,15 +63,16 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --exit-code 1
 
-FROM $BASE_TAG
+FROM alpine:3.19
 ARG UI_TAG
 ARG UI_RELEASE
+RUN apk add --update --no-cache sqlite postgresql-client curl jq
 # Makes an assumption that that base image is ubuntu based 
 # so it uses apt
-ARG DEBIAN_FRONTEND=noninteractive
-RUN apt update -y \
-  && apt install -y jq sqlite postgresql \
-  && rm -rf /var/lib/apt/lists/*
+# ARG DEBIAN_FRONTEND=noninteractive
+# RUN apt update -y \
+#   && apt install -y jq sqlite postgresql \
+#   && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
     && chmod -R g+rwX /firefly \
