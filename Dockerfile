@@ -89,6 +89,8 @@ ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_T
 RUN mkdir /firefly/frontend \
     && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 COPY --from=SBOM /sbom.spdx.json /sbom.spdx.json
-RUN ln -s /firefly/firefly /usr/bin/firefly
+RUN ln -s /firefly/firefly /usr/bin/firefly \
+    && chgrp -R 0 /firefly/ \
+    && chmod -R g+rwX /firefly/
 USER 1001
 ENTRYPOINT [ "firefly" ]
