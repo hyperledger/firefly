@@ -46,7 +46,7 @@ type sqliteGoTestProvider struct {
 	capabilities *database.Capabilities
 }
 
-// newTestProvider creates a real in-memory database provider for e2e testing
+// newSQLiteTestProvider creates a real in-memory database provider for e2e testing
 func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 	conf := config.RootSection("unittest.db")
 	conf.AddKnownKey("url", "test")
