@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -35,7 +35,7 @@ var putContractAPI = &ffapi.Route{
 		{Name: "id", Example: "id", Description: coremsgs.APIParamsContractAPIName},
 	},
 	QueryParams: []*ffapi.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
+		{Name: "confirm", Description: coremsgs.APIConfirmMsgQueryParam, IsBool: true, Example: "true"},
 	},
 	Description:     coremsgs.APIParamsContractAPIID,
 	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
