@@ -3877,3 +3877,172 @@ func TestFilterHash(t *testing.T) {
 	assert.Equal(t, "ecf24a607244d2dcdc245f694665ce8acd21391a2291978a27a5fbe82c0d4689", hash1.String())
 	assert.Equal(t, hash1.String(), hash2.String())
 }
+
+func TestGenerateContractDeprecatedEventSignature(t *testing.T) {
+	cm := newTestContractManager()
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	output, err := cm.ConstructContractListenerHash(context.Background(), sub)
+	assert.NoError(t, err)
+	assert.Equal(t, "63f8cea8fe30c1e76095f786cf6bc932b8d8a5246eebfbb59724215a33cf363e", output.FilterHash.String())
+	assert.Equal(t, "changed", output.Signature)
+}
+
+func TestGenerateContractFiltersHash(t *testing.T) {
+	cm := newTestContractManager()
+	event := &fftypes.FFIEvent{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "firstEvent",
+			Params: fftypes.FFIParams{
+				{
+					Name:   "value",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+				},
+			},
+		},
+	}
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
+
+	sub := &core.ContractListenerInput{
+		Filters: []*core.ListenerFilterInput{
+			{
+				ListenerFilter: core.ListenerFilter{
+					Location: fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+					Interface: &fftypes.FFIReference{
+						ID: fftypes.NewUUID(),
+					},
+				},
+				EventPath: "firstEvent",
+			},
+			{
+				ListenerFilter: core.ListenerFilter{
+					Location: fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+					Interface: &fftypes.FFIReference{
+						ID: fftypes.NewUUID(),
+					},
+				},
+				EventPath: "firstEvent",
+			},
+		},
+		ContractListener: core.ContractListener{
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	output, err := cm.ConstructContractListenerHash(context.Background(), sub)
+	assert.NoError(t, err)
+	assert.Equal(t, "881ddcb13fb417847b1d6a4f272fa057be84fab03cfb11bed0af3631f08ea27c", output.FilterHash.String())
+	assert.Empty(t, output.Signature)
+}
+
+// func TestGenerateContractFiltersHash(t *testing.T) {
+// 	cm := newTestContractManager()
+
+// 	sub := &core.ContractListenerInput{
+// 		ContractListener: core.ContractListener{
+// 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+// 				"address": "0x123",
+// 			}.String()),
+// 			Event: &core.FFISerializedEvent{
+// 				FFIEventDefinition: fftypes.FFIEventDefinition{
+// 					Name: "changed",
+// 					Params: fftypes.FFIParams{
+// 						{
+// 							Name:   "value",
+// 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+// 						},
+// 					},
+// 				},
+// 			},
+// 			Options: &core.ContractListenerOptions{},
+// 			Topic:   "test-topic",
+// 		},
+// 	}
+
+// 	filterSet1 := core.ListenerFilters{
+// 		&core.ListenerFilter{
+// 			Signature: "Changed(uint256)",
+// 			Location:  fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+// 		},
+// 	}
+
+// 	filterSet2 := core.ListenerFilters{
+// 		&core.ListenerFilter{
+// 			Signature: "Changed(uint256)",
+// 			Location:  fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+// 		},
+// 	}
+
+// 	hash1, err := cm.ConstructContractListenerHash(filterSet1)
+// 	assert.NoError(t, err)
+// 	hash2, err := cm.generateFilterHash(filterSet2)
+// 	assert.NoError(t, err)
+
+// 	assert.Equal(t, "5b4b14f9da842c8db443b9e4542f84baf0e1a216c3d06b17383b68389db82df2", hash1.String())
+// 	assert.Equal(t, hash1.String(), hash2.String())
+
+// 	filterSet1 = core.ListenerFilters{
+// 		&core.ListenerFilter{
+// 			Signature: "Changed(uint256)",
+// 			Location:  fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+// 		},
+// 		&core.ListenerFilter{
+// 			Signature: "Changed(uint256)",
+// 			Location:  fftypes.JSONAnyPtr(`{"address":"0x217e63be04ddac2a6e28eb653131aeb00a3fd0f4"}`),
+// 		},
+// 	}
+
+// 	filterSet2 = core.ListenerFilters{
+// 		&core.ListenerFilter{
+// 			Signature: "Changed(uint256)",
+// 			Location:  fftypes.JSONAnyPtr(`{"address":"0x217e63be04ddac2a6e28eb653131aeb00a3fd0f4"}`),
+// 		},
+// 		&core.ListenerFilter{
+// 			Signature: "Changed(uint256)",
+// 			Interface: &fftypes.FFIReference{
+// 				ID: fftypes.NewUUID(),
+// 			},
+// 			Location: fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+// 		},
+// 	}
+
+// 	hash1, err = cm.generateFilterHash(filterSet1)
+// 	assert.NoError(t, err)
+// 	hash2, err = cm.generateFilterHash(filterSet2)
+// 	assert.NoError(t, err)
+
+// 	assert.Equal(t, "ecf24a607244d2dcdc245f694665ce8acd21391a2291978a27a5fbe82c0d4689", hash1.String())
+// 	assert.Equal(t, hash1.String(), hash2.String())
+// }

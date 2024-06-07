@@ -72,6 +72,7 @@ type Manager interface {
 	ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) error
 	DeleteContractAPI(ctx context.Context, apiName string) error
 
+	ConstructContractListenerHash(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerHashOutput, err error)
 	AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error)
 	AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (*core.ContractListener, error)
@@ -811,10 +812,71 @@ func (cm *contractManager) checkContractListenerExists(ctx context.Context, list
 		database.ContractListenerQueryFactory.NewUpdate(ctx).Set("backendid", listener.BackendID))
 }
 
-// TODO: clean this up to make it less complex
-//
-//nolint:gocyclo
-func (cm *contractManager) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error) {
+func (cm *contractManager) ConstructContractListenerHash(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerHashOutput, err error) {
+	output = &core.ContractListenerHashOutput{}
+
+	// Create signature for deprecated root event
+	if len(listener.Filters) == 0 {
+		if listener.Event == nil {
+			if listener.EventPath == "" || listener.Interface == nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
+			}
+			// Copy the event definition into the filter
+			if listener.Event, err = cm.resolveEvent(ctx, listener.Interface, listener.EventPath); err != nil {
+				return nil, err
+			}
+		}
+
+		output.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
+
+		// Create a single filter to still provide a filter hash
+		listener.Filters = append(listener.Filters, &core.ListenerFilterInput{
+			ListenerFilter: core.ListenerFilter{
+				Event:     listener.Event,
+				Location:  listener.Location,
+				Interface: listener.Interface,
+			},
+			EventPath: listener.EventPath,
+		})
+	}
+
+	for _, filter := range listener.Filters {
+		if filter.Event == nil {
+			if filter.EventPath == "" || filter.Interface == nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
+			}
+			// Copy the event definition into the filter
+			if filter.Event, err = cm.resolveEvent(ctx, filter.Interface, filter.EventPath); err != nil {
+				return nil, err
+			}
+		} else {
+			filter.Interface = nil
+		}
+
+		filter.Signature = cm.blockchain.GenerateEventSignature(ctx, &filter.Event.FFIEventDefinition)
+		if err := cm.validateFFIEvent(ctx, &filter.Event.FFIEventDefinition); err != nil {
+			return nil, err
+		}
+
+		listener.ContractListener.Filters = append(listener.ContractListener.Filters, &core.ListenerFilter{
+			Event:     filter.Event,
+			Location:  filter.Location,
+			Interface: filter.Interface,
+			Signature: filter.Signature,
+		})
+	}
+
+	filterHash, err := cm.generateFilterHash(listener.ContractListener.Filters)
+	if err != nil {
+		return nil, err
+	}
+
+	output.FilterHash = *filterHash
+
+	return output, nil
+}
+
+func (cm *contractManager) verifyContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error) {
 	listener.ID = fftypes.NewUUID()
 	listener.Namespace = cm.namespace
 
@@ -893,20 +955,23 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 			}
 		}
 
-		if listener.Event == nil {
-			if listener.EventPath == "" || listener.Interface == nil {
-				return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
+		if len(listener.Filters) == 0 {
+			// Deprecated flow
+			if listener.Event == nil {
+				if listener.EventPath == "" || listener.Interface == nil {
+					return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
+				}
+				// Copy the event definition into the listener
+				if listener.Event, err = cm.resolveEvent(ctx, listener.Interface, listener.EventPath); err != nil {
+					return err
+				}
+			} else {
+				listener.Interface = nil
 			}
-			// Copy the event definition into the listener
-			if listener.Event, err = cm.resolveEvent(ctx, listener.Interface, listener.EventPath); err != nil {
-				return err
-			}
-		} else {
-			listener.Interface = nil
+			// Namespace + Topic + Location + Signature must be unique
+			listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
 		}
 
-		// Namespace + Topic + Location + Signature must be unique
-		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
 		// Above we only call NormalizeContractLocation if the listener is non-nil, and that means
 		// for an unset location we will have a nil value. Using an fftypes.JSONAny in a query
 		// of nil does not yield the right result, so we need to do an explicit nil query.
@@ -933,26 +998,26 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		return nil, err
 	}
 
-	// Namespace + Name must be unique
-	if listener.Name != "" {
-		if existing, err := cm.database.GetContractListener(ctx, cm.namespace, listener.Name); err != nil {
-			return nil, err
-		} else if existing != nil {
-			return nil, i18n.NewError(ctx, coremsgs.MsgContractListenerNameExists, cm.namespace, listener.Name)
-		}
+	return &listener.ContractListener, nil
+}
+
+func (cm *contractManager) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error) {
+	verifiedContractListener, err := cm.verifyContractListener(ctx, listener)
+	if err != nil {
+		return nil, err
 	}
 
-	if err = cm.blockchain.AddContractListener(ctx, &listener.ContractListener); err != nil {
+	if err = cm.blockchain.AddContractListener(ctx, verifiedContractListener); err != nil {
 		return nil, err
 	}
 	if listener.Name == "" {
 		listener.Name = listener.BackendID
 	}
-	if err = cm.database.InsertContractListener(ctx, &listener.ContractListener); err != nil {
+	if err = cm.database.InsertContractListener(ctx, verifiedContractListener); err != nil {
 		return nil, err
 	}
 
-	return &listener.ContractListener, err
+	return verifiedContractListener, err
 }
 
 // Sort the filters by signature then location and generate a hash

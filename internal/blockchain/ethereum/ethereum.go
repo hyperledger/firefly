@@ -880,6 +880,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	}
 
 	filters := make([]*filter, 0)
+	// This keeps the existing behaviour where a contract listener could only listen to one event
 	if listener.Event != nil {
 		abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
 		if err != nil {

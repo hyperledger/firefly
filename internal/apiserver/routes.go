@@ -132,6 +132,7 @@ var routes = append(
 		postContractAPIPublish,
 		postContractAPIQuery,
 		postContractAPIListeners,
+		postContractListenerHash,
 		postContractInterfaceGenerate,
 		postContractInterfacePublish,
 		postContractDeploy,

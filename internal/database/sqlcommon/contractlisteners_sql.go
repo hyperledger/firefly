@@ -48,8 +48,9 @@ var (
 		"filter_hash",
 	}
 	contractListenerFilterFieldMap = map[string]string{
-		"interface": "interface_id",
-		"backendid": "backend_id",
+		"interface":  "interface_id",
+		"backendid":  "backend_id",
+		"filterhash": "filter_hash",
 	}
 )
 
@@ -119,21 +120,7 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, contractlistenersTable)
 	}
 
-	// If we have a legacy "event" and "address" stored in the DB, return them as a single item in the "filters" array
-	// Address is optional
-	if len(listener.Filters) == 0 && (listener.Event != nil) {
-		filter := &core.ListenerFilter{
-			Event:     listener.Event,
-			Location:  listener.Location,
-			Interface: listener.Interface,
-			Signature: listener.Signature,
-		}
-		listener.Filters = []*core.ListenerFilter{filter}
-		listener.Event = nil
-		listener.Location = nil
-		listener.Interface = nil
-		listener.Signature = ""
-	}
+	// Note: If we have a legacy "event" and "address" stored in the DB, it will be returned as before with the event at the top level
 
 	return &listener, nil
 }

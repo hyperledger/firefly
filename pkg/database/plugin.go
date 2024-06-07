@@ -1050,16 +1050,17 @@ var FFIErrorQueryFactory = &ffapi.QueryFields{
 
 // ContractListenerQueryFactory filter fields for contract listeners
 var ContractListenerQueryFactory = &ffapi.QueryFields{
-	"id":        &ffapi.UUIDField{},
-	"name":      &ffapi.StringField{},
-	"interface": &ffapi.UUIDField{},
-	"location":  &ffapi.JSONField{},
-	"topic":     &ffapi.StringField{},
-	"signature": &ffapi.StringField{},
-	"backendid": &ffapi.StringField{},
-	"created":   &ffapi.TimeField{},
-	"updated":   &ffapi.TimeField{},
-	"state":     &ffapi.JSONField{},
+	"id":         &ffapi.UUIDField{},
+	"name":       &ffapi.StringField{},
+	"interface":  &ffapi.UUIDField{},
+	"location":   &ffapi.JSONField{},
+	"topic":      &ffapi.StringField{},
+	"signature":  &ffapi.StringField{},
+	"backendid":  &ffapi.StringField{},
+	"filterhash": &ffapi.StringField{},
+	"created":    &ffapi.TimeField{},
+	"updated":    &ffapi.TimeField{},
+	"state":      &ffapi.JSONField{},
 }
 
 // BlockchainEventQueryFactory filter fields for contract events

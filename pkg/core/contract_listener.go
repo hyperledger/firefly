@@ -34,11 +34,11 @@ type ContractListener struct {
 	Location   *fftypes.JSONAny         `ffstruct:"ContractListener" json:"location,omitempty" ffexcludeinput:"true"`
 	Created    *fftypes.FFTime          `ffstruct:"ContractListener" json:"created,omitempty" ffexcludeinput:"true"`
 	Event      *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty" ffexcludeinput:"true"`
-	Filters    ListenerFilters          `ffstruct:"ContractListener" json:"filters,omitempty" ffexcludeinput:"postContractAPIListeners"`
 	Signature  string                   `ffstruct:"ContractListener" json:"signature,omitempty" ffexcludeinput:"true"`
 	Topic      string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
 	Options    *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
-	FilterHash *fftypes.Bytes32         `json:"-"` // For internal use
+	Filters    ListenerFilters          `ffstruct:"ContractListener" json:"filters,omitempty" ffexcludeinput:"postContractAPIListeners"`
+	FilterHash *fftypes.Bytes32         `ffstruct:"ContractListener" json:"filterHash,omitempty" ffexcludeinput:"true"` // A unique hash of the filters to check for existence and allow applications to check if the contract listener exists
 }
 
 type ContractListenerWithStatus struct {
@@ -55,8 +55,13 @@ type ListenerStatusError struct {
 
 type ContractListenerInput struct {
 	ContractListener
-	Filters   ListenerFiltersInput `ffstruct:"ContractListener" json:"filters,omitempty" ffexcludeinput:"postContractAPIListeners"`
+	Filters   ListenerFiltersInput `ffstruct:"ContractListener" json:"filters,omitempty"`
 	EventPath string               `ffstruct:"ContractListener" json:"eventPath,omitempty" ffexcludeinput:"true"`
+}
+
+type ContractListenerHashOutput struct {
+	FilterHash fftypes.Bytes32 `ffstruct:"ContractListener" json:"filterHash,omitempty" ffexcludeinput:"true"` // A unique hash of the filters to check for existence and allow applications to check if the contract listener exists
+	Signature  string          `ffstruct:"ContractListener" json:"signature,omitempty" ffexcludeinput:"true"`  // Deprecated but still available for older listeners
 }
 
 type ListenerFilter struct {
