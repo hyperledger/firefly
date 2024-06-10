@@ -22,7 +22,7 @@ jobs:
       run: cat results.csv
     - name: Upload check results
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: urlchecker-results
         path: results.csv
