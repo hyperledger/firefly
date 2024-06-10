@@ -16,14 +16,14 @@ The FireFly API for digital assets, data flows, and blockchain transactions make
 
 The best place to learn about FireFly is in the [documentation](https://hyperledger.github.io/firefly).
 
-There you will find our [Getting Started Guide](https://hyperledger.github.io/firefly/gettingstarted/),
+There you will find our [Getting Started Guide](https://hyperledger.github.io/firefly/latest/gettingstarted/),
 which will get you a running FireFly network of Supernodes on your local machine in a few minutes.
 
 Your development environment will come with:
 
 FireFly CLI                   |  FireFly Explorer UI                | FireFly Sandbox  |
 :----------------------------:|:-----------------------------------:|:----------------:|
-![](./images/firefly_cli.png) | ![](./images/firefly_explorer.png) | ![](./images/firefly_sandbox.png) |
+[![CLI](./images/firefly_cli.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/firefly_cli/#install-the-firefly-cli) | [![UI](./images/firefly_explorer.png)](https://github.com/hyperledger/firefly-ui) | [![Sandbox](./images/firefly_sandbox.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/sandbox/#use-the-sandbox) |
 
 ## Engage with the community
 
@@ -297,7 +297,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │
   │           ┌───────────────┐  - Database Interactions
   ├───────────┤ database  [Di]│    * Create, Read, Update, Delete (CRUD) actions
-  │           │ interace      │    * Filtering and update definition interace
+  │           │ interace      │    * Filtering and update definition interface
   │           └─────┬─────────┘    * Migrations and Indexes
   │                 │
   │                 ├───────── ... extensible to NoSQL (CouchDB / MongoDB etc.)
