@@ -28,26 +28,26 @@ import (
 /*
 *
 
-	This API provides the ability to retrieve the hash for the filters of a contract listener
+	This API provides the ability to retrieve the signature for the filters of a contract listener
 
 *
 */
-var postContractListenerHash = &ffapi.Route{
-	Name:            "postContractListenerHash",
-	Path:            "contracts/listeners/hash",
+var postContractListenerSignature = &ffapi.Route{
+	Name:            "postContractListenerSignature",
+	Path:            "contracts/listeners/signature",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
 	Description:     coremsgs.APIEndpointsPostContractListenerHash,
 	JSONInputValue:  func() interface{} { return &core.ContractListenerInput{} },
-	JSONOutputValue: func() interface{} { return &core.ContractListenerHashOutput{} },
+	JSONOutputValue: func() interface{} { return &core.ContractListenerSignatureOutput{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		EnabledIf: func(or orchestrator.Orchestrator) bool {
 			return or.Contracts() != nil
 		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Contracts().ConstructContractListenerHash(cr.ctx, r.Input.(*core.ContractListenerInput))
+			return cr.or.Contracts().ConstructContractListenerSignature(cr.ctx, r.Input.(*core.ContractListenerInput))
 		},
 	},
 }

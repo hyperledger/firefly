@@ -72,7 +72,7 @@ type Manager interface {
 	ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) error
 	DeleteContractAPI(ctx context.Context, apiName string) error
 
-	ConstructContractListenerHash(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerHashOutput, err error)
+	ConstructContractListenerSignature(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerSignatureOutput, err error)
 	AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error)
 	AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (*core.ContractListener, error)
@@ -749,6 +749,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 			return nil, i18n.NewError(ctx, coremsgs.MsgCannotSetParameterWithMessage, lastParam.Name)
 		}
 	}
+
 	for _, param := range req.Method.Params[:lastIndex] {
 		schema, schemaOk := paramSchemas[param.Name]
 		value, valueOk := req.Input[param.Name]
@@ -812,8 +813,8 @@ func (cm *contractManager) checkContractListenerExists(ctx context.Context, list
 		database.ContractListenerQueryFactory.NewUpdate(ctx).Set("backendid", listener.BackendID))
 }
 
-func (cm *contractManager) ConstructContractListenerHash(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerHashOutput, err error) {
-	output = &core.ContractListenerHashOutput{}
+func (cm *contractManager) ConstructContractListenerSignature(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerSignatureOutput, err error) {
+	output = &core.ContractListenerSignatureOutput{}
 
 	// Create signature for deprecated root event
 	if len(listener.Filters) == 0 {
@@ -828,16 +829,7 @@ func (cm *contractManager) ConstructContractListenerHash(ctx context.Context, li
 		}
 
 		output.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
-
-		// Create a single filter to still provide a filter hash
-		listener.Filters = append(listener.Filters, &core.ListenerFilterInput{
-			ListenerFilter: core.ListenerFilter{
-				Event:     listener.Event,
-				Location:  listener.Location,
-				Interface: listener.Interface,
-			},
-			EventPath: listener.EventPath,
-		})
+		return output, nil
 	}
 
 	for _, filter := range listener.Filters {
@@ -858,6 +850,12 @@ func (cm *contractManager) ConstructContractListenerHash(ctx context.Context, li
 			return nil, err
 		}
 
+		if filter.Location != nil {
+			if filter.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, listener.Location); err != nil {
+				return nil, err
+			}
+		}
+
 		listener.ContractListener.Filters = append(listener.ContractListener.Filters, &core.ListenerFilter{
 			Event:     filter.Event,
 			Location:  filter.Location,
@@ -866,12 +864,16 @@ func (cm *contractManager) ConstructContractListenerHash(ctx context.Context, li
 		})
 	}
 
-	filterHash, err := cm.generateFilterHash(listener.ContractListener.Filters)
+	if len(listener.Filters) == 1 {
+		output.Signature = listener.Filters[0].Signature
+		return output, nil
+	}
+
+	signature, err := cm.generateFilterSignature(listener.ContractListener.Filters)
 	if err != nil {
 		return nil, err
 	}
-
-	output.FilterHash = *filterHash
+	output.Signature = signature.String()
 
 	return output, nil
 }
@@ -889,6 +891,9 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 		return nil, err
 	}
 
+	// TODO probably a check that if you have filters and root eventpath it won't work!
+
+	// This location only applies to the root event and will be ignore as part of filters
 	if listener.Location != nil {
 		if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, listener.Location); err != nil {
 			return nil, err
@@ -901,49 +906,12 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 		listener.Options.FirstEvent = cm.getDefaultContractListenerOptions().FirstEvent
 	}
 
-	// Normalize Event/EventPath + Location to list of Listeners
-	if len(listener.Filters) == 0 {
-		listener.Filters = append(listener.Filters, &core.ListenerFilterInput{
-			ListenerFilter: core.ListenerFilter{
-				Event:     listener.Event,
-				Location:  listener.Location,
-				Interface: listener.Interface,
-			},
-			EventPath: listener.EventPath,
-		})
-	}
-
-	for _, filter := range listener.Filters {
-		if filter.Event == nil {
-			if filter.EventPath == "" || filter.Interface == nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
-			}
-			// Copy the event definition into the filter
-			if filter.Event, err = cm.resolveEvent(ctx, filter.Interface, filter.EventPath); err != nil {
-				return nil, err
-			}
-		} else {
-			filter.Interface = nil
-		}
-
-		filter.Signature = cm.blockchain.GenerateEventSignature(ctx, &filter.Event.FFIEventDefinition)
-		if err := cm.validateFFIEvent(ctx, &filter.Event.FFIEventDefinition); err != nil {
-			return nil, err
-		}
-
-		listener.ContractListener.Filters = append(listener.ContractListener.Filters, &core.ListenerFilter{
-			Event:     filter.Event,
-			Location:  filter.Location,
-			Interface: filter.Interface,
-			Signature: filter.Signature,
-		})
-	}
-
-	filterHash, err := cm.generateFilterHash(listener.ContractListener.Filters)
+	signatureOutput, err := cm.ConstructContractListenerSignature(ctx, listener)
 	if err != nil {
 		return nil, err
 	}
-	listener.ContractListener.FilterHash = filterHash
+
+	listener.Signature = signatureOutput.Signature
 
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		// Namespace + Name must be unique
@@ -955,23 +923,6 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 			}
 		}
 
-		if len(listener.Filters) == 0 {
-			// Deprecated flow
-			if listener.Event == nil {
-				if listener.EventPath == "" || listener.Interface == nil {
-					return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
-				}
-				// Copy the event definition into the listener
-				if listener.Event, err = cm.resolveEvent(ctx, listener.Interface, listener.EventPath); err != nil {
-					return err
-				}
-			} else {
-				listener.Interface = nil
-			}
-			// Namespace + Topic + Location + Signature must be unique
-			listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
-		}
-
 		// Above we only call NormalizeContractLocation if the listener is non-nil, and that means
 		// for an unset location we will have a nil value. Using an fftypes.JSONAny in a query
 		// of nil does not yield the right result, so we need to do an explicit nil query.
@@ -979,15 +930,15 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 		if !listener.Location.IsNil() {
 			locationLookup = listener.Location.String()
 		}
+		if len(listener.Filters) == 1 && listener.Filters[0].Location != nil {
+			locationLookup = listener.Filters[0].Location
+		}
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
-		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.Or(fb.And(
+		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
 			fb.Eq("location", locationLookup),
 			fb.Eq("signature", listener.Signature),
-		), fb.And(
-			fb.Eq("topic", listener.Topic),
-			fb.Eq("filterhash", listener.FilterHash),
-		))); err != nil {
+		)); err != nil {
 			return err
 		} else if len(existing) > 0 {
 			return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
@@ -1021,7 +972,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 }
 
 // Sort the filters by signature then location and generate a hash
-func (cm *contractManager) generateFilterHash(filters core.ListenerFilters) (*fftypes.Bytes32, error) {
+func (cm *contractManager) generateFilterSignature(filters core.ListenerFilters) (*fftypes.Bytes32, error) {
 	sort.Slice(filters, func(i, j int) bool {
 		if filters[i].Signature == filters[j].Signature {
 			return filters[i].Location.String() < filters[j].Location.String()

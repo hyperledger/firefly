@@ -59,9 +59,8 @@ type ContractListenerInput struct {
 	EventPath string               `ffstruct:"ContractListener" json:"eventPath,omitempty" ffexcludeinput:"true"`
 }
 
-type ContractListenerHashOutput struct {
-	FilterHash fftypes.Bytes32 `ffstruct:"ContractListener" json:"filterHash,omitempty" ffexcludeinput:"true"` // A unique hash of the filters to check for existence and allow applications to check if the contract listener exists
-	Signature  string          `ffstruct:"ContractListener" json:"signature,omitempty" ffexcludeinput:"true"`  // Deprecated but still available for older listeners
+type ContractListenerSignatureOutput struct {
+	Signature string `ffstruct:"ContractListener" json:"signature,omitempty" ffexcludeinput:"true"`
 }
 
 type ListenerFilter struct {

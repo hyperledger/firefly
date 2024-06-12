@@ -3836,9 +3836,9 @@ func TestFilterHash(t *testing.T) {
 		},
 	}
 
-	hash1, err := cm.generateFilterHash(filterSet1)
+	hash1, err := cm.generateFilterSignature(filterSet1)
 	assert.NoError(t, err)
-	hash2, err := cm.generateFilterHash(filterSet2)
+	hash2, err := cm.generateFilterSignature(filterSet2)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "5b4b14f9da842c8db443b9e4542f84baf0e1a216c3d06b17383b68389db82df2", hash1.String())
@@ -3869,9 +3869,9 @@ func TestFilterHash(t *testing.T) {
 		},
 	}
 
-	hash1, err = cm.generateFilterHash(filterSet1)
+	hash1, err = cm.generateFilterSignature(filterSet1)
 	assert.NoError(t, err)
-	hash2, err = cm.generateFilterHash(filterSet2)
+	hash2, err = cm.generateFilterSignature(filterSet2)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ecf24a607244d2dcdc245f694665ce8acd21391a2291978a27a5fbe82c0d4689", hash1.String())
@@ -3905,7 +3905,7 @@ func TestGenerateContractDeprecatedEventSignature(t *testing.T) {
 		},
 	}
 
-	output, err := cm.ConstructContractListenerHash(context.Background(), sub)
+	output, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.NoError(t, err)
 	assert.Equal(t, "63f8cea8fe30c1e76095f786cf6bc932b8d8a5246eebfbb59724215a33cf363e", output.FilterHash.String())
 	assert.Equal(t, "changed", output.Signature)
@@ -3961,10 +3961,9 @@ func TestGenerateContractFiltersHash(t *testing.T) {
 		},
 	}
 
-	output, err := cm.ConstructContractListenerHash(context.Background(), sub)
+	output, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.NoError(t, err)
-	assert.Equal(t, "881ddcb13fb417847b1d6a4f272fa057be84fab03cfb11bed0af3631f08ea27c", output.FilterHash.String())
-	assert.Empty(t, output.Signature)
+	assert.Empty(t, "881ddcb13fb417847b1d6a4f272fa057be84fab03cfb11bed0af3631f08ea27c", output.Signature)
 }
 
 // func TestGenerateContractFiltersHash(t *testing.T) {

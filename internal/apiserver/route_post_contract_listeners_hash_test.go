@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestNewContractListenerHash(t *testing.T) {
+func TestNewContractListenerSignature(t *testing.T) {
 	o, r := newTestAPIServer()
 	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mcm := &contractmocks.Manager{}
@@ -40,8 +40,8 @@ func TestNewContractListenerHash(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("ConstructContractListenerHash", mock.Anything, mock.AnythingOfType("*core.ContractListenerInput")).
-		Return(&core.ContractListenerHashOutput{}, nil, nil)
+	mcm.On("ConstructContractListenerSignature", mock.Anything, mock.AnythingOfType("*core.ContractListenerInput")).
+		Return(&core.ContractListenerSignatureOutput{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

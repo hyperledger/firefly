@@ -79,24 +79,24 @@ func (_m *Manager) AddContractListener(ctx context.Context, listener *core.Contr
 	return r0, r1
 }
 
-// ConstructContractListenerHash provides a mock function with given fields: ctx, listener
-func (_m *Manager) ConstructContractListenerHash(ctx context.Context, listener *core.ContractListenerInput) (*core.ContractListenerHashOutput, error) {
+// ConstructContractListenerSignature provides a mock function with given fields: ctx, listener
+func (_m *Manager) ConstructContractListenerSignature(ctx context.Context, listener *core.ContractListenerInput) (*core.ContractListenerSignatureOutput, error) {
 	ret := _m.Called(ctx, listener)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ConstructContractListenerHash")
+		panic("no return value specified for ConstructContractListenerSignature")
 	}
 
-	var r0 *core.ContractListenerHashOutput
+	var r0 *core.ContractListenerSignatureOutput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) (*core.ContractListenerHashOutput, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) (*core.ContractListenerSignatureOutput, error)); ok {
 		return rf(ctx, listener)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) *core.ContractListenerHashOutput); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) *core.ContractListenerSignatureOutput); ok {
 		r0 = rf(ctx, listener)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.ContractListenerHashOutput)
+			r0 = ret.Get(0).(*core.ContractListenerSignatureOutput)
 		}
 	}
 
