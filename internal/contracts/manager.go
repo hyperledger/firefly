@@ -516,6 +516,7 @@ func (cm *contractManager) addContractURLs(httpServerURL string, api *core.Contr
 		baseURL := fmt.Sprintf("%s/apis/%s", httpServerURL, api.Name)
 		api.URLs.OpenAPI = baseURL + "/api/swagger.json"
 		api.URLs.UI = baseURL + "/api"
+		api.URLs.API = baseURL
 	}
 }
 
@@ -806,7 +807,7 @@ func (cm *contractManager) resolveEvent(ctx context.Context, ffi *fftypes.FFIRef
 }
 
 func (cm *contractManager) checkContractListenerExists(ctx context.Context, listener *core.ContractListener) error {
-	found, _, err := cm.blockchain.GetContractListenerStatus(ctx, listener.Namespace, listener.BackendID, true)
+	found, _, _, err := cm.blockchain.GetContractListenerStatus(ctx, listener.Namespace, listener.BackendID, true)
 	if err != nil {
 		log.L(ctx).Errorf("Validating listener %s:%s (BackendID=%s) failed: %s", listener.Signature, listener.ID, listener.BackendID, err)
 		return err
@@ -1056,7 +1057,7 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 	if err != nil {
 		return nil, err
 	}
-	_, status, err := cm.blockchain.GetContractListenerStatus(ctx, listener.Namespace, listener.BackendID, false)
+	_, status, _, err := cm.blockchain.GetContractListenerStatus(ctx, listener.Namespace, listener.BackendID, false)
 	if err != nil {
 		status = core.ListenerStatusError{
 			StatusError: err.Error(),

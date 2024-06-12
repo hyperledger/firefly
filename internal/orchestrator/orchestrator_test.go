@@ -305,18 +305,6 @@ func TestInitMessagingComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitTokensFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.assets = nil
-	or.mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	or.mmp.On("ConfigureContract", mock.Anything).Return(nil)
-	or.mdi.On("GetTokenPools", mock.Anything, "ns", mock.Anything).Return([]*core.TokenPool{}, nil, nil)
-	or.mti.On("StartNamespace", mock.Anything, "ns", mock.Anything).Return(fmt.Errorf("pop"))
-	err := or.initManagers(context.Background())
-	assert.Regexp(t, "pop", err)
-}
-
 func TestInitEventsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -496,6 +484,7 @@ func TestStartStopOk(t *testing.T) {
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mtw.On("Start").Return()
+	or.mam.On("Start").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mdm.On("WaitStop").Return(nil)
@@ -518,6 +507,7 @@ func TestStartStopOk(t *testing.T) {
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mtw.On("Start").Return()
+	or.mam.On("Start").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mdm.On("WaitStop").Return(nil)

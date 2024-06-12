@@ -311,12 +311,11 @@ func (im *identityManager) getDefaultVerifier(ctx context.Context, intent blockc
 	}
 	if im.multiparty != nil {
 		orgKey := im.multiparty.RootOrg().Key
-		if orgKey == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+		if orgKey != "" {
+			return im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey, intent)
 		}
-		return im.resolveInputKeyViaBlockchainPlugin(ctx, orgKey, intent)
 	}
-	return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+	return im.resolveInputKeyViaBlockchainPlugin(ctx, "", intent)
 }
 
 // ResolveMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration,

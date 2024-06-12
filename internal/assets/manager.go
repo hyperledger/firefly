@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -73,7 +73,7 @@ type Manager interface {
 	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, phase core.OpPhase, err error)
 
 	// Starts the namespace on each of the configured token plugins
-	Start(ctx context.Context) error
+	Start() error
 }
 
 type assetManager struct {
@@ -173,9 +173,9 @@ func (am *assetManager) GetTokenConnectors(ctx context.Context) []*core.TokenCon
 	return connectors
 }
 
-func (am *assetManager) Start(ctx context.Context) error {
-	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
-	pools, _, err := am.database.GetTokenPools(ctx, am.namespace, f)
+func (am *assetManager) Start() error {
+	f := database.TokenPoolQueryFactory.NewFilter(am.ctx).And()
+	pools, _, err := am.database.GetTokenPools(am.ctx, am.namespace, f)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (am *assetManager) Start(ctx context.Context) error {
 				activePools = append(activePools, pool)
 			}
 		}
-		err := plugin.StartNamespace(ctx, am.namespace, activePools)
+		err := plugin.StartNamespace(am.ctx, am.namespace, activePools)
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -34,6 +34,9 @@ func (pm *privateMessaging) NewMessage(in *core.MessageInOut) syncasync.Sender {
 		msg: &data.NewMessage{
 			Message: in,
 		},
+	}
+	if pm.metrics.IsMetricsEnabled() {
+		pm.metrics.MessageSubmitted(&in.Message)
 	}
 	message.setDefaults()
 	return message

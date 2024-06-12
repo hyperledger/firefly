@@ -39,7 +39,7 @@ func TestGenerateMarkdownPages(t *testing.T) {
 	assert.NotNil(t, markdownMap)
 
 	for pageName, markdown := range markdownMap {
-		f, err := os.Create(filepath.Join("..", "..", "docs", "reference", "types", fmt.Sprintf("%s.md", pageName)))
+		f, err := os.Create(filepath.Join("..", "..", "doc-site", "docs", "reference", "types", fmt.Sprintf("%s.md", pageName)))
 		assert.NoError(t, err)
 		_, err = f.Write(markdown)
 		assert.NoError(t, err)

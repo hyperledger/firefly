@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -26,6 +26,19 @@ type NamespaceStatus struct {
 	Plugins    NamespaceStatusPlugins    `ffstruct:"NamespaceStatus" json:"plugins"`
 	Multiparty NamespaceStatusMultiparty `ffstruct:"NamespaceStatus" json:"multiparty"`
 }
+
+type NamespaceRegistrationStatus = fftypes.FFEnum
+
+var (
+	// entity is not yet registered
+	NamespaceRegistrationStatusUnregistered = fftypes.FFEnumValue("namespaceregistrationstatus", "unregistered")
+	// entity is not yet registered but a registration is in progress
+	NamespaceRegistrationStatusRegistering = fftypes.FFEnumValue("namespaceregistrationstatus", "registering")
+	// entity is registered
+	NamespaceRegistrationStatusRegistered = fftypes.FFEnumValue("namespaceregistrationstatus", "registered")
+	// entity registration status couldn't be determined
+	NamespaceRegistrationStatusUnknown = fftypes.FFEnumValue("namespaceregistrationstatus", "unknown")
+)
 
 // NamespaceStatusNode is the information about the local node, returned in the namespace status
 type NamespaceStatusNode struct {
@@ -64,4 +77,21 @@ type NamespaceStatusPlugin struct {
 type NamespaceStatusMultiparty struct {
 	Enabled   bool                 `ffstruct:"NamespaceStatusMultiparty" json:"enabled"`
 	Contracts *MultipartyContracts `ffstruct:"NamespaceStatusMultiparty" json:"contract,omitempty"`
+}
+
+type NamespaceMultipartyStatusOrg struct {
+	Status                       NamespaceRegistrationStatus `ffstruct:"NamespaceStatusOrg" json:"status"`
+	PendingRegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusOrg" json:"pendingRegistrationMessageId,omitempty"`
+}
+
+type NamespaceMultipartyStatusNode struct {
+	Status                       NamespaceRegistrationStatus `ffstruct:"NamespaceStatusNode" json:"status"`
+	PendingRegistrationMessageID *fftypes.UUID               `ffstruct:"NamespaceStatusNode" json:"pendingRegistrationMessageId,omitempty"`
+}
+
+type NamespaceMultipartyStatus struct {
+	Enabled   bool                                 `ffstruct:"NamespaceMultipartyStatus" json:"enabled"`
+	Org       NamespaceMultipartyStatusOrg         `ffstruct:"NamespaceMultipartyStatus" json:"org"`
+	Node      NamespaceMultipartyStatusNode        `ffstruct:"NamespaceMultipartyStatus" json:"node"`
+	Contracts *MultipartyContractsWithActiveStatus `ffstruct:"NamespaceMultipartyStatus" json:"contracts,omitempty"`
 }

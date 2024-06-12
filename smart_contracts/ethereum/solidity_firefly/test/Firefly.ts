@@ -1,7 +1,7 @@
 "use strict";
 
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { Firefly } from "../typechain-types";
 import { randomBytes } from "crypto";
 import { assert } from "chai";
@@ -18,7 +18,7 @@ describe("Firefly.sol", () => {
     [deployer] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory("Firefly");
     fireflyContract = await Factory.connect(deployer).deploy();
-    await fireflyContract.deployed();
+    await fireflyContract.waitForDeployment();
   });
 
   describe("Firefly", () => {
@@ -35,7 +35,7 @@ describe("Firefly.sol", () => {
           contexts
         );
         const receipt = await result.wait();
-        const logArgs = receipt.events?.[0]?.args;
+        const logArgs = receipt.logs?.[0]?.args;
         assert.isDefined(logArgs);
         if (logArgs) {
           assert.equal(logArgs.author, deployer.address);
@@ -62,7 +62,7 @@ describe("Firefly.sol", () => {
           contexts
         );
         const receipt = await result.wait();
-        const logArgs = receipt.events?.[0]?.args;
+        const logArgs = receipt.logs?.[0]?.args;
         assert.isDefined(logArgs);
         if (logArgs) {
           assert.equal(logArgs.author, deployer.address);
@@ -84,14 +84,14 @@ describe("Firefly.sol", () => {
         const batchHash = randB32Hex();
         const payloadRef = "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD";
         const contexts = [randB32Hex(), randB32Hex(), randB32Hex()];
-        const abiCoder = ethers.utils.defaultAbiCoder;
+        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
         const data = abiCoder.encode(
           ["bytes32", "bytes32", "string", "bytes32[]"],
           [uuids, batchHash, payloadRef, contexts]
         );
         const result = await fireflyContract.pinBatchData(data);
         const receipt = await result.wait();
-        const logArgs = receipt.events?.[0]?.args;
+        const logArgs = receipt.logs?.[0]?.args;
         assert.isDefined(logArgs);
         if (logArgs) {
           assert.equal(logArgs.author, deployer.address);
@@ -114,7 +114,7 @@ describe("Firefly.sol", () => {
           "123"
         );
         const receipt = await result.wait();
-        const logArgs = receipt.events?.[0]?.args;
+        const logArgs = receipt.logs?.[0]?.args;
         assert.isDefined(logArgs);
         if (logArgs) {
           assert.equal(logArgs.author, deployer.address);

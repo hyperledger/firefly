@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -100,6 +100,7 @@ func newTestTezos() (*Tezos, func()) {
 	mm.On("IsMetricsEnabled").Return(true)
 	mm.On("BlockchainTransaction", mock.Anything, mock.Anything).Return(nil)
 	mm.On("BlockchainQuery", mock.Anything, mock.Anything).Return(nil)
+	mm.On("BlockchainContractDeployment", mock.Anything, mock.Anything).Return(nil)
 	t := &Tezos{
 		ctx:         ctx,
 		cancelCtx:   cancel,
@@ -558,7 +559,10 @@ func TestVerifyTezosAddress(t *testing.T) {
 	tz, cancel := newTestTezos()
 	defer cancel()
 
-	_, err := tz.ResolveSigningKey(context.Background(), "tz1err", blockchain.ResolveKeyIntentSign)
+	_, err := tz.ResolveSigningKey(context.Background(), "", blockchain.ResolveKeyIntentSign)
+	assert.Regexp(t, "FF10354", err)
+
+	_, err = tz.ResolveSigningKey(context.Background(), "tz1err", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10142", err)
 
 	key, err := tz.ResolveSigningKey(context.Background(), "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN", blockchain.ResolveKeyIntentSign)
@@ -1048,14 +1052,84 @@ func TestDeployContractOK(t *testing.T) {
 	httpmock.ActivateNonDefault(tz.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 	signingKey := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
-	options := map[string]interface{}{}
 	input := []interface{}{}
+	options := map[string]interface{}{}
 	definitionBytes, err := json.Marshal([]interface{}{})
-	contractBytes, err := json.Marshal("KT123")
+	contract := "{\"code\":[{\"args\":[{\"prim\":\"string\"}],\"prim\":\"parameter\"},{\"args\":[{\"prim\":\"string\"}],\"prim\":\"storage\"},{\"args\":[[{\"prim\":\"CAR\"},{\"args\":[{\"prim\":\"operation\"}],\"prim\":\"NIL\"},{\"prim\":\"PAIR\"}]],\"prim\":\"code\"}],\"storage\":{\"string\":\"hello\"}}"
+	contractBytes, err := json.Marshal(contract)
 	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, core.DeployContract, headers["type"])
+			assert.Equal(t, "123", headers["id"])
+			assert.Equal(t, contract, body["contract"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
 
-	_, err = tz.DeployContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
-	assert.Regexp(t, "FF10429", err)
+	_, err = tz.DeployContract(context.Background(), "123", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+
+	assert.NoError(t, err)
+}
+
+func TestDeployContractError(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	httpmock.ActivateNonDefault(tz.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
+	input := []interface{}{}
+	options := map[string]interface{}{}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contract := "{\"code\":[{\"args\":[{\"prim\":\"string\"}],\"prim\":\"parameter\"},{\"args\":[{\"prim\":\"string\"}],\"prim\":\"storage\"},{\"args\":[[{\"prim\":\"CAR\"},{\"args\":[{\"prim\":\"operation\"}],\"prim\":\"NIL\"},{\"prim\":\"PAIR\"}]],\"prim\":\"code\"}],\"storage\":{\"string\":\"hello\"}}"
+	contractBytes, err := json.Marshal(contract)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "DeployContract", headers["type"])
+			assert.Equal(t, "123", headers["id"])
+			assert.Equal(t, contract, body["contract"])
+			return httpmock.NewJsonResponderOrPanic(400, "error")(req)
+		})
+
+	_, err = tz.DeployContract(context.Background(), "123", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+
+	assert.Regexp(t, "FF10283", err)
+}
+
+func TestDeployContractInvalidOption(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	httpmock.ActivateNonDefault(tz.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	signingKey := "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN"
+	input := []interface{}{}
+	options := map[string]interface{}{
+		"contract": "shouldn't be allowed",
+	}
+	definitionBytes, err := json.Marshal([]interface{}{})
+	contract := "{\"code\":[{\"args\":[{\"prim\":\"string\"}],\"prim\":\"parameter\"},{\"args\":[{\"prim\":\"string\"}],\"prim\":\"storage\"},{\"args\":[[{\"prim\":\"CAR\"},{\"args\":[{\"prim\":\"operation\"}],\"prim\":\"NIL\"},{\"prim\":\"PAIR\"}]],\"prim\":\"code\"}],\"storage\":{\"string\":\"hello\"}}"
+	contractBytes, err := json.Marshal(contract)
+	assert.NoError(t, err)
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, core.DeployContract, headers["type"])
+			assert.Equal(t, "123", headers["id"])
+			assert.Equal(t, contract, body["contract"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	_, err = tz.DeployContract(context.Background(), "123", signingKey, fftypes.JSONAnyPtrBytes(definitionBytes), fftypes.JSONAnyPtrBytes(contractBytes), input, options)
+
+	assert.Regexp(t, "FF10398", err)
 }
 
 func TestInvokeContractOK(t *testing.T) {
@@ -1720,8 +1794,55 @@ func TestGetContractListenerStatus(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
-	assert.NotNil(t, status)
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.NotNil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusSynced, status)
+	assert.NoError(t, err)
+	assert.True(t, found)
+}
+
+func TestGetContractListenerStatusSyncing(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	checkpoint := ListenerCheckpoint{
+		Block:                   0,
+		TransactionBatchIndex:   -1,
+		TransactionIndex:        -1,
+		MetaInternalResultIndex: -1,
+	}
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub1",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sub1", Stream: "es12345", Name: "ff-sub-1132312312312", subscriptionCheckpoint: subscriptionCheckpoint{
+				Catchup:    true,
+				Checkpoint: checkpoint,
+			},
+		}))
+
+	resetConf(tz)
+	utTezosconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utTezosconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utTezosconnectConf.Set(TezosconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tz.ctx, 100, 5*time.Minute), nil)
+	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
+	assert.NoError(t, err)
+
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.NotNil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusSyncing, status)
 	assert.NoError(t, err)
 	assert.True(t, found)
 }
@@ -1753,8 +1874,9 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
-	assert.Nil(t, status)
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.Nil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusUnknown, status)
 	assert.Regexp(t, "FF10283", err)
 	assert.False(t, found)
 }
@@ -1786,8 +1908,9 @@ func TestGetContractListenerStatusGetSubNotFound(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
-	assert.Nil(t, status)
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.Nil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusUnknown, status)
 	assert.Nil(t, err)
 	assert.False(t, found)
 }

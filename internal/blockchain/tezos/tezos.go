@@ -283,6 +283,10 @@ func (t *Tezos) RemoveFireflySubscription(ctx context.Context, subID string) {
 }
 
 func (t *Tezos) ResolveSigningKey(ctx context.Context, key string, intent blockchain.ResolveKeyIntent) (resolved string, err error) {
+	// Key is always required
+	if key == "" {
+		return "", i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+	}
 	if !t.addressResolveAlways {
 		// If there's no address resolver plugin, or addressResolveAlways is false,
 		// we check if it's already an tezos address - in which case we can just return it.
@@ -311,7 +315,35 @@ func (t *Tezos) SubmitNetworkAction(ctx context.Context, nsOpID string, signingK
 }
 
 func (t *Tezos) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
-	return true, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+	if t.metrics.IsMetricsEnabled() {
+		t.metrics.BlockchainContractDeployment()
+	}
+	headers := TezosconnectMessageHeaders{
+		Type: core.DeployContract,
+		ID:   nsOpID,
+	}
+	body := map[string]interface{}{
+		"headers":  &headers,
+		"contract": contract,
+		"from":     signingKey,
+	}
+
+	body, err = t.applyOptions(ctx, body, options)
+	if err != nil {
+		return true, err
+	}
+
+	var resErr common.BlockchainRESTError
+	res, err := t.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)
+	}
+
+	return false, nil
 }
 
 func (t *Tezos) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
@@ -411,10 +443,10 @@ func (t *Tezos) DeleteContractListener(ctx context.Context, subscription *core.C
 }
 
 // Note: In state of development. Approach can be changed.
-func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, detail interface{}, status core.ContractListenerStatus, err error) {
 	sub, err := t.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil {
-		return false, nil, err
+		return false, nil, core.ContractListenerStatusUnknown, err
 	}
 
 	checkpoint := &ListenerStatus{
@@ -427,7 +459,13 @@ func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID 
 		},
 	}
 
-	return true, checkpoint, nil
+	// reduce checkpoint data to a single enum
+	status = core.ContractListenerStatusSynced
+	if sub.Catchup {
+		status = core.ContractListenerStatusSyncing
+	}
+
+	return true, checkpoint, status, nil
 }
 
 func (t *Tezos) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

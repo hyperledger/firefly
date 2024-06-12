@@ -542,6 +542,13 @@ func formatEthAddress(ctx context.Context, key string) (string, error) {
 }
 
 func (e *Ethereum) ResolveSigningKey(ctx context.Context, key string, intent blockchain.ResolveKeyIntent) (resolved string, err error) {
+	// Key may be unset for query intent only
+	if key == "" {
+		if intent == blockchain.ResolveKeyIntentQuery {
+			return "", nil
+		}
+		return "", i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
+	}
 	if !e.addressResolveAlways {
 		// If there's no address resolver plugin, or addressResolveAlways is false,
 		// we check if it's already an ethereum address - in which case we can just return it.
@@ -643,7 +650,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address, signingKey 
 	return res, nil
 }
 
-func (e *Ethereum) buildBatchPinInput(ctx context.Context, version int, namespace string, batch *blockchain.BatchPin) (*abi.Entry, []interface{}) {
+func (e *Ethereum) buildBatchPinInput(version int, namespace string, batch *blockchain.BatchPin) (*abi.Entry, []interface{}) {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -688,7 +695,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace,
 		return err
 	}
 
-	method, input := e.buildBatchPinInput(ctx, version, networkNamespace, batch)
+	method, input := e.buildBatchPinInput(version, networkNamespace, batch)
 
 	var emptyErrors []*abi.Entry
 	_, err = e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, emptyErrors, nil)
@@ -735,7 +742,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		e.metrics.BlockchainContractDeployment()
 	}
 	headers := EthconnectMessageHeaders{
-		Type: "DeployContract",
+		Type: core.DeployContract,
 		ID:   nsOpID,
 	}
 	body := map[string]interface{}{
@@ -745,9 +752,7 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		"definition": definition,
 		"contract":   contract,
 	}
-	if signingKey != "" {
-		body["from"] = signingKey
-	}
+
 	body, err = e.applyOptions(ctx, body, options)
 	if err != nil {
 		return true, err
@@ -804,7 +809,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey
 	if batch != nil {
 		err := e.checkDataSupport(ctx, methodInfo.methodABI)
 		if err == nil {
-			method, batchPin := e.buildBatchPinInput(ctx, 2, "", batch)
+			method, batchPin := e.buildBatchPinInput(2, "", batch)
 			encoded, err := method.Inputs.EncodeABIDataValuesCtx(ctx, batchPin)
 			if err == nil {
 				orderedInput[len(orderedInput)-1] = hex.EncodeToString(encoded)
@@ -912,11 +917,11 @@ func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *cor
 	return e.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, detail interface{}, status core.ContractListenerStatus, err error) {
 	esID := e.streamID[namespace]
 	sub, err := e.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil || sub.Stream != esID {
-		return false, nil, err
+		return false, nil, core.ContractListenerStatusUnknown, err
 	}
 
 	checkpoint := &ListenerStatus{
@@ -928,7 +933,13 @@ func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, sub
 		},
 	}
 
-	return true, checkpoint, nil
+	// reduce checkpoint data to a single enum
+	status = core.ContractListenerStatusSynced
+	if sub.Catchup {
+		status = core.ContractListenerStatusSyncing
+	}
+
+	return true, checkpoint, status, nil
 }
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
