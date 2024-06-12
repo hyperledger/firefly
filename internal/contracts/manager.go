@@ -911,7 +911,7 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 	}
 
 	// Check that both the new filters and deprecated fields are not specified
-	if len(listener.Filters) > 0 && (listener.EventPath != "" || listener.Interface != nil) {
+	if len(listener.Filters) > 0 && (listener.Event != nil || listener.EventPath != "") {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFiltersAndRootEventError, cm.namespace, listener.Name)
 	}
 

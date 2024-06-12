@@ -1288,6 +1288,47 @@ func TestAddContractListenerNameError(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestAddContractListenerFiltersAndDeprecatedFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		Filters: core.ListenerFiltersInput{
+			{
+				ListenerFilter: core.ListenerFilter{
+					Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+						"address": "0x123",
+					}.String()),
+				},
+			},
+		},
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "null"}`),
+						},
+					},
+				},
+			},
+			Topic: "test-topic",
+		},
+	}
+
+	_, err := cm.AddContractListener(context.Background(), sub)
+	assert.Regexp(t, "FF10466", err)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestAddContractListenerValidateFail(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
