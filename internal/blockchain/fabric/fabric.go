@@ -922,13 +922,24 @@ func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType,
 
 func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener) error {
 	namespace := listener.Namespace
-	location, err := parseContractLocation(ctx, listener.Location)
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	if len(listener.Filters) > 1 {
+		return i18n.NewError(ctx, coremsgs.MsgContractListenerBlockchainFilterLimit, listener.Name)
+	}
+
+	filter := listener.Filters[0]
+
+	location, err := parseContractLocation(ctx, filter.Location)
 	if err != nil {
 		return err
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
-	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, listener.Event.Name, listener.Options.FirstEvent)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, filter.Event.Name, listener.Options.FirstEvent)
 	if err != nil {
 		return err
 	}

@@ -1998,18 +1998,22 @@ func TestAddSubscription(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "0x123",
-		}.String()),
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
-				Params: fftypes.FFIParams{
-					{
-						Name:   "value",
-						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
 					},
 				},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
 			},
 		},
 		Options: &core.ContractListenerOptions{
@@ -2036,13 +2040,17 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
-				Params: fftypes.FFIParams{
-					{
-						Name:   "value",
-						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
 					},
 				},
 			},
@@ -2163,18 +2171,22 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "0x123",
-		}.String()),
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
-				Params: fftypes.FFIParams{
-					{
-						Name:   "value",
-						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
+							},
+						},
 					},
 				},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
 			},
 		},
 	}
@@ -2185,27 +2197,6 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	err := e.AddContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10311", err)
-}
-
-func TestAddLegacySubscriptionBadLocation(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	httpmock.ActivateNonDefault(e.client.GetClient())
-	defer httpmock.DeactivateAndReset()
-
-	e.streamID["ns1"] = "es-1"
-	e.streams = &streamManager{
-		client: e.client,
-	}
-
-	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(""),
-		Event:    &core.FFISerializedEvent{},
-	}
-
-	err := e.AddContractListener(context.Background(), sub)
-
-	assert.Regexp(t, "FF10310", err)
 }
 
 func TestAddSubscriptionBadLocation(t *testing.T) {
@@ -2233,6 +2224,20 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	assert.Regexp(t, "FF10310", err)
 }
 
+func TestAddListenerNoFiltersFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	sub := &core.ContractListener{
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
+		},
+	}
+
+	err := e.AddContractListener(context.Background(), sub)
+	assert.Regexp(t, "FF10467", err)
+}
+
 func TestAddSubscriptionFail(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
@@ -2245,10 +2250,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "0x123",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},

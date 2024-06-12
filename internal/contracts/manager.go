@@ -272,6 +272,15 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 			return nil
 		}
 		for _, l := range listeners {
+			// Standardise to new format from deprecate root event
+			if l.Event != nil {
+				l.Filters = append(l.Filters, &core.ListenerFilter{
+					Event:     l.Event,
+					Location:  l.Location,
+					Interface: l.Interface,
+					Signature: l.Signature,
+				})
+			}
 			if err := cm.checkContractListenerExists(ctx, l); err != nil {
 				return err
 			}

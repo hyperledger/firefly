@@ -870,47 +870,29 @@ func (e *Ethereum) encodeContractLocation(ctx context.Context, location *Locatio
 }
 
 func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
-	var location *Location
 	namespace := listener.Namespace
-	if listener.Location != nil {
-		location, err = e.parseContractLocation(ctx, listener.Location)
-		if err != nil {
-			return err
-		}
+	filters := make([]*filter, 0)
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
 	}
 
-	filters := make([]*filter, 0)
-	// This keeps the existing behaviour where a contract listener could only listen to one event
-	if listener.Event != nil {
-		abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
+	for _, f := range listener.Filters {
+		abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &f.Event.FFIEventDefinition)
 		if err != nil {
 			return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
 		}
 		evmFilter := &filter{
 			Event: abi,
 		}
-		if location != nil {
+		if f.Location != nil {
+			location, err := e.parseContractLocation(ctx, f.Location)
+			if err != nil {
+				return err
+			}
 			evmFilter.Address = location.Address
 		}
 		filters = append(filters, evmFilter)
-	} else {
-		for _, f := range listener.Filters {
-			abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &f.Event.FFIEventDefinition)
-			if err != nil {
-				return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
-			}
-			evmFilter := &filter{
-				Event: abi,
-			}
-			if f.Location != nil {
-				location, err = e.parseContractLocation(ctx, f.Location)
-				if err != nil {
-					return err
-				}
-				evmFilter.Address = location.Address
-			}
-			filters = append(filters, evmFilter)
-		}
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
