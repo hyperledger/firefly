@@ -891,7 +891,13 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 		return nil, err
 	}
 
+<<<<<<< Updated upstream
 	// TODO probably a check that if you have filters and root eventpath it won't work!
+=======
+	if len(listener.Filters) > 0 && listener.EventPath != "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractListenerNameExists, cm.namespace, listener.Name)
+	}
+>>>>>>> Stashed changes
 
 	// This location only applies to the root event and will be ignore as part of filters
 	if listener.Location != nil {
