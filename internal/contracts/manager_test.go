@@ -1323,7 +1323,7 @@ func TestAddContractListenerFiltersAndDeprecatedFail(t *testing.T) {
 	}
 
 	_, err := cm.AddContractListener(context.Background(), sub)
-	assert.Regexp(t, "FF10466", err)
+	assert.Regexp(t, "FF10472", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)

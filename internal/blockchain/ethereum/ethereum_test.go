@@ -2242,7 +2242,7 @@ func TestAddListenerNoFiltersFail(t *testing.T) {
 	}
 
 	err := e.AddContractListener(context.Background(), sub)
-	assert.Regexp(t, "FF10467", err)
+	assert.Regexp(t, "FF10473", err)
 }
 
 func TestAddSubscriptionFail(t *testing.T) {
