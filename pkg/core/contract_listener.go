@@ -26,19 +26,18 @@ import (
 )
 
 type ContractListener struct {
-	ID         *fftypes.UUID            `ffstruct:"ContractListener" json:"id,omitempty" ffexcludeinput:"true"`
-	Interface  *fftypes.FFIReference    `ffstruct:"ContractListener" json:"interface,omitempty" ffexcludeinput:"postContractAPIListeners"`
-	Namespace  string                   `ffstruct:"ContractListener" json:"namespace,omitempty" ffexcludeinput:"true"`
-	Name       string                   `ffstruct:"ContractListener" json:"name,omitempty"`
-	BackendID  string                   `ffstruct:"ContractListener" json:"backendId,omitempty" ffexcludeinput:"true"`
-	Location   *fftypes.JSONAny         `ffstruct:"ContractListener" json:"location,omitempty" ffexcludeinput:"true"`
-	Created    *fftypes.FFTime          `ffstruct:"ContractListener" json:"created,omitempty" ffexcludeinput:"true"`
-	Event      *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty" ffexcludeinput:"true"`
-	Signature  string                   `ffstruct:"ContractListener" json:"signature,omitempty" ffexcludeinput:"true"`
-	Topic      string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
-	Options    *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
-	Filters    ListenerFilters          `ffstruct:"ContractListener" json:"filters,omitempty" ffexcludeinput:"postContractAPIListeners"`
-	FilterHash *fftypes.Bytes32         `ffstruct:"ContractListener" json:"filterHash,omitempty" ffexcludeinput:"true"` // A unique hash of the filters to check for existence and allow applications to check if the contract listener exists
+	ID        *fftypes.UUID            `ffstruct:"ContractListener" json:"id,omitempty" ffexcludeinput:"true"`
+	Interface *fftypes.FFIReference    `ffstruct:"ContractListener" json:"interface,omitempty" ffexcludeinput:"postContractAPIListeners"`
+	Namespace string                   `ffstruct:"ContractListener" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Name      string                   `ffstruct:"ContractListener" json:"name,omitempty"`
+	BackendID string                   `ffstruct:"ContractListener" json:"backendId,omitempty" ffexcludeinput:"true"`
+	Location  *fftypes.JSONAny         `ffstruct:"ContractListener" json:"location,omitempty" ffexcludeinput:"true"`
+	Created   *fftypes.FFTime          `ffstruct:"ContractListener" json:"created,omitempty" ffexcludeinput:"true"`
+	Event     *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty" ffexcludeinput:"true"`
+	Signature string                   `ffstruct:"ContractListener" json:"signature,omitempty" ffexcludeinput:"true"`
+	Topic     string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
+	Options   *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
+	Filters   ListenerFilters          `ffstruct:"ContractListener" json:"filters,omitempty" ffexcludeinput:"postContractAPIListeners"`
 }
 
 type ContractListenerWithStatus struct {

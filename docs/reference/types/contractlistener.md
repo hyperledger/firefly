@@ -75,7 +75,6 @@ nav_order: 10
 | `topic` | A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need | `string` |
 | `options` | Options that control how the listener subscribes to events from the underlying blockchain | [`ContractListenerOptions`](#contractlisteneroptions) |
 | `filters` | A list of filters for the contract listener. Each filter is made up of an Event and an optional Location. Events matching these filters will always be emitted in the order determined by the blockchain. | [`ListenerFilter[]`](#listenerfilter) |
-| `filterHash` | This is the hash of the filters provided, useful to be able to retrieve a unique contract listener. | `Bytes32` |
 
 ## FFIReference
 

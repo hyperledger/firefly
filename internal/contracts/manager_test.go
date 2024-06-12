@@ -1314,8 +1314,6 @@ func TestAddContractListenerValidateFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 
 	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "does not validate", err)
@@ -3907,7 +3905,6 @@ func TestGenerateContractDeprecatedEventSignature(t *testing.T) {
 
 	output, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.NoError(t, err)
-	assert.Equal(t, "63f8cea8fe30c1e76095f786cf6bc932b8d8a5246eebfbb59724215a33cf363e", output.FilterHash.String())
 	assert.Equal(t, "changed", output.Signature)
 }
 
@@ -3927,8 +3924,11 @@ func TestGenerateContractFiltersHash(t *testing.T) {
 		},
 	}
 
+	location := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
+
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location).Return(location, nil)
 
 	mdi := cm.database.(*databasemocks.Plugin)
 	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
@@ -3938,7 +3938,7 @@ func TestGenerateContractFiltersHash(t *testing.T) {
 		Filters: []*core.ListenerFilterInput{
 			{
 				ListenerFilter: core.ListenerFilter{
-					Location: fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+					Location: location,
 					Interface: &fftypes.FFIReference{
 						ID: fftypes.NewUUID(),
 					},
@@ -3947,7 +3947,7 @@ func TestGenerateContractFiltersHash(t *testing.T) {
 			},
 			{
 				ListenerFilter: core.ListenerFilter{
-					Location: fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`),
+					Location: location,
 					Interface: &fftypes.FFIReference{
 						ID: fftypes.NewUUID(),
 					},
@@ -3963,7 +3963,7 @@ func TestGenerateContractFiltersHash(t *testing.T) {
 
 	output, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.NoError(t, err)
-	assert.Empty(t, "881ddcb13fb417847b1d6a4f272fa057be84fab03cfb11bed0af3631f08ea27c", output.Signature)
+	assert.Equal(t, "881ddcb13fb417847b1d6a4f272fa057be84fab03cfb11bed0af3631f08ea27c", output.Signature)
 }
 
 // func TestGenerateContractFiltersHash(t *testing.T) {

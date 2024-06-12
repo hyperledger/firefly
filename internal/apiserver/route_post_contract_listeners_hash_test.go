@@ -36,7 +36,7 @@ func TestNewContractListenerSignature(t *testing.T) {
 	input := core.ContractListenerInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/mynamespace/contracts/listeners/hash", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/mynamespace/contracts/listeners/signature", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

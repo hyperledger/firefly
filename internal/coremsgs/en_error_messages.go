@@ -304,4 +304,5 @@ var (
 	MsgMaxSubscriptionEventScanLimitBreached = ffe("FF10463", "Event scan limit breached with start sequence ID %d and end sequence ID %d. Please restrict your query to a narrower range", 400)
 	MsgSequenceIDDidNotParseToInt            = ffe("FF10464", "Could not parse provided %s to an integer sequence ID", 400)
 	MsgInternalServerError                   = ffe("FF10465", "Internal server error: %s", 500)
+	MsgFiltersAndRootEventError              = ffe("FF10466", "Canno provide both filters and deprecated event path: %s, please only provide one option.", 500)
 )

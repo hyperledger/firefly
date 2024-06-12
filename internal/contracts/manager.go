@@ -828,7 +828,17 @@ func (cm *contractManager) ConstructContractListenerSignature(ctx context.Contex
 			}
 		}
 
+		if err := cm.validateFFIEvent(ctx, &listener.Event.FFIEventDefinition); err != nil {
+			return nil, err
+		}
+
 		output.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
+		listener.ContractListener.Filters = append(listener.ContractListener.Filters, &core.ListenerFilter{
+			Event:     listener.Event,
+			Location:  listener.Location,
+			Interface: listener.Interface,
+			Signature: listener.Signature,
+		})
 		return output, nil
 	}
 
@@ -851,7 +861,7 @@ func (cm *contractManager) ConstructContractListenerSignature(ctx context.Contex
 		}
 
 		if filter.Location != nil {
-			if filter.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, listener.Location); err != nil {
+			if filter.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, filter.Location); err != nil {
 				return nil, err
 			}
 		}
@@ -891,13 +901,10 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 		return nil, err
 	}
 
-<<<<<<< Updated upstream
-	// TODO probably a check that if you have filters and root eventpath it won't work!
-=======
-	if len(listener.Filters) > 0 && listener.EventPath != "" {
-		return nil, i18n.NewError(ctx, coremsgs.MsgContractListenerNameExists, cm.namespace, listener.Name)
+	// Check that both the new filters and deprecated fields are not specified
+	if len(listener.Filters) > 0 && (listener.EventPath != "" || listener.Interface != nil) {
+		return nil, i18n.NewError(ctx, coremsgs.MsgFiltersAndRootEventError, cm.namespace, listener.Name)
 	}
->>>>>>> Stashed changes
 
 	// This location only applies to the root event and will be ignore as part of filters
 	if listener.Location != nil {
@@ -937,6 +944,9 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 			locationLookup = listener.Location.String()
 		}
 		if len(listener.Filters) == 1 && listener.Filters[0].Location != nil {
+			// For backwards compatibility with existing contract listeners with one filter
+			// We need to set the location to not find clashes
+			listener.Location = listener.Filters[0].Location
 			locationLookup = listener.Filters[0].Location
 		}
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
