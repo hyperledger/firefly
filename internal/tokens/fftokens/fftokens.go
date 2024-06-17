@@ -37,6 +37,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
+	"golang.org/x/sync/errgroup"
 )
 
 type ConflictError struct {
@@ -716,16 +717,31 @@ func (ft *FFTokens) handleNamespaceStarted(ctx context.Context, data fftypes.JSO
 	// Make sure any pools that are marked as active in our DB are indeed active
 	namespace := data.GetString("namespace")
 	log.L(ctx).Debugf("Token connector '%s' started namespace '%s'. Ensuring all token pools active.", ft.Name(), namespace)
-	for _, pool := range ft.poolsToActivate[namespace] {
-		if _, err := ft.EnsureTokenPoolActive(ctx, pool); err == nil {
-			log.L(ctx).Debugf("Ensured token pool active '%s'", pool.ID)
-		} else {
-			// Log the error and continue trying to activate pools
-			// At this point we've already started
-			log.L(ctx).Errorf("Error ensuring token pool active '%s': %s", pool.ID, err.Error())
-		}
 
+	g, ctx := errgroup.WithContext(ctx)
+
+	for _, pool := range ft.poolsToActivate[namespace] {
+		currentPool := pool
+		g.Go(func() error {
+			_, err := ft.EnsureTokenPoolActive(ctx, currentPool)
+			if err == nil {
+				log.L(ctx).Debugf("Ensured token pool active '%s'", currentPool.ID)
+			} else {
+				log.L(ctx).Errorf("Error ensuring token pool active '%s': %s", currentPool.ID, err.Error())
+			}
+
+			return err
+		})
 	}
+
+	// g.Wait waits for all goroutines activating token pools to complete
+	// and returns the first non-nil error returned
+	// by one of the goroutines.
+	if err := g.Wait(); err != nil {
+		// The above handleMessage will retry if errors occur
+		return err
+	}
+
 	return nil
 }
 

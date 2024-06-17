@@ -29,6 +29,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/hfuss/mux-prometheus v0.0.5
 	golang.org/x/net v0.20.0
+	golang.org/x/sync v0.5.0
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v2 v2.4.0
 )
