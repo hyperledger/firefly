@@ -13,7 +13,7 @@ ARG GIT_REF
 # Makes an assumption that that base image is debian based 
 # so it uses apt
 RUN apt update -y \
-  && apt install -y make gcc curl git
+    && apt install -y make gcc curl git
 
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
@@ -70,17 +70,14 @@ ARG UI_RELEASE
 # so it uses apt
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update -y \
-  && apt install -y curl jq sqlite postgresql \
-  && rm -rf /var/lib/apt/lists/*
+    && apt install -y curl jq sqlite postgresql \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly/ \
     && chmod -R g+rwX /firefly/ \
     && mkdir /etc/firefly/ \
     && chgrp -R 0 /etc/firefly \
     && chmod -R g+rwX /etc/firefly
-RUN curl -sL "https://github.com/golang-migrate/migrate/releases/download/$(curl -sL https://api.github.com/repos/golang-migrate/migrate/releases/latest | jq -r '.name')/migrate.linux-amd64.tar.gz" | tar xz \
-    && chmod +x ./migrate \
-    && mv ./migrate /usr/bin/migrate
 COPY --from=firefly-builder --chown=1001:0 /firefly/firefly ./firefly
 COPY --from=firefly-builder --chown=1001:0 /firefly/db ./db
 COPY --from=solidity-builder --chown=1001:0 /firefly/solidity_firefly/build/contracts ./contracts
