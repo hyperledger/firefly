@@ -191,33 +191,34 @@ type Config struct {
 }
 
 type orchestrator struct {
-	ctx            context.Context
-	cancelCtx      context.CancelFunc
-	started        bool
-	startedLock    sync.Mutex
-	namespace      *core.Namespace
-	config         Config
-	plugins        *Plugins
-	multiparty     multiparty.Manager       // only for multiparty
-	batch          batch.Manager            // only for multiparty
-	broadcast      broadcast.Manager        // only for multiparty
-	messaging      privatemessaging.Manager // only for multiparty
-	sharedDownload shareddownload.Manager   // only for multiparty
-	identity       identity.Manager
-	events         events.EventManager
-	networkmap     networkmap.Manager
-	defhandler     definitions.Handler
-	defsender      definitions.Sender
-	data           data.Manager
-	syncasync      syncasync.Bridge
-	assets         assets.Manager
-	bc             boundCallbacks
-	contracts      contracts.Manager
-	metrics        metrics.Manager
-	cacheManager   cache.Manager
-	operations     operations.Manager
-	txHelper       txcommon.Helper
-	txWriter       txwriter.Writer
+	ctx                     context.Context
+	cancelCtx               context.CancelFunc
+	started                 bool
+	startedBlockchainPlugin bool
+	startedLock             sync.Mutex
+	namespace               *core.Namespace
+	config                  Config
+	plugins                 *Plugins
+	multiparty              multiparty.Manager       // only for multiparty
+	batch                   batch.Manager            // only for multiparty
+	broadcast               broadcast.Manager        // only for multiparty
+	messaging               privatemessaging.Manager // only for multiparty
+	sharedDownload          shareddownload.Manager   // only for multiparty
+	identity                identity.Manager
+	events                  events.EventManager
+	networkmap              networkmap.Manager
+	defhandler              definitions.Handler
+	defsender               definitions.Sender
+	data                    data.Manager
+	syncasync               syncasync.Bridge
+	assets                  assets.Manager
+	bc                      boundCallbacks
+	contracts               contracts.Manager
+	metrics                 metrics.Manager
+	cacheManager            cache.Manager
+	operations              operations.Manager
+	txHelper                txcommon.Helper
+	txWriter                txwriter.Writer
 }
 
 func NewOrchestrator(ns *core.Namespace, config Config, plugins *Plugins, metrics metrics.Manager, cacheManager cache.Manager) Orchestrator {
@@ -568,11 +569,16 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
-	if or.blockchain() != nil {
+	// The blockchain plugin doesn't return a manager or struct that we can check for
+	// nil like all the other mangagers to see if it has been initialised before!
+	// So we have a boolean to check so that when the retry wrapper initialises these components
+	// again we do have multiple ones running
+	if or.blockchain() != nil && !or.startedBlockchainPlugin {
 		err = or.blockchain().StartNamespace(ctx, or.namespace.Name)
 		if err != nil {
 			return err
 		}
+		or.startedBlockchainPlugin = true
 	}
 
 	if or.data == nil {
