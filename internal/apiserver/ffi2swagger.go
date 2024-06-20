@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -89,6 +89,9 @@ func addFFIMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FF
 		Name:   fmt.Sprintf("invoke_%s", method.Pathname),
 		Path:   fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method: http.MethodPost,
+		QueryParams: []*ffapi.QueryParam{
+			{Name: "confirm", Description: coremsgs.APIConfirmInvokeQueryParam, IsBool: true, Example: "true"},
+		},
 		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
 			return contractRequestJSONSchema(ctx, &method.Params, hasLocation)
 		},

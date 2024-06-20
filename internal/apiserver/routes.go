@@ -107,6 +107,7 @@ var routes = append(
 		getOps,
 		getPins,
 		getStatus,
+		getStatusMultiparty,
 		getStatusBatchManager,
 		getSubscriptionByID,
 		getSubscriptions,

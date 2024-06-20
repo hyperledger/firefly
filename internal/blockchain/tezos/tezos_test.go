@@ -559,7 +559,10 @@ func TestVerifyTezosAddress(t *testing.T) {
 	tz, cancel := newTestTezos()
 	defer cancel()
 
-	_, err := tz.ResolveSigningKey(context.Background(), "tz1err", blockchain.ResolveKeyIntentSign)
+	_, err := tz.ResolveSigningKey(context.Background(), "", blockchain.ResolveKeyIntentSign)
+	assert.Regexp(t, "FF10354", err)
+
+	_, err = tz.ResolveSigningKey(context.Background(), "tz1err", blockchain.ResolveKeyIntentSign)
 	assert.Regexp(t, "FF10142", err)
 
 	key, err := tz.ResolveSigningKey(context.Background(), "tz1Y6GnVhC4EpcDDSmD3ibcC4WX6DJ4Q1QLN", blockchain.ResolveKeyIntentSign)
@@ -1721,8 +1724,55 @@ func TestGetContractListenerStatus(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
-	assert.NotNil(t, status)
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.NotNil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusSynced, status)
+	assert.NoError(t, err)
+	assert.True(t, found)
+}
+
+func TestGetContractListenerStatusSyncing(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	checkpoint := ListenerCheckpoint{
+		Block:                   0,
+		TransactionBatchIndex:   -1,
+		TransactionIndex:        -1,
+		MetaInternalResultIndex: -1,
+	}
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/sub1",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sub1", Stream: "es12345", Name: "ff-sub-1132312312312", subscriptionCheckpoint: subscriptionCheckpoint{
+				Catchup:    true,
+				Checkpoint: checkpoint,
+			},
+		}))
+
+	resetConf(tz)
+	utTezosconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utTezosconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utTezosconnectConf.Set(TezosconnectConfigTopic, "topic1")
+
+	cmi := &cachemocks.Manager{}
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(tz.ctx, 100, 5*time.Minute), nil)
+	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
+	assert.NoError(t, err)
+
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.NotNil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusSyncing, status)
 	assert.NoError(t, err)
 	assert.True(t, found)
 }
@@ -1754,8 +1804,9 @@ func TestGetContractListenerStatusGetSubFail(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
-	assert.Nil(t, status)
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.Nil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusUnknown, status)
 	assert.Regexp(t, "FF10283", err)
 	assert.False(t, found)
 }
@@ -1787,8 +1838,9 @@ func TestGetContractListenerStatusGetSubNotFound(t *testing.T) {
 	err := tz.Init(tz.ctx, tz.cancelCtx, utConfig, tz.metrics, cmi)
 	assert.NoError(t, err)
 
-	found, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
-	assert.Nil(t, status)
+	found, detail, status, err := tz.GetContractListenerStatus(context.Background(), "ns1", "sub1", true)
+	assert.Nil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusUnknown, status)
 	assert.Nil(t, err)
 	assert.False(t, found)
 }
