@@ -1299,6 +1299,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -1592,6 +1597,47 @@ paths:
           application/json:
             schema:
               properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -5694,6 +5740,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -5974,6 +6025,48 @@ paths:
           application/json:
             schema:
               properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
+                eventPath:
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
+                  type: string
                 filters:
                   description: A list of filters for the contract listener. Each filter
                     is made up of an Event and an optional Location. Events matching
@@ -6067,6 +6160,9 @@ paths:
                       description: The version of the FireFly interface
                       type: string
                   type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -6530,6 +6626,48 @@ paths:
           application/json:
             schema:
               properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
+                eventPath:
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
+                  type: string
                 filters:
                   description: A list of filters for the contract listener. Each filter
                     is made up of an Event and an optional Location. Events matching
@@ -6623,6 +6761,9 @@ paths:
                       description: The version of the FireFly interface
                       type: string
                   type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -13846,6 +13987,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -14146,6 +14292,44 @@ paths:
           application/json:
             schema:
               properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
                 filters:
                   description: A list of filters for the contract listener. Each filter
                     is made up of an Event and an optional Location. Events matching
@@ -14234,6 +14418,9 @@ paths:
                       description: The version of the FireFly interface
                       type: string
                   type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -18708,6 +18895,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -18995,6 +19187,48 @@ paths:
           application/json:
             schema:
               properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
+                eventPath:
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
+                  type: string
                 filters:
                   description: A list of filters for the contract listener. Each filter
                     is made up of an Event and an optional Location. Events matching
@@ -19088,6 +19322,9 @@ paths:
                       description: The version of the FireFly interface
                       type: string
                   type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -19572,6 +19809,48 @@ paths:
           application/json:
             schema:
               properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
+                eventPath:
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
+                  type: string
                 filters:
                   description: A list of filters for the contract listener. Each filter
                     is made up of an Event and an optional Location. Events matching
@@ -19665,6 +19944,9 @@ paths:
                       description: The version of the FireFly interface
                       type: string
                   type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string

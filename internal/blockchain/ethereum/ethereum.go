@@ -851,6 +851,15 @@ func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockcha
 	return e.encodeContractLocation(ctx, parsed)
 }
 
+func (e *Ethereum) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := e.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return parsed.Address, nil
+}
+
 func (e *Ethereum) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	ethLocation := Location{}
 	if err := json.Unmarshal(location.Bytes(), &ethLocation); err != nil {

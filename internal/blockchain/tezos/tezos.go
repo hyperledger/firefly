@@ -406,6 +406,15 @@ func (t *Tezos) NormalizeContractLocation(ctx context.Context, ntype blockchain.
 	return t.encodeContractLocation(ctx, parsed)
 }
 
+func (t *Tezos) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return parsed.Address, nil
+}
+
 func (t *Tezos) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
 	if len(listener.Filters) == 0 {
 		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)

@@ -31,9 +31,9 @@ type ContractListener struct {
 	Namespace string                   `ffstruct:"ContractListener" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name      string                   `ffstruct:"ContractListener" json:"name,omitempty"`
 	BackendID string                   `ffstruct:"ContractListener" json:"backendId,omitempty" ffexcludeinput:"true"`
-	Location  *fftypes.JSONAny         `ffstruct:"ContractListener" json:"location,omitempty" ffexcludeinput:"true"`
+	Location  *fftypes.JSONAny         `ffstruct:"ContractListener" json:"location,omitempty"`
 	Created   *fftypes.FFTime          `ffstruct:"ContractListener" json:"created,omitempty" ffexcludeinput:"true"`
-	Event     *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty" ffexcludeinput:"true"`
+	Event     *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty"`
 	Signature string                   `ffstruct:"ContractListener" json:"signature,omitempty" ffexcludeinput:"true"`
 	Topic     string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
 	Options   *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
@@ -55,7 +55,7 @@ type ListenerStatusError struct {
 type ContractListenerInput struct {
 	ContractListener
 	Filters   ListenerFiltersInput `ffstruct:"ContractListener" json:"filters,omitempty"`
-	EventPath string               `ffstruct:"ContractListener" json:"eventPath,omitempty" ffexcludeinput:"true"`
+	EventPath string               `ffstruct:"ContractListener" json:"eventPath,omitempty"`
 }
 
 type ContractListenerSignatureOutput struct {

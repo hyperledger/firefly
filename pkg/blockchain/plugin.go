@@ -114,6 +114,9 @@ type Plugin interface {
 	// NormalizeContractLocation validates and normalizes the formatting of the location JSON
 	NormalizeContractLocation(ctx context.Context, ntype NormalizeType, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
 
+	// NormalizeContractLocation validates and normalizes the formatting of the location JSON
+	StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error)
+
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
 	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
 

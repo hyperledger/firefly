@@ -609,6 +609,34 @@ func (_m *Plugin) StopNamespace(ctx context.Context, namespace string) error {
 	return r0
 }
 
+// StringifyContractLocation provides a mock function with given fields: ctx, location
+func (_m *Plugin) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	ret := _m.Called(ctx, location)
+
+	if len(ret) == 0 {
+		panic("no return value specified for StringifyContractLocation")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) (string, error)); ok {
+		return rf(ctx, location)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) string); ok {
+		r0 = rf(ctx, location)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, location)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, networkNamespace, signingKey, batch, location
 func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, networkNamespace string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
 	ret := _m.Called(ctx, nsOpID, networkNamespace, signingKey, batch, location)

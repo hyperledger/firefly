@@ -897,6 +897,21 @@ func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain
 	return encodeContractLocation(ctx, ntype, parsed)
 }
 
+func (f *Fabric) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	// Concatinate channel and chaincode if present
+	result := fmt.Sprintf("%s-*", parsed.Channel)
+	if parsed.Chaincode != "" {
+		result = fmt.Sprintf("%s-%s", parsed.Channel, parsed.Chaincode)
+	}
+
+	return result, nil
+}
+
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	if location == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
