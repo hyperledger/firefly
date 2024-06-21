@@ -3592,7 +3592,55 @@ func TestGenerateEventSignature(t *testing.T) {
 	}
 
 	signature := e.GenerateEventSignature(context.Background(), event)
-	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256))", signature)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256)) indexed positions [,,[,]]", signature)
+}
+
+func TestGenerateEventSignatureWithIndexedFields(t *testing.T) {
+	e, _ := newTestEthereum()
+	complexParam := fftypes.JSONObject{
+		"type": "object",
+		"details": fftypes.JSONObject{
+			"type": "tuple",
+		},
+		"properties": fftypes.JSONObject{
+			"prop1": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 0,
+				},
+			},
+			"prop2": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":    "uint256",
+					"index":   1,
+					"indexed": true,
+				},
+			},
+		},
+	}.String()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256", "indexed": true}}`),
+			},
+			{
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(complexParam),
+			},
+		},
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256)) indexed positions [,i,[,i]]", signature)
 }
 
 func TestGenerateEventSignatureInvalid(t *testing.T) {

@@ -960,7 +960,37 @@ func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FF
 	if err != nil {
 		return ""
 	}
-	return ffi2abi.ABIMethodToSignature(abi)
+	signature := ffi2abi.ABIMethodToSignature(abi)
+	indexedSignature := ABIMethodToIndexedSignature(abi)
+	return fmt.Sprintf("%s %s", signature, indexedSignature)
+}
+
+func ABIArgumentIndexed(param *abi.Parameter, components abi.ParameterArray) string {
+	if strings.HasPrefix(param.Type, "tuple") {
+		suffix := param.Type[5:]
+		children := make([]string, len(components))
+		for i, component := range components {
+			children[i] = ABIArgumentIndexed(component, nil)
+		}
+		return "[" + strings.Join(children, ",") + "]" + suffix
+	}
+	if param.Indexed {
+		return "i"
+	}
+	return ""
+}
+
+func ABIMethodToIndexedSignature(abi *abi.Entry) string {
+	result := "indexed positions ["
+	if len(abi.Inputs) > 0 {
+		types := make([]string, len(abi.Inputs))
+		for i, param := range abi.Inputs {
+			types[i] = ABIArgumentIndexed(param, param.Components)
+		}
+		result += strings.Join(types, ",")
+	}
+	result += "]"
+	return result
 }
 
 func (e *Ethereum) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string {
