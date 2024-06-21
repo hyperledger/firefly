@@ -897,6 +897,21 @@ func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain
 	return encodeContractLocation(ctx, ntype, parsed)
 }
 
+func (f *Fabric) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	// Concatinate channel and chaincode if present
+	result := fmt.Sprintf("%s-*", parsed.Channel)
+	if parsed.Chaincode != "" {
+		result = fmt.Sprintf("%s-%s", parsed.Channel, parsed.Chaincode)
+	}
+
+	return result, nil
+}
+
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	if location == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
@@ -927,13 +942,24 @@ func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType,
 
 func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener) error {
 	namespace := listener.Namespace
-	location, err := parseContractLocation(ctx, listener.Location)
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	if len(listener.Filters) > 1 {
+		return i18n.NewError(ctx, coremsgs.MsgContractListenerBlockchainFilterLimit, listener.Name)
+	}
+
+	filter := listener.Filters[0]
+
+	location, err := parseContractLocation(ctx, filter.Location)
 	if err != nil {
 		return err
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
-	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, listener.Event.Name, listener.Options.FirstEvent)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, filter.Event.Name, listener.Options.FirstEvent)
 	if err != nil {
 		return err
 	}

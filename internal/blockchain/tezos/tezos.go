@@ -406,10 +406,29 @@ func (t *Tezos) NormalizeContractLocation(ctx context.Context, ntype blockchain.
 	return t.encodeContractLocation(ctx, parsed)
 }
 
+func (t *Tezos) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return parsed.Address, nil
+}
+
 func (t *Tezos) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	if len(listener.Filters) > 1 {
+		return i18n.NewError(ctx, coremsgs.MsgContractListenerBlockchainFilterLimit, listener.Name)
+	}
+
+	filter := listener.Filters[0]
+
 	var location *Location
-	if listener.Location != nil {
-		location, err = t.parseContractLocation(ctx, listener.Location)
+	if filter.Location != nil {
+		location, err = t.parseContractLocation(ctx, filter.Location)
 		if err != nil {
 			return err
 		}
@@ -420,7 +439,7 @@ func (t *Tezos) AddContractListener(ctx context.Context, listener *core.Contract
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
 	}
-	result, err := t.streams.createSubscription(ctx, location, t.streamID, subName, listener.Event.Name, firstEvent)
+	result, err := t.streams.createSubscription(ctx, location, t.streamID, subName, filter.Event.Name, firstEvent)
 	if err != nil {
 		return err
 	}

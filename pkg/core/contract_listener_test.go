@@ -96,3 +96,37 @@ func TestContractListenerOptionsValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"firstEvent":"newest"}`, string(val.([]byte)))
 }
+
+func TestListenerFiltersScan(t *testing.T) {
+	filters := ListenerFilters{}
+	err := filters.Scan([]byte(`[{"event":{"name":"event1","description":"asuperevent","params":[{"name":"value","schema":{"type":"integer","details":{"type":"uint256","internalType":"uint256"}}}]},"location":{"address":"0x1234"}}]`))
+	assert.NoError(t, err)
+}
+
+func TestListenerFiltersScanNil(t *testing.T) {
+	params := &ListenerFilters{}
+	err := params.Scan(nil)
+	assert.Nil(t, err)
+}
+
+func TestListenerFiltersScanString(t *testing.T) {
+	params := &ListenerFilters{}
+	err := params.Scan(`[{"event":{"name":"event1","description":"asuperevent","params":[{"name":"value","schema":{"type":"integer","details":{"type":"uint256","internalType":"uint256"}}}]},"location":{"address":"0x1234"},"signature":"changed"}]`)
+	assert.NoError(t, err)
+}
+
+func TestListenerFiltersScanError(t *testing.T) {
+	params := &ListenerFilters{}
+	err := params.Scan(map[string]interface{}{"this is": "not a supported serialization of a FFISerializedEvent"})
+	assert.Regexp(t, "FF00105", err)
+}
+
+func TestListenerFiltersValue(t *testing.T) {
+	filtersStr := `[{"event":{"name":"event1","description":"asuperevent","params":[{"name":"value","schema":{"type":"integer","details":{"type":"uint256","internalType":"uint256"}}}]},"location":{"address":"0x1234"},"signature":"changed"}]`
+	filters := ListenerFilters{}
+	err := filters.Scan(filtersStr)
+	assert.NoError(t, err)
+	value, err := filters.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, filtersStr, string(value.([]byte)))
+}

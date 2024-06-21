@@ -1060,6 +1060,7 @@ var ContractListenerQueryFactory = &ffapi.QueryFields{
 	"created":   &ffapi.TimeField{},
 	"updated":   &ffapi.TimeField{},
 	"state":     &ffapi.JSONField{},
+	"filters":   &ffapi.JSONField{},
 }
 
 // BlockchainEventQueryFactory filter fields for contract events

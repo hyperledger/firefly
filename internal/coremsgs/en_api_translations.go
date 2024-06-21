@@ -170,6 +170,7 @@ var (
 	APIEndpointsPostNewContractAPI              = ffm("api.endpoints.postNewContractAPI", "Creates and broadcasts a new custom smart contract API")
 	APIEndpointsPostNewContractInterface        = ffm("api.endpoints.postNewContractInterface", "Creates and broadcasts a new custom smart contract interface")
 	APIEndpointsPostNewContractListener         = ffm("api.endpoints.postNewContractListener", "Creates a new blockchain listener for events emitted by custom smart contracts")
+	APIEndpointsPostContractListenerHash        = ffm("api.endpoints.postContractListenerHash", "Calculates the hash of a blockchain listener filters and events")
 	APIEndpointsPostNewDatatype                 = ffm("api.endpoints.postNewDatatype", "Creates and broadcasts a new datatype")
 	APIEndpointsPostNewIdentity                 = ffm("api.endpoints.postNewIdentity", "Registers a new identity in the network")
 	APIEndpointsPostNewMessageBroadcast         = ffm("api.endpoints.postNewMessageBroadcast", "Broadcasts a message to all members in the network")

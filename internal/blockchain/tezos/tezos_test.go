@@ -811,12 +811,16 @@ func TestAddSubscription(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "KT123",
-		}.String()),
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+					},
+				},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
 			},
 		},
 		Options: &core.ContractListenerOptions{
@@ -843,9 +847,13 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+					},
+				},
 			},
 		},
 		Options: &core.ContractListenerOptions{
@@ -873,8 +881,12 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(""),
-		Event:    &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(""),
+				Event:    &core.FFISerializedEvent{},
+			},
+		},
 	}
 
 	err := tz.AddContractListener(context.Background(), sub)
@@ -893,10 +905,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "KT123",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
@@ -908,6 +924,60 @@ func TestAddSubscriptionFail(t *testing.T) {
 	err := tz.AddContractListener(context.Background(), sub)
 
 	assert.Regexp(t, "FF10283.*pop", err)
+}
+
+func TestAddSubscriptionNoFiltersFail(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	tz.streamID = "es-1"
+	tz.streams = &streamManager{
+		client: tz.client,
+	}
+
+	sub := &core.ContractListener{
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
+		},
+	}
+
+	err := tz.AddContractListener(context.Background(), sub)
+
+	assert.Regexp(t, "FF10473", err)
+}
+
+func TestAddSubscriptionTwoManyFiltersFail(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	tz.streamID = "es-1"
+	tz.streams = &streamManager{
+		client: tz.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
+			},
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
+			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
+		},
+	}
+
+	err := tz.AddContractListener(context.Background(), sub)
+
+	assert.Regexp(t, "FF10474", err)
 }
 
 func TestDeleteSubscription(t *testing.T) {

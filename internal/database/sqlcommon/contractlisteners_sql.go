@@ -44,6 +44,7 @@ var (
 		"topic",
 		"options",
 		"created",
+		"filters",
 	}
 	contractListenerFilterFieldMap = map[string]string{
 		"interface": "interface_id",
@@ -52,6 +53,20 @@ var (
 )
 
 const contractlistenersTable = "contractlisteners"
+
+func (s *SQLCommon) InsertContractListeners(ctx context.Context, listeners []*core.ContractListener) (err error) {
+	return s.RunAsGroup(ctx, func(ctx context.Context) error {
+		for _, listener := range listeners {
+			// Make all the inserts run in a single db transaction
+			err := s.InsertContractListener(ctx, listener)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
 
 func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
@@ -81,6 +96,7 @@ func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.C
 				listener.Topic,
 				listener.Options,
 				listener.Created,
+				listener.Filters,
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeCreated, listener.Namespace, listener.ID)
@@ -108,10 +124,14 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 		&listener.Topic,
 		&listener.Options,
 		&listener.Created,
+		&listener.Filters,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, contractlistenersTable)
 	}
+
+	// Note: If we have a legacy "event" and "address" stored in the DB, it will be returned as before with the event at the top level
+
 	return &listener, nil
 }
 

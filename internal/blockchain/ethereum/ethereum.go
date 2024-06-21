@@ -851,6 +851,15 @@ func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockcha
 	return e.encodeContractLocation(ctx, parsed)
 }
 
+func (e *Ethereum) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := e.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return parsed.Address, nil
+}
+
 func (e *Ethereum) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	ethLocation := Location{}
 	if err := json.Unmarshal(location.Bytes(), &ethLocation); err != nil {
@@ -875,17 +884,29 @@ func (e *Ethereum) encodeContractLocation(ctx context.Context, location *Locatio
 }
 
 func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
-	var location *Location
 	namespace := listener.Namespace
-	if listener.Location != nil {
-		location, err = e.parseContractLocation(ctx, listener.Location)
-		if err != nil {
-			return err
-		}
+	filters := make([]*filter, 0)
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
 	}
-	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
-	if err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+
+	for _, f := range listener.Filters {
+		abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &f.Event.FFIEventDefinition)
+		if err != nil {
+			return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+		}
+		evmFilter := &filter{
+			Event: abi,
+		}
+		if f.Location != nil {
+			location, err := e.parseContractLocation(ctx, f.Location)
+			if err != nil {
+				return err
+			}
+			evmFilter.Address = location.Address
+		}
+		filters = append(filters, evmFilter)
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
@@ -893,7 +914,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
 	}
-	result, err := e.streams.createSubscription(ctx, location, e.streamID[namespace], subName, firstEvent, abi)
+	result, err := e.streams.createSubscription(ctx, e.streamID[namespace], subName, firstEvent, filters)
 	if err != nil {
 		return err
 	}
@@ -939,7 +960,37 @@ func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FF
 	if err != nil {
 		return ""
 	}
-	return ffi2abi.ABIMethodToSignature(abi)
+	signature := ffi2abi.ABIMethodToSignature(abi)
+	indexedSignature := ABIMethodToIndexedSignature(abi)
+	return fmt.Sprintf("%s %s", signature, indexedSignature)
+}
+
+func ABIArgumentIndexed(param *abi.Parameter, components abi.ParameterArray) string {
+	if strings.HasPrefix(param.Type, "tuple") {
+		suffix := param.Type[5:]
+		children := make([]string, len(components))
+		for i, component := range components {
+			children[i] = ABIArgumentIndexed(component, nil)
+		}
+		return "[" + strings.Join(children, ",") + "]" + suffix
+	}
+	if param.Indexed {
+		return "i"
+	}
+	return ""
+}
+
+func ABIMethodToIndexedSignature(abi *abi.Entry) string {
+	result := "indexed positions ["
+	if len(abi.Inputs) > 0 {
+		types := make([]string, len(abi.Inputs))
+		for i, param := range abi.Inputs {
+			types[i] = ABIArgumentIndexed(param, param.Components)
+		}
+		result += strings.Join(types, ",")
+	}
+	result += "]"
+	return result
 }
 
 func (e *Ethereum) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string {

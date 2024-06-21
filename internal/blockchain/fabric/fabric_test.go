@@ -1896,11 +1896,15 @@ func TestAddSubscription(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"channel":   "firefly",
-			"chaincode": "mycode",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
@@ -1919,6 +1923,51 @@ func TestAddSubscription(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestAddSubscriptionNoFiltersFail(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	sub := &core.ContractListener{
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	err := e.AddContractListener(context.Background(), sub)
+	assert.Regexp(t, "FF10473", err)
+}
+
+func TestAddSubscriptionTooManyFiltersFail(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	err := e.AddContractListener(context.Background(), sub)
+
+	assert.Regexp(t, "FF10474", err)
+}
+
 func TestAddSubscriptionNoChannel(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -1931,10 +1980,14 @@ func TestAddSubscriptionNoChannel(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"chaincode": "mycode",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
@@ -1965,7 +2018,11 @@ func TestAddSubscriptionNoLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
@@ -1988,8 +2045,12 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(""),
-		Event:    &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(""),
+				Event:    &core.FFISerializedEvent{},
+			},
+		},
 	}
 
 	err := e.AddContractListener(context.Background(), sub)
@@ -2009,11 +2070,15 @@ func TestAddSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"channel":   "firefly",
-			"chaincode": "mycode",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
