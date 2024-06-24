@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -201,13 +203,26 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, firstEvent string, abi *abi.Entry) (*subscription, error) {
+func latestOrLastBlock(protocolID string) string {
+	if len(protocolID) > 0 {
+		blockStr := strings.Split(protocolID, "/")[0]
+		blockNumber, err := strconv.ParseUint(blockStr, 10, 64)
+		if err == nil {
+			// We jump back on block from the last event, to minimize re-delivery while ensuring
+			// we get all events since the last delivered (including subsequent events in the same block)
+			return strconv.FormatUint(blockNumber-1, 10)
+		}
+	}
+	return "latest"
+}
+
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, firstEvent string, abi *abi.Entry, lastProtocolID string) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
 	switch firstEvent {
 	case string(core.SubOptsFirstEventOldest):
 		firstEvent = "0"
 	case string(core.SubOptsFirstEventNewest):
-		firstEvent = "latest"
+		firstEvent = latestOrLastBlock(lastProtocolID)
 	}
 	sub := subscription{
 		Name:           subName,
@@ -244,7 +259,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string, ok
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, instancePath, firstEvent, stream string, abi *abi.Entry) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, instancePath, firstEvent, stream string, abi *abi.Entry, lastProtocolID string) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -286,7 +301,7 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 		name = v1Name
 	}
 	location := &Location{Address: instancePath}
-	if sub, err = s.createSubscription(ctx, location, stream, name, firstEvent, abi); err != nil {
+	if sub, err = s.createSubscription(ctx, location, stream, name, firstEvent, abi, lastProtocolID); err != nil {
 		return nil, err
 	}
 	log.L(ctx).Infof("%s subscription: %s", abi.Name, sub.ID)

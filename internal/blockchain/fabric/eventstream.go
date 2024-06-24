@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,6 +19,8 @@ package fabric
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -177,10 +179,25 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, firstEvent string) (*subscription, error) {
+func newestOrLastBlock(protocolID string) string {
+	if len(protocolID) > 0 {
+		blockStr := strings.Split(protocolID, "/")[0]
+		blockNumber, err := strconv.ParseUint(blockStr, 10, 64)
+		if err == nil {
+			// We jump back on block from the last event, to minimize re-delivery while ensuring
+			// we get all events since the last delivered (including subsequent events in the same block)
+			return strconv.FormatUint(blockNumber-1, 10)
+		}
+	}
+	return "newest"
+}
+
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, firstEvent, lastProtocolID string) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Fabric "fromBlock" values
 	if firstEvent == string(core.SubOptsFirstEventOldest) {
 		firstEvent = "0"
+	} else if firstEvent == "" || firstEvent == string(core.SubOptsFirstEventNewest) {
+		firstEvent = newestOrLastBlock(lastProtocolID)
 	}
 	sub := subscription{
 		Name:    name,
@@ -221,7 +238,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string, ok
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, location *Location, firstEvent, stream, event string) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, location *Location, firstEvent, stream, event, lastProtocolID string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
@@ -250,7 +267,7 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 	if version == 1 {
 		name = v1Name
 	}
-	if sub, err = s.createSubscription(ctx, location, stream, name, event, firstEvent); err != nil {
+	if sub, err = s.createSubscription(ctx, location, stream, name, event, firstEvent, lastProtocolID); err != nil {
 		return nil, err
 	}
 	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
