@@ -310,4 +310,6 @@ var (
 	MsgNoRegistrationMessageData             = ffe("FF10469", "Unable to check message registration data for org %s", 500)
 	MsgUnexpectedRegistrationType            = ffe("FF10470", "Unexpected type checking registration status: %s", 500)
 	MsgUnableToParseRegistrationData         = ffe("FF10471", "Unable to parse registration message data: %s", 500)
+	MsgInvalidLastEventProtocolID            = ffe("FF10472", "Unable to parse protocol ID of previous event: %s", 500)
+	MsgInvalidFromBlockNumber                = ffe("FF10473", "Unable to parse block number: %s", 500)
 )

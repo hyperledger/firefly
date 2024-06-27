@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,6 +19,8 @@ package fabric
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -177,11 +179,54 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, firstEvent string) (*subscription, error) {
-	// Map FireFly "firstEvent" values to Fabric "fromBlock" values
+func resolveFromBlock(ctx context.Context, firstEvent, lastProtocolID string) (string, error) {
+	// Parse the lastProtocolID if supplied
+	var blockBeforeNewestEvent *uint64
+	if len(lastProtocolID) > 0 {
+		blockStr := strings.Split(lastProtocolID, "/")[0]
+		parsedUint, err := strconv.ParseUint(blockStr, 10, 64)
+		if err != nil {
+			return "", i18n.NewError(ctx, coremsgs.MsgInvalidLastEventProtocolID, lastProtocolID)
+		}
+		if parsedUint > 0 {
+			// We jump back on block from the last event, to minimize re-delivery while ensuring
+			// we get all events since the last delivered (including subsequent events in the same block)
+			parsedUint--
+			blockBeforeNewestEvent = &parsedUint
+		}
+	}
+
+	// If the user requested newest, then we use the last block number if we have one,
+	// or we pass the request for newest down to the connector
+	if firstEvent == "" || firstEvent == string(core.SubOptsFirstEventNewest) || firstEvent == "latest" {
+		if blockBeforeNewestEvent != nil {
+			return strconv.FormatUint(*blockBeforeNewestEvent, 10), nil
+		}
+		return "newest", nil
+	}
+
+	// Otherwise we expect to be able to parse the block, with "oldest" being the same as "0"
 	if firstEvent == string(core.SubOptsFirstEventOldest) {
 		firstEvent = "0"
 	}
+	blockNumber, err := strconv.ParseUint(firstEvent, 10, 64)
+	if err != nil {
+		return "", i18n.NewError(ctx, coremsgs.MsgInvalidFromBlockNumber, firstEvent)
+	}
+	// If the last event is already dispatched after this block, recreate the listener from that block
+	if blockBeforeNewestEvent != nil && *blockBeforeNewestEvent > blockNumber {
+		blockNumber = *blockBeforeNewestEvent
+	}
+	return strconv.FormatUint(blockNumber, 10), nil
+}
+
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, firstEvent, lastProtocolID string) (*subscription, error) {
+
+	fromBlock, err := resolveFromBlock(ctx, firstEvent, lastProtocolID)
+	if err != nil {
+		return nil, err
+	}
+
 	sub := subscription{
 		Name:    name,
 		Channel: location.Channel,
@@ -190,7 +235,7 @@ func (s *streamManager) createSubscription(ctx context.Context, location *Locati
 		Filter: eventFilter{
 			EventFilter: event,
 		},
-		FromBlock: firstEvent,
+		FromBlock: fromBlock,
 	}
 
 	if location.Chaincode != "" {
@@ -221,7 +266,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string, ok
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, location *Location, firstEvent, stream, event string) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, version int, location *Location, firstEvent, stream, event, lastProtocolID string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
@@ -250,7 +295,7 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 	if version == 1 {
 		name = v1Name
 	}
-	if sub, err = s.createSubscription(ctx, location, stream, name, event, firstEvent); err != nil {
+	if sub, err = s.createSubscription(ctx, location, stream, name, event, firstEvent, lastProtocolID); err != nil {
 		return nil, err
 	}
 	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)

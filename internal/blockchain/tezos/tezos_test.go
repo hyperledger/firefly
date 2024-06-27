@@ -548,7 +548,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	assert.NoError(t, err)
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
@@ -827,7 +827,7 @@ func TestAddSubscription(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
 	assert.NoError(t, err)
 }
@@ -856,7 +856,7 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
 	assert.NoError(t, err)
 }
@@ -877,7 +877,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		Event:    &core.FFISerializedEvent{},
 	}
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -905,7 +905,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10283.*pop", err)
 }
@@ -1549,7 +1549,7 @@ func TestAddSubBadLocation(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err := tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err := tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1597,7 +1597,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	subID, err := tz.AddFireflySubscription(tz.ctx, ns, contract)
+	subID, err := tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, tz.subs.GetSubscription("sub1"))
 
@@ -1641,7 +1641,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10283", err)
 }
 
@@ -1681,7 +1681,7 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10283", err)
 }
 
