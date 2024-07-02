@@ -3592,7 +3592,7 @@ func TestGenerateEventSignature(t *testing.T) {
 	}
 
 	signature := e.GenerateEventSignature(context.Background(), event)
-	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256)) indexed positions [,,[,]]", signature)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256))", signature)
 }
 
 func TestGenerateEventSignatureWithIndexedFields(t *testing.T) {
@@ -3640,7 +3640,18 @@ func TestGenerateEventSignatureWithIndexedFields(t *testing.T) {
 	}
 
 	signature := e.GenerateEventSignature(context.Background(), event)
-	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256)) indexed positions [,i,[,i]]", signature)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256)) [i=1]", signature)
+}
+
+func TestGenerateEventSignatureWithEmptyDefinition(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Empty",
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "Empty()", signature)
 }
 
 func TestGenerateEventSignatureInvalid(t *testing.T) {
@@ -4737,4 +4748,27 @@ func TestValidateInvokeRequest(t *testing.T) {
 
 	err = e.ValidateInvokeRequest(context.Background(), parsedMethod, nil, true)
 	assert.Regexp(t, "FF10443", err)
+}
+func TestStringifyNormalizeContractLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "3081D84FD367044F4ED453F2024709242470388C", result)
+}
+
+func TestStringifyNormalizeContractLocationError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err)
 }

@@ -2089,3 +2089,27 @@ func TestStopNamespace(t *testing.T) {
 	err := tz.StopNamespace(context.Background(), "ns1")
 	assert.NoError(t, err)
 }
+
+func TestStringifyNormalizeContractLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "3081D84FD367044F4ED453F2024709242470388C", result)
+}
+
+func TestStringifyNormalizeContractLocationError(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err)
+}

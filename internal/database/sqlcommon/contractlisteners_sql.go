@@ -55,6 +55,9 @@ var (
 const contractlistenersTable = "contractlisteners"
 
 func (s *SQLCommon) InsertContractListeners(ctx context.Context, listeners []*core.ContractListener) (err error) {
+	if len(listeners) == 0 {
+		return nil
+	}
 	return s.RunAsGroup(ctx, func(ctx context.Context) error {
 		for _, listener := range listeners {
 			// Make all the inserts run in a single db transaction
@@ -63,7 +66,6 @@ func (s *SQLCommon) InsertContractListeners(ctx context.Context, listeners []*co
 				return err
 			}
 		}
-
 		return nil
 	})
 }

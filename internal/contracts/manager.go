@@ -866,10 +866,10 @@ func (cm *contractManager) parseContractListenerFilters(ctx context.Context, lis
 		// Have parsed a filter with the same signature?
 		// In the case of location being different
 		if duplicateMapChecker[filter.Signature] != "" {
-			// If this duplicate filter is looking at all location it's superset of the previous one
+			// If this duplicate filter is looking at all locations it's a superset of the previous one
 			// or the previous filter was also looking at all locations then we are trying to under a subset
 			if filter.Location == nil || duplicateMapChecker[filter.Signature] == "*" {
-				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilter)
+				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilterLocation)
 			}
 
 			location, err := cm.blockchain.StringifyContractLocation(ctx, filter.Location)
@@ -877,9 +877,15 @@ func (cm *contractManager) parseContractListenerFilters(ctx context.Context, lis
 				return err
 			}
 
-			// Check if same location as well
+			// Check if same location
 			if strings.Compare(duplicateMapChecker[filter.Signature], location) == 0 {
-				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilter)
+				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilterLocation, location)
+			}
+
+			// In the case of Fabric for example comparing listening to channel
+			// comparing to channel + chaincode
+			if strings.Contains(duplicateMapChecker[filter.Signature], location) || strings.Contains(location, duplicateMapChecker[filter.Signature]) {
+				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilterLocation)
 			}
 
 		}
@@ -912,7 +918,6 @@ func (cm *contractManager) parseContractListenerFilters(ctx context.Context, lis
 	return nil
 }
 
-// location or * + signature with indexed , next one, next one...
 func (cm *contractManager) ConstructContractListenerSignature(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerSignatureOutput, err error) {
 	output = &core.ContractListenerSignatureOutput{}
 

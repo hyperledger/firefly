@@ -962,35 +962,29 @@ func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FF
 	}
 	signature := ffi2abi.ABIMethodToSignature(abi)
 	indexedSignature := ABIMethodToIndexedSignature(abi)
-	return fmt.Sprintf("%s %s", signature, indexedSignature)
-}
-
-func ABIArgumentIndexed(param *abi.Parameter, components abi.ParameterArray) string {
-	if strings.HasPrefix(param.Type, "tuple") {
-		suffix := param.Type[5:]
-		children := make([]string, len(components))
-		for i, component := range components {
-			children[i] = ABIArgumentIndexed(component, nil)
-		}
-		return "[" + strings.Join(children, ",") + "]" + suffix
+	if indexedSignature != "" {
+		signature = fmt.Sprintf("%s %s", signature, indexedSignature)
 	}
-	if param.Indexed {
-		return "i"
-	}
-	return ""
+	return signature
 }
 
 func ABIMethodToIndexedSignature(abi *abi.Entry) string {
-	result := "indexed positions ["
-	if len(abi.Inputs) > 0 {
-		types := make([]string, len(abi.Inputs))
-		for i, param := range abi.Inputs {
-			types[i] = ABIArgumentIndexed(param, param.Components)
-		}
-		result += strings.Join(types, ",")
+	if len(abi.Inputs) == 0 {
+		return ""
 	}
-	result += "]"
-	return result
+	positions := []string{}
+	for i, param := range abi.Inputs {
+		if param.Indexed {
+			positions = append(positions, fmt.Sprint(i))
+		}
+	}
+
+	// No indexed fields
+	if len(positions) == 0 {
+		return ""
+	}
+
+	return "[i=" + strings.Join(positions, ",") + "]"
 }
 
 func (e *Ethereum) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string {

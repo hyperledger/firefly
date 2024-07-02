@@ -3473,3 +3473,28 @@ func TestQueryContractBadFFI(t *testing.T) {
 	_, err := e.QueryContract(context.Background(), "", nil, nil, nil, nil)
 	assert.Regexp(t, "FF10457", err)
 }
+
+func TestStringifyNormalizeContractLocation(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel:   "my-channel",
+		Chaincode: "my-chaincode",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "my-channel-my-chaincode", result)
+}
+
+func TestStringifyNormalizeContractLocationError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err)
+}
