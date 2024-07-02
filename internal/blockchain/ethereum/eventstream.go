@@ -63,7 +63,7 @@ type subscription struct {
 
 type filter struct {
 	Event   *abi.Entry `json:"event"`
-	Address string     `json:"address"`
+	Address string     `json:"address,omitempty"`
 }
 
 type subscriptionCheckpoint struct {
