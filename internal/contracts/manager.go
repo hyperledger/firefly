@@ -271,21 +271,41 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 			log.L(ctx).Infof("Listener restore complete. Verified=%d", verifyCount)
 			return nil
 		}
+
+		// Migrate and check if listener exists in blockchain plugin
+		migratedListeners := []*core.ContractListener{}
 		for _, l := range listeners {
-			// Standardise to new format from deprecate root event
-			if l.Event != nil {
-				l.Filters = append(l.Filters, &core.ListenerFilter{
-					Event:     l.Event,
-					Location:  l.Location,
-					Interface: l.Interface,
-					Signature: l.Signature,
-				})
+			migrated, l, err := cm.MigrateToFiltersIfNeeded(ctx, l)
+			if err != nil {
+				return err
 			}
+			if migrated {
+				migratedListeners = append(migratedListeners, l)
+			}
+
 			if err := cm.checkContractListenerExists(ctx, l); err != nil {
 				return err
 			}
 			verifyCount++
 		}
+
+		// Write back the migrations
+		if len(migratedListeners) > 0 {
+			err := cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+				for _, listener := range migratedListeners {
+					err := cm.database.UpsertContractListener(ctx, listener, true)
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+
 		page++
 	}
 
@@ -1085,7 +1105,8 @@ func (cm *contractManager) AddContractAPIListener(ctx context.Context, apiName, 
 	return cm.AddContractListener(ctx, input)
 }
 
-func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listener *core.ContractListener) (*core.ContractListener, error) {
+func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listener *core.ContractListener) (bool, *core.ContractListener, error) {
+	migrated := false
 	if len(listener.Filters) == 0 && listener.Event != nil {
 		// Blockchain plugin has changed the signature
 		newSignature := cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
@@ -1099,18 +1120,12 @@ func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listene
 		var err error
 		listener.Signature, err = cm.generateFilterSignature(ctx, listener.Filters)
 		if err != nil {
-			return nil, err
+			return false, nil, err
 		}
-
-		// Need to write back!
-		err = cm.database.UpsertContractListener(ctx, listener, true)
-		if err != nil {
-			return nil, err
-		}
-
+		migrated = true
 	}
 
-	return listener, nil
+	return migrated, listener, nil
 }
 
 func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (listener *core.ContractListener, err error) {
@@ -1129,7 +1144,7 @@ func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, na
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 
-	return cm.MigrateToFiltersIfNeeded(ctx, listener)
+	return listener, nil
 }
 
 func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.Context, nameOrID string) (enrichedListener *core.ContractListenerWithStatus, err error) {
@@ -1151,20 +1166,7 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 }
 
 func (cm *contractManager) GetContractListeners(ctx context.Context, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
-	listeners, result, err := cm.database.GetContractListeners(ctx, cm.namespace, filter)
-	if err != nil {
-		return nil, nil, err
-	}
-	for i, listener := range listeners {
-		// Update the array if needed
-		listeners[i], err = cm.MigrateToFiltersIfNeeded(ctx, listener)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	return listeners, result, nil
-
+	return cm.database.GetContractListeners(ctx, cm.namespace, filter)
 }
 
 func (cm *contractManager) GetContractAPIListeners(ctx context.Context, apiName, eventPath string, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
