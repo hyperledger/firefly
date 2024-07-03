@@ -112,7 +112,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *core.C
 					"name":      listener.Name,
 				}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
 			},
 		); err != nil {
 			return err
