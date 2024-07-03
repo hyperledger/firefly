@@ -521,8 +521,11 @@ type iContractAPICollection interface {
 }
 
 type iContractListenerCollection interface {
-	// InsertContractListener - upsert a listener to an external smart contract
+	// InsertContractListener - insert a listener to an external smart contract
 	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
+
+	// UpsertContractListener - upsert a listener to an external smart contract
+	UpsertContractListener(ctx context.Context, sub *core.ContractListener, allowExisting bool) (err error)
 
 	// UpdateContractListener - update contract listener by id
 	UpdateContractListener(ctx context.Context, namespace string, id *fftypes.UUID, update ffapi.Update) (err error)

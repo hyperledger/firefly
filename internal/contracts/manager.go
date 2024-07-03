@@ -1103,10 +1103,11 @@ func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listene
 		}
 
 		// Need to write back!
-		err = cm.database.InsertContractListener(ctx, listener)
+		err = cm.database.UpsertContractListener(ctx, listener, true)
 		if err != nil {
 			return nil, err
 		}
+
 	}
 
 	return listener, nil
@@ -1150,7 +1151,20 @@ func (cm *contractManager) GetContractListenerByNameOrIDWithStatus(ctx context.C
 }
 
 func (cm *contractManager) GetContractListeners(ctx context.Context, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {
-	return cm.database.GetContractListeners(ctx, cm.namespace, filter)
+	listeners, result, err := cm.database.GetContractListeners(ctx, cm.namespace, filter)
+	if err != nil {
+		return nil, nil, err
+	}
+	for i, listener := range listeners {
+		// Update the array if needed
+		listeners[i], err = cm.MigrateToFiltersIfNeeded(ctx, listener)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return listeners, result, nil
+
 }
 
 func (cm *contractManager) GetContractAPIListeners(ctx context.Context, apiName, eventPath string, filter ffapi.AndFilter) ([]*core.ContractListener, *ffapi.FilterResult, error) {

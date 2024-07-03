@@ -54,20 +54,78 @@ var (
 
 const contractlistenersTable = "contractlisteners"
 
-func (s *SQLCommon) InsertContractListeners(ctx context.Context, listeners []*core.ContractListener) (err error) {
-	if len(listeners) == 0 {
-		return nil
+func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *core.ContractListener, allowExisting bool) (err error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
 	}
-	return s.RunAsGroup(ctx, func(ctx context.Context) error {
-		for _, listener := range listeners {
-			// Make all the inserts run in a single db transaction
-			err := s.InsertContractListener(ctx, listener)
-			if err != nil {
-				return err
-			}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		listenerRows, _, err := s.QueryTx(ctx, contractlistenersTable, tx,
+			sq.Select("id").
+				From(contractlistenersTable).
+				Where(sq.Eq{
+					"namespace": listener.Namespace,
+					"name":      listener.Name,
+				}),
+		)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+
+		existing = listenerRows.Next()
+		if existing {
+			var id fftypes.UUID
+			_ = listenerRows.Scan(&id)
+			if listener.ID != nil {
+				if *listener.ID != id {
+					listenerRows.Close()
+					return database.IDMismatch
+				}
+			}
+			listener.ID = &id // Update on returned object
+		}
+		listenerRows.Close()
+	}
+
+	if existing {
+		var interfaceID *fftypes.UUID
+		if listener.Interface != nil {
+			interfaceID = listener.Interface.ID
+		}
+		// Update the listener
+		if _, err = s.UpdateTx(ctx, contractlistenersTable, tx,
+			sq.Update(contractlistenersTable).
+				// Note we do not update ID or backend ID
+				Set("filters", listener.Filters).
+				Set("event", listener.Event).
+				Set("signature", listener.Signature).
+				Set("options", listener.Options).
+				Set("topic", listener.Topic).
+				Set("location", listener.Location).
+				Set("interface_id", interfaceID).
+				Where(sq.Eq{
+					"namespace": listener.Namespace,
+					"name":      listener.Name,
+				}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
+			},
+		); err != nil {
+			return err
+		}
+	} else {
+		if listener.ID == nil {
+			listener.ID = fftypes.NewUUID()
+		}
+
+		return s.InsertContractListener(ctx, listener)
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
