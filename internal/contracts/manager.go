@@ -275,10 +275,7 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 		// Migrate and check if listener exists in blockchain plugin
 		migratedListeners := []*core.ContractListener{}
 		for _, l := range listeners {
-			migrated, l, err := cm.MigrateToFiltersIfNeeded(ctx, l)
-			if err != nil {
-				return err
-			}
+			migrated, l := cm.MigrateToFiltersIfNeeded(ctx, l)
 			if migrated {
 				migratedListeners = append(migratedListeners, l)
 			}
@@ -1105,7 +1102,7 @@ func (cm *contractManager) AddContractAPIListener(ctx context.Context, apiName, 
 	return cm.AddContractListener(ctx, input)
 }
 
-func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listener *core.ContractListener) (bool, *core.ContractListener, error) {
+func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listener *core.ContractListener) (bool, *core.ContractListener) {
 	migrated := false
 	if len(listener.Filters) == 0 && listener.Event != nil {
 		// Blockchain plugin has changed the signature
@@ -1116,16 +1113,11 @@ func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listene
 			Interface: listener.Interface,
 			Signature: newSignature,
 		})
-
-		var err error
-		listener.Signature, err = cm.generateFilterSignature(ctx, listener.Filters)
-		if err != nil {
-			return false, nil, err
-		}
+		// Note not migrating the signature as that would not allow rolling back
 		migrated = true
 	}
 
-	return migrated, listener, nil
+	return migrated, listener
 }
 
 func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (listener *core.ContractListener, err error) {

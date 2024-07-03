@@ -1307,51 +1307,6 @@ func TestAddContractListenerVerifyFailMigration(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestAddContractListenerVerifyFailMigrationSignature(t *testing.T) {
-	cm := newTestContractManager()
-
-	ctx := context.Background()
-
-	mdi := cm.database.(*databasemocks.Plugin)
-	mdi.On("GetContractListeners", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
-		fi, _ := f.Finalize()
-		return fi.Skip == 0 && fi.Limit == 50
-	})).Return([]*core.ContractListener{
-		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
-		{
-			Namespace: "ns1",
-			ID:        fftypes.NewUUID(),
-			BackendID: "23456",
-			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-				"address": "0x123",
-			}.String()),
-			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: "changed",
-					Params: fftypes.FFIParams{
-						{
-							Name:   "value",
-							Schema: fftypes.JSONAnyPtr(`{"type": "null"}`),
-						},
-					},
-				},
-			},
-		},
-	}, nil, nil).Once()
-
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("StringifyContractLocation", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
-	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
-
-	err := cm.verifyListeners(ctx)
-	assert.Error(t, err)
-	assert.Regexp(t, "pop", err.Error())
-
-	mdi.AssertExpectations(t)
-	mbi.AssertExpectations(t)
-}
-
 func TestAddContractListenerBadName(t *testing.T) {
 	cm := newTestContractManager()
 	sub := &core.ContractListenerInput{
@@ -4702,40 +4657,9 @@ func TestMigrateFilters(t *testing.T) {
 		},
 	}
 
-	migrated, listener, err := cm.MigrateToFiltersIfNeeded(context.Background(), listener)
-	assert.NoError(t, err)
+	migrated, listener := cm.MigrateToFiltersIfNeeded(context.Background(), listener)
 	assert.True(t, migrated)
 	assert.NotEmpty(t, listener.Filters)
-}
-
-func TestMigrateFiltersFail(t *testing.T) {
-	cm := newTestContractManager()
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("StringifyContractLocation", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
-
-	listener := &core.ContractListener{
-		Options: &core.ContractListenerOptions{},
-		Topic:   "test-topic",
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "0x123",
-		}.String()),
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "changed",
-				Params: fftypes.FFIParams{
-					{
-						Name:   "value",
-						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
-					},
-				},
-			},
-		},
-	}
-
-	_, listener, err := cm.MigrateToFiltersIfNeeded(context.Background(), listener)
-	assert.Error(t, err)
-	assert.Regexp(t, "pop", err.Error())
 }
 
 func TestAddContractListenerFail(t *testing.T) {
