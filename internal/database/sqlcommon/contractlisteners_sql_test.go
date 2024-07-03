@@ -122,7 +122,7 @@ func TestContractListenerLegacyE2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(subs))
 }
 
-func TestUpsertContractListenerFailBegin(t *testing.T) {
+func TestInsertContractListenerFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertContractListener(context.Background(), &core.ContractListener{})
@@ -130,7 +130,7 @@ func TestUpsertContractListenerFailBegin(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContractListenerFailInsert(t *testing.T) {
+func TestInsertContractListenerFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -140,7 +140,7 @@ func TestUpsertContractListenerFailInsert(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContractListenerFailCommit(t *testing.T) {
+func TestInsertContractListenerFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -281,5 +281,33 @@ func TestUpdateContractListenerNotFount(t *testing.T) {
 	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(),
 		database.ContractListenerQueryFactory.NewUpdate(context.Background()).Set("backendid", "sb-234"))
 	assert.Regexp(t, "FF10143", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertContractListenerFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{}, false)
+	assert.Regexp(t, "FF00175", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertContractListenerFailInsert(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{}, false)
+	assert.Regexp(t, "FF00177", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertContractListenerFailCommit(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{}, false)
+	assert.Regexp(t, "FF00180", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

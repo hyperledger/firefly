@@ -122,7 +122,10 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *core.C
 			listener.ID = fftypes.NewUUID()
 		}
 
-		return s.InsertContractListener(ctx, listener)
+		err = s.InsertContractListener(ctx, listener)
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.CommitTx(ctx, tx, autoCommit)

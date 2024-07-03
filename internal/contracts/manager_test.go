@@ -3075,6 +3075,91 @@ func TestGetContractListeners(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetContractListenersFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
+	_, _, err := cm.GetContractListeners(context.Background(), f.And())
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestGetContractListenersMigrate(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("StringifyContractLocation", context.Background(), mock.Anything).Return("0x123", nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{&sub.ContractListener}, nil, nil)
+	mdi.On("UpsertContractListener", context.Background(), mock.Anything, true).Return(nil)
+
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
+	_, _, err := cm.GetContractListeners(context.Background(), f.And())
+	assert.NoError(t, err)
+}
+
+func TestGetContractListenersMigrateFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("StringifyContractLocation", context.Background(), mock.Anything).Return("0x123", nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{&sub.ContractListener}, nil, nil)
+	mdi.On("UpsertContractListener", context.Background(), mock.Anything, true).Return(fmt.Errorf("pop"))
+
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
+	_, _, err := cm.GetContractListeners(context.Background(), f.And())
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+}
+
 func TestGetContractAPIListeners(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
@@ -4608,7 +4693,7 @@ func TestMigrateFilters(t *testing.T) {
 	// 		},
 	// 	},
 	// }
-	mdi.On("InsertContractListener", context.Background(), mock.Anything).Return(nil)
+	mdi.On("UpsertContractListener", context.Background(), mock.Anything, true).Return(nil)
 
 	listener, err := cm.MigrateToFiltersIfNeeded(context.Background(), listener)
 	assert.NoError(t, err)
@@ -4651,7 +4736,7 @@ func TestMigrateFiltersFailInsert(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mbi.On("StringifyContractLocation", context.Background(), mock.Anything).Return("0x123", nil)
-	mdi.On("InsertContractListener", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertContractListener", context.Background(), mock.Anything, true).Return(fmt.Errorf("pop"))
 
 	listener := &core.ContractListener{
 		Options: &core.ContractListenerOptions{},
@@ -4676,11 +4761,6 @@ func TestMigrateFiltersFailInsert(t *testing.T) {
 	assert.Error(t, err)
 	assert.Regexp(t, "pop", err.Error())
 }
-
-// TODO duplicate with stringify error...
-
-// Get contract listeners errors
-// Conflict of get contract listeners!
 
 func TestAddContractListenerFail(t *testing.T) {
 	cm := newTestContractManager()
