@@ -891,6 +891,27 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
 	}
 
+	// For ethconnect we need to use one event and one location as it does not support filters
+	// Note: the first filter event gets copied to the root of the listener for backwards
+	// compatibility so available here
+	// it will be ignored by evmconnect
+	var firstEventABI *abi.Entry
+	if listener.Event != nil {
+		firstEventABI, err = ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
+		if err != nil {
+			return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+		}
+	}
+
+	// First filter location is copied over to the root
+	var location *Location
+	if listener.Location != nil {
+		location, err = e.parseContractLocation(ctx, listener.Location)
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, f := range listener.Filters {
 		abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &f.Event.FFIEventDefinition)
 		if err != nil {
@@ -914,7 +935,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
 	}
-	result, err := e.streams.createSubscription(ctx, e.streamID[namespace], subName, firstEvent, filters)
+	result, err := e.streams.createSubscription(ctx, e.streamID[namespace], subName, firstEvent, location, firstEventABI, filters)
 	if err != nil {
 		return err
 	}

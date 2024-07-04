@@ -205,7 +205,7 @@ func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (
 	return sub.Name, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, stream, subName, firstEvent string, filters []*filter) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, stream, subName, firstEvent string, location *Location, abi *abi.Entry, filters []*filter) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
 	switch firstEvent {
 	case string(core.SubOptsFirstEventOldest):
@@ -214,10 +214,15 @@ func (s *streamManager) createSubscription(ctx context.Context, stream, subName,
 		firstEvent = "latest"
 	}
 	sub := subscription{
-		Name:      subName,
-		Stream:    stream,
-		FromBlock: firstEvent,
-		Filters:   filters,
+		Name:           subName,
+		Stream:         stream,
+		FromBlock:      firstEvent,
+		EthCompatEvent: abi, // only used for ethconnect
+		Filters:        filters,
+	}
+
+	if location != nil {
+		sub.EthCompatAddress = location.Address
 	}
 
 	res, err := s.client.R().
@@ -292,7 +297,7 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 			Address: location.Address,
 		},
 	}
-	if sub, err = s.createSubscription(ctx, stream, name, firstEvent, filters); err != nil {
+	if sub, err = s.createSubscription(ctx, stream, name, firstEvent, location, abi, filters); err != nil {
 		return nil, err
 	}
 	log.L(ctx).Infof("%s subscription: %s", abi.Name, sub.ID)
