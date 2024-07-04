@@ -1010,18 +1010,47 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 			// For backwards compatibility with existing contract listeners with one filter
 			// We need to set the location to not find clashes
 			listener.Location = listener.Filters[0].Location
-			locationLookup = listener.Filters[0].Location
+			locationLookup = listener.Filters[0].Location.String()
 		}
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
 			fb.Eq("location", locationLookup),
+			// We have extended the event signature to add more information
+			// So we compare the start with is not guaranteed to be the same
+			// but it's the best comparison
 			fb.Eq("signature", listener.Signature),
 		)); err != nil {
 			return err
 		} else if len(existing) > 0 {
 			return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
 		}
+
+		// Check for existense of an older listener with the old signature
+		if listener.Event != nil {
+			// Note the event signature has been extended with more information in some blockchain plugins
+			// That is why we do not add the signature in the query but instead iterate over the listeners
+			// and compare the signatures
+			signature := cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
+			filter := database.ContractListenerQueryFactory.NewFilter(ctx)
+			if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, filter.And(
+				filter.Eq("topic", listener.Topic),
+				filter.Eq("location", locationLookup),
+			)); err != nil {
+				return err
+			} else if len(existing) > 0 {
+				for _, listener := range existing {
+					// We have extended the event signature to add more information
+					// So we compare the start with is not guaranteed to be the same
+					// but it's the best comparison
+					if strings.HasPrefix(signature, listener.Signature) {
+						return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
+					}
+
+				}
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
