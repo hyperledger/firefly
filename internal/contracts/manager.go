@@ -1016,9 +1016,6 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
 			fb.Eq("topic", listener.Topic),
 			fb.Eq("location", locationLookup),
-			// We have extended the event signature to add more information
-			// So we compare the start with is not guaranteed to be the same
-			// but it's the best comparison
 			fb.Eq("signature", listener.Signature),
 		)); err != nil {
 			return err
