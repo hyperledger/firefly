@@ -20,8 +20,8 @@ package coremsgs
 var (
 	CoreSystemNSDescription = ffm("core.systemNSDescription", "FireFly system namespace (legacy - no longer used by newer versions)")
 
-	APIParamsConfigRecordKeyUpdate          = ffm("api.params.configRecordKey.update", "The configuration key to update. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")
-	APIParamsConfigRecordKeyGet             = ffm("api.params.configRecordKey.get", "The configuration key to get. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")
+	APIParamsConfigRecordKeyUpdate          = ffm("api.params.configRecordKey.update", "The configuration key to update. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/latest/reference/config/")
+	APIParamsConfigRecordKeyGet             = ffm("api.params.configRecordKey.get", "The configuration key to get. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/latest/reference/config/")
 	APIParamsOperationIDGet                 = ffm("api.params.operationID.get", "The operation ID key to get")
 	APIParamsOperationNamespacedID          = ffm("api.params.spiOperationID", "The operation ID as passed to the connector when the operation was performed, including the 'namespace:' prefix")
 	APIParamsNamespace                      = ffm("api.params.namespace", "The namespace which scopes this request")
@@ -202,7 +202,8 @@ var (
 	APIFilterLimitDesc         = ffm("api.filterLimit", "The maximum number of records to return (max: %d)")
 	APIFilterCountDesc         = ffm("api.filterCount", "Return a total count as well as items (adds extra database processing)")
 	APIFetchDataDesc           = ffm("api.fetchData", "Fetch the data and include it in the messages returned")
-	APIConfirmQueryParam       = ffm("api.confirmQueryParam", "When true the HTTP request blocks until the message is confirmed")
+	APIConfirmMsgQueryParam    = ffm("api.confirmMsgQueryParam", "When true the HTTP request blocks until the message is confirmed")
+	APIConfirmInvokeQueryParam = ffm("api.confirmInvokeQueryParam", "When true the HTTP request blocks until the blockchain transaction is confirmed")
 	APIPublishQueryParam       = ffm("api.publishQueryParam", "When true the definition will be published to all other members of the multiparty network")
 	APIHistogramStartTimeParam = ffm("api.histogramStartTime", "Start time of the data to be fetched")
 	APIHistogramEndTimeParam   = ffm("api.histogramEndTime", "End time of the data to be fetched")

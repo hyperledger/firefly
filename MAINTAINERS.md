@@ -5,7 +5,7 @@ The following is the list of current maintainers this repo:
 | Name              | GitHub          | Email                        | LFID              |
 | ----------------- | --------------- | ---------------------------- | ----------------- |
 | Peter Broadhurst  | peterbroadhurst | peter.broadhurst@kaleido.io  | peterbroadhurst   |
-| Nicko Guyer       | nguyer          | nicko.guyer@kaleido.io       | nguyer            |
+| Enrique Lacal     | enriquel8       | enrique.lacal@kaleido.io     | enriquelacal      |
 | Andrew Richardson | awrichar        | andrew.richardson@kaleido.io | Andrew.Richardson |
 | Alex Shorsher     | shorsher        | alex.shorsher@kaleido.io     | shorsher          |
 
