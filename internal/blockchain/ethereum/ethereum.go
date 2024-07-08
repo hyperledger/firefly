@@ -896,17 +896,15 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	// compatibility so available here
 	// it will be ignored by evmconnect
 	var firstEventABI *abi.Entry
-	if listener.Event != nil {
-		firstEventABI, err = ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
-		if err != nil {
-			return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
-		}
+	firstEventABI, err = ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Filters[0].Event.FFIEventDefinition)
+	if err != nil {
+		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
 	}
 
 	// First filter location is copied over to the root
 	var location *Location
-	if listener.Location != nil {
-		location, err = e.parseContractLocation(ctx, listener.Location)
+	if listener.Filters[0].Location != nil {
+		location, err = e.parseContractLocation(ctx, listener.Filters[0].Location)
 		if err != nil {
 			return err
 		}

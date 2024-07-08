@@ -99,7 +99,8 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *core.C
 		// Update the listener
 		if _, err = s.UpdateTx(ctx, contractlistenersTable, tx,
 			sq.Update(contractlistenersTable).
-				// Note we do not update ID or backend ID
+				// Note we do not update ID
+				Set("backend_id", listener.BackendID).
 				Set("filters", listener.Filters).
 				Set("event", listener.Event).
 				Set("signature", listener.Signature).
