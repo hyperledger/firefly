@@ -843,7 +843,7 @@ func (cm *contractManager) checkContractListenerExists(ctx context.Context, list
 func (cm *contractManager) parseContractListenerFilters(ctx context.Context, listener *core.ContractListenerInput) (err error) {
 	// Handle deprecated root event
 	if len(listener.Filters) == 0 {
-		// Copy the depreacted interface into the first element in the filters array
+		// Copy the deprecated interface into the first element in the filters array
 		listener.Filters = append(listener.Filters, &core.ListenerFilterInput{
 			ListenerFilter: core.ListenerFilter{
 				Event:     listener.Event,
@@ -884,7 +884,7 @@ func (cm *contractManager) parseContractListenerFilters(ctx context.Context, lis
 		// In the case of location being different
 		if duplicateMapChecker[filter.Signature] != "" {
 			// If this duplicate filter is looking at all locations it's a superset of the previous one
-			// or the previous filter was also looking at all locations then we are trying to under a subset
+			// or the previous filter was also looking at all locations then we are trying to add a subset
 			if filter.Location == nil || duplicateMapChecker[filter.Signature] == "*" {
 				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilterLocation)
 			}
@@ -1024,7 +1024,8 @@ func (cm *contractManager) verifyContractListener(ctx context.Context, listener 
 		}
 
 		// Check for existense of an older listener with the old signature
-		if listener.Event != nil {
+		// Only valid for one filter
+		if listener.Event != nil && len(listener.Filters) == 1 {
 			// Note the event signature has been extended with more information in some blockchain plugins
 			// That is why we do not add the signature in the query but instead iterate over the listeners
 			// and compare the signatures
@@ -1139,7 +1140,7 @@ func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listene
 			Interface: listener.Interface,
 			Signature: newSignature,
 		})
-		// Note not migrating the signature as that would not allow rolling back
+		// Note not migrating the root signature as that would not allow rolling back
 		migrated = true
 	}
 
