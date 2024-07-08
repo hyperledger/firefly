@@ -188,7 +188,11 @@ func (as *apiServer) getBaseURL(req *http.Request) string {
 	vars := mux.Vars(req)
 	if ns, ok := vars["ns"]; ok && ns != "" {
 		baseURL += `/namespaces/` + ns
+	} else if ns := config.GetString(coreconfig.NamespacesDefault); ns != "" {
+		// Use the default namespace
+		baseURL += `/namespaces/` + ns
 	}
+
 	return baseURL
 }
 
