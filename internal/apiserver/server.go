@@ -61,6 +61,7 @@ type apiServer struct {
 	ffiSwaggerGen          FFISwaggerGen
 	apiPublicURL           string
 	dynamicPublicURLHeader string
+	defaultNamespace       string
 }
 
 func InitConfig() {
@@ -76,6 +77,7 @@ func NewAPIServer() Server {
 		apiTimeout:             config.GetDuration(coreconfig.APIRequestTimeout),
 		apiMaxTimeout:          config.GetDuration(coreconfig.APIRequestMaxTimeout),
 		dynamicPublicURLHeader: config.GetString(coreconfig.APIDynamicPublicURLHeader),
+		defaultNamespace:       config.GetString(coreconfig.NamespacesDefault),
 		metricsEnabled:         config.GetBool(coreconfig.MetricsEnabled),
 		ffiSwaggerGen:          &ffiSwaggerGen{},
 	}
@@ -188,9 +190,9 @@ func (as *apiServer) getBaseURL(req *http.Request) string {
 	vars := mux.Vars(req)
 	if ns, ok := vars["ns"]; ok && ns != "" {
 		baseURL += `/namespaces/` + ns
-	} else if ns := config.GetString(coreconfig.NamespacesDefault); ns != "" {
+	} else {
 		// Use the default namespace
-		baseURL += `/namespaces/` + ns
+		baseURL += `/namespaces/` + as.defaultNamespace
 	}
 
 	return baseURL
