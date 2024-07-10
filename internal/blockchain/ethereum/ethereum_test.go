@@ -906,7 +906,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	<-toServer
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -964,7 +964,7 @@ func TestInitAllExistingStreamsV1(t *testing.T) {
 	<-toServer
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -1022,7 +1022,7 @@ func TestInitAllExistingStreamsOld(t *testing.T) {
 	<-toServer
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -1080,7 +1080,7 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 
 	<-toServer
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10416", err)
 }
 
@@ -2027,7 +2027,7 @@ func TestAddSubscription(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.NoError(t, err)
 }
@@ -2062,7 +2062,7 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.NoError(t, err)
 }
@@ -2097,7 +2097,7 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10311", err)
 }
@@ -2118,7 +2118,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		Event:    &core.FFISerializedEvent{},
 	}
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10310", err)
 }
@@ -2147,7 +2147,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10111", err)
 	assert.Regexp(t, "pop", err)
@@ -4005,7 +4005,7 @@ func TestAddSubBadLocation(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err := e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err := e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -4025,9 +4025,15 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{
-			ID: "sub1",
-		}))
+		func(r *http.Request) (*http.Response, error) {
+			var s subscription
+			err := json.NewDecoder(r.Body).Decode(&s)
+			assert.NoError(t, err)
+			assert.Equal(t, "19", s.FromBlock)
+			return httpmock.NewJsonResponderOrPanic(200, subscription{
+				ID: "sub1",
+			})(r)
+		})
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(2))
 
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -4055,7 +4061,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 
 	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	subID, err := e.AddFireflySubscription(e.ctx, ns, contract)
+	subID, err := e.AddFireflySubscription(e.ctx, ns, contract, "000000000020/000000/000000")
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 
@@ -4103,7 +4109,7 @@ func TestAddFireflySubscriptionV1(t *testing.T) {
 
 	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, e.subs.GetSubscription("sub1"))
 }
@@ -4147,7 +4153,7 @@ func TestAddFireflySubscriptionEventstreamFail(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10465", err)
 }
 
@@ -4189,7 +4195,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 
 	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -4231,7 +4237,7 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -4273,7 +4279,7 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 
 	e.streamID["ns1"] = "es12345"
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = e.AddFireflySubscription(e.ctx, ns, contract)
+	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10111", err)
 }
 
