@@ -777,7 +777,7 @@ func TestAddContractListenerInline(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
+	mbi.On("AddContractListener", context.Background(), &sub.ContractListener, "").Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
 	result, err := cm.AddContractListener(context.Background(), sub)
@@ -818,7 +818,7 @@ func TestAddContractListenerInlineNilLocation(t *testing.T) {
 	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(cl *core.ContractListener) bool {
 		// Normalize is not called for this case
 		return cl.Location == nil
-	})).Return(nil)
+	}), "").Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
 	result, err := cm.AddContractListener(context.Background(), sub)
@@ -856,7 +856,7 @@ func TestAddContractListenerNoLocationOK(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("*:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
+	mbi.On("AddContractListener", context.Background(), &sub.ContractListener, "").Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
 	result, err := cm.AddContractListener(context.Background(), sub)
@@ -906,7 +906,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
+	mbi.On("AddContractListener", context.Background(), &sub.ContractListener, "").Return(nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(event, nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
@@ -1075,6 +1075,13 @@ func TestAddContractListenerVerifyOk(t *testing.T) {
 		fi, _ := f.Finalize()
 		return fi.Skip == 50 && fi.Limit == 50
 	})).Return([]*core.ContractListener{}, nil, nil).Once()
+	mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		return fi.Limit == 1 && strings.Contains(fi.String(), "listener")
+	})).Return([]*core.BlockchainEvent{
+		{Namespace: "ns1", ID: fftypes.NewUUID(), ProtocolID: "001/002/003"},
+	}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
@@ -1083,7 +1090,7 @@ func TestAddContractListenerVerifyOk(t *testing.T) {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
 		return prevBackendID == "23456"
-	})).Return(nil)
+	}), "001/002/003").Return(nil)
 
 	mdi.On("UpdateContractListener", ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
 		uu, _ := u.Finalize()
@@ -1110,6 +1117,7 @@ func TestAddContractListenerVerifyUpdateFail(t *testing.T) {
 		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
 		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
+	mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.BlockchainEvent{}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
@@ -1118,7 +1126,7 @@ func TestAddContractListenerVerifyUpdateFail(t *testing.T) {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
 		return prevBackendID == "23456"
-	})).Return(nil)
+	}), "").Return(nil)
 
 	mdi.On("UpdateContractListener", ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
 		uu, _ := u.Finalize()
@@ -1145,6 +1153,7 @@ func TestAddContractListenerVerifyAddFail(t *testing.T) {
 		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
 		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
 	}, nil, nil).Once()
+	mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.BlockchainEvent{}, nil, nil).Once()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
@@ -1153,7 +1162,34 @@ func TestAddContractListenerVerifyAddFail(t *testing.T) {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
 		return prevBackendID == "23456"
-	})).Return(fmt.Errorf("pop"))
+	}), "").Return(fmt.Errorf("pop"))
+
+	err := cm.verifyListeners(ctx)
+	assert.Regexp(t, "pop", err)
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestAddContractListenerGetEventsFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	ctx := context.Background()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetContractListeners", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
+		fi, _ := f.Finalize()
+		return fi.Skip == 0 && fi.Limit == 50
+	})).Return([]*core.ContractListener{
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "23456"},
+	}, nil, nil).Once()
+	mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).
+		Return(nil, nil, fmt.Errorf("pop")).Once()
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 
 	err := cm.verifyListeners(ctx)
 	assert.Regexp(t, "pop", err)
@@ -1583,7 +1619,7 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
+	mbi.On("AddContractListener", context.Background(), &sub.ContractListener, "").Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
@@ -1621,7 +1657,7 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
-	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
+	mbi.On("AddContractListener", context.Background(), &sub.ContractListener, "").Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), sub)
@@ -1663,7 +1699,7 @@ func TestAddContractAPIListener(t *testing.T) {
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListener) bool {
 		return *l.Interface.ID == *interfaceID && l.Topic == "test-topic"
-	})).Return(nil)
+	}), "").Return(nil)
 	mdi.On("InsertContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListener) bool {
 		return *l.Filters[0].Interface.ID == *interfaceID && l.Filters[0].Event.Name == "changed" && l.Topic == "test-topic"
 	})).Return(nil)

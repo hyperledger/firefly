@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -32,7 +32,7 @@ var postNewMessagePrivate = &ffapi.Route{
 	Method:     http.MethodPost,
 	PathParams: nil,
 	QueryParams: []*ffapi.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
+		{Name: "confirm", Description: coremsgs.APIConfirmMsgQueryParam, IsBool: true},
 	},
 	Description:     coremsgs.APIEndpointsPostNewMessagePrivate,
 	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },

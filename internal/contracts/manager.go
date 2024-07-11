@@ -835,7 +835,24 @@ func (cm *contractManager) checkContractListenerExists(ctx context.Context, list
 		log.L(ctx).Debugf("Validated listener %s:%s (BackendID=%s)", listener.Signature, listener.ID, listener.BackendID)
 		return nil
 	}
-	if err = cm.blockchain.AddContractListener(ctx, listener); err != nil {
+
+	// For the case that we're establishing a listener from "latest" we obtain the protocol ID
+	// of the latest event confirmed from the blockchain for a given subscription.
+	// This protocolID should be parsed and used by the blockchain plugin if SubOptsFirstEventNewest
+	// is passed through, and the listener does not exist.
+	fb := database.BlockchainEventQueryFactory.NewFilter(ctx).Sort("-protocolid").Limit(1)
+	latestEvents, _, err := cm.database.GetBlockchainEvents(ctx, cm.namespace, fb.Eq(
+		"listener", listener.ID,
+	))
+	if err != nil {
+		return err
+	}
+	lastProtocolID := ""
+	if len(latestEvents) > 0 {
+		lastProtocolID = latestEvents[0].ProtocolID
+	}
+
+	if err = cm.blockchain.AddContractListener(ctx, listener, lastProtocolID); err != nil {
 		return err
 	}
 	return cm.database.UpdateContractListener(ctx, cm.namespace, listener.ID,
@@ -1084,7 +1101,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		return nil, err
 	}
 
-	if err = cm.blockchain.AddContractListener(ctx, verifiedContractListener); err != nil {
+	if err = cm.blockchain.AddContractListener(ctx, &listener.ContractListener, ""); err != nil {
 		return nil, err
 	}
 	if listener.Name == "" {

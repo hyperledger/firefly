@@ -261,7 +261,11 @@ func (t *Tezos) Capabilities() *blockchain.Capabilities {
 	return t.capabilities
 }
 
-func (t *Tezos) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+func (t *Tezos) AddFireflySubscription(ctx context.Context,
+	namespace *core.Namespace,
+	contract *blockchain.MultipartyContract,
+	_ string, // Tezos lexicographically sortable protocol IDs for not yet implemented for events
+) (string, error) {
 	tezosLocation, err := t.parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
@@ -436,7 +440,11 @@ func (t *Tezos) StringifyContractLocation(ctx context.Context, location *fftypes
 	return parsed.Address, nil
 }
 
-func (t *Tezos) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
+func (t *Tezos) AddContractListener(
+	ctx context.Context,
+	listener *core.ContractListener,
+	_ string, // Tezos lexicographically sortable protocol IDs for not yet implemented for events
+) (err error) {
 	if len(listener.Filters) == 0 {
 		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
 	}

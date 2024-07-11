@@ -97,7 +97,7 @@ type Plugin interface {
 	QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
-	AddContractListener(ctx context.Context, subscription *core.ContractListener) error
+	AddContractListener(ctx context.Context, subscription *core.ContractListener, lastProtocolID string) error
 
 	// DeleteContractListener deletes a previously-created subscription
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error
@@ -133,7 +133,7 @@ type Plugin interface {
 	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
 
 	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
-	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *MultipartyContract) (subID string, err error)
+	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *MultipartyContract, lastProtocolID string) (subID string, err error)
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
 	RemoveFireflySubscription(ctx context.Context, subID string)

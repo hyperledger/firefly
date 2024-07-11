@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -33,7 +33,7 @@ var postTokenPoolPublish = &ffapi.Route{
 		{Name: "nameOrId", Description: coremsgs.APIParamsTokenPoolNameOrID},
 	},
 	QueryParams: []*ffapi.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
+		{Name: "confirm", Description: coremsgs.APIConfirmMsgQueryParam, IsBool: true},
 	},
 	Description:     coremsgs.APIEndpointsPostTokenPoolPublish,
 	JSONInputValue:  func() interface{} { return &core.DefinitionPublish{} },

@@ -411,7 +411,7 @@ func (f *Fabric) processContractEvent(ctx context.Context, events common.EventsT
 	return nil
 }
 
-func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract, lastProtocolID string) (string, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
@@ -437,7 +437,7 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Nam
 	if !ok {
 		return "", i18n.NewError(ctx, coremsgs.MsgInternalServerError, "eventstream ID not found")
 	}
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, streamID, batchPinEvent)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, streamID, batchPinEvent, lastProtocolID)
 	if err != nil {
 		return "", err
 	}
@@ -965,7 +965,7 @@ func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType,
 	return result, err
 }
 
-func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener) error {
+func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) error {
 	namespace := listener.Namespace
 
 	if len(listener.Filters) == 0 {
@@ -984,7 +984,7 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
-	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, filter.Event.Name, listener.Options.FirstEvent)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, listener.Event.Name, listener.Options.FirstEvent, lastProtocolID)
 	if err != nil {
 		return err
 	}

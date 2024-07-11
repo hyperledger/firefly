@@ -5268,7 +5268,8 @@ paths:
       description: Invokes a method on a smart contract. Performs a blockchain transaction.
       operationId: postContractInvoke
       parameters:
-      - description: When true the HTTP request blocks until the message is confirmed
+      - description: When true the HTTP request blocks until the blockchain transaction
+          is confirmed
         in: query
         name: confirm
         schema:
@@ -18416,7 +18417,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: When true the HTTP request blocks until the message is confirmed
+      - description: When true the HTTP request blocks until the blockchain transaction
+          is confirmed
         in: query
         name: confirm
         schema:

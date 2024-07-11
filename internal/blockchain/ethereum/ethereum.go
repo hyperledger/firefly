@@ -271,7 +271,7 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract, lastProtocolID string) (string, error) {
 	ethLocation, err := e.parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
@@ -286,7 +286,7 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.N
 	if !ok {
 		return "", i18n.NewError(ctx, coremsgs.MsgInternalServerError, "eventstream ID not found")
 	}
-	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, streamID, batchPinEventABI)
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, streamID, batchPinEventABI, lastProtocolID)
 
 	if err != nil {
 		return "", err
@@ -894,7 +894,7 @@ func (e *Ethereum) encodeContractLocation(ctx context.Context, location *Locatio
 	return result, err
 }
 
-func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
+func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) (err error) {
 	namespace := listener.Namespace
 	filters := make([]*filter, 0)
 
@@ -944,7 +944,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
 	}
-	result, err := e.streams.createSubscription(ctx, e.streamID[namespace], subName, firstEvent, location, firstEventABI, filters)
+	result, err := e.streams.createSubscription(ctx, e.streamID[namespace], subName, firstEvent, location, firstEventABI, filters, lastProtocolID)
 	if err != nil {
 		return err
 	}

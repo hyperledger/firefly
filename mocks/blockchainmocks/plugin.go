@@ -24,17 +24,17 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddContractListener provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.ContractListener) error {
-	ret := _m.Called(ctx, subscription)
+// AddContractListener provides a mock function with given fields: ctx, subscription, lastProtocolID
+func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.ContractListener, lastProtocolID string) error {
+	ret := _m.Called(ctx, subscription, lastProtocolID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddContractListener")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener) error); ok {
-		r0 = rf(ctx, subscription)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener, string) error); ok {
+		r0 = rf(ctx, subscription, lastProtocolID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -42,9 +42,9 @@ func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.Co
 	return r0
 }
 
-// AddFireflySubscription provides a mock function with given fields: ctx, namespace, contract
-func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
-	ret := _m.Called(ctx, namespace, contract)
+// AddFireflySubscription provides a mock function with given fields: ctx, namespace, contract, lastProtocolID
+func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract, lastProtocolID string) (string, error) {
+	ret := _m.Called(ctx, namespace, contract, lastProtocolID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddFireflySubscription")
@@ -52,17 +52,17 @@ func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace *core.Na
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) (string, error)); ok {
-		return rf(ctx, namespace, contract)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract, string) (string, error)); ok {
+		return rf(ctx, namespace, contract, lastProtocolID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) string); ok {
-		r0 = rf(ctx, namespace, contract)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract, string) string); ok {
+		r0 = rf(ctx, namespace, contract, lastProtocolID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract) error); ok {
-		r1 = rf(ctx, namespace, contract)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, *blockchain.MultipartyContract, string) error); ok {
+		r1 = rf(ctx, namespace, contract, lastProtocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
