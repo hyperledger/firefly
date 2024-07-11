@@ -1272,13 +1272,14 @@ func TestAddContractListenerVerifyMigration(t *testing.T) {
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything, mock.Anything).Return("changed", nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.BlockchainEvent{}, nil, nil).Once()
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
 		return prevBackendID == "23456" && len(l.Filters) != 0
-	})).Return(nil)
+	}), "").Return(nil)
 
 	mdi.On("UpdateContractListener", ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
 		uu, _ := u.Finalize()
@@ -1324,13 +1325,14 @@ func TestVerifyListenersFailMigration(t *testing.T) {
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything, mock.Anything).Return("changed", nil)
+	mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.BlockchainEvent{}, nil, nil).Once()
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
 		prevBackendID := l.BackendID
 		l.BackendID = "34567"
 		return prevBackendID == "23456" && len(l.Filters) != 0
-	})).Return(nil)
+	}), "").Return(nil)
 	mdi.On("UpdateContractListener", ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
 		uu, _ := u.Finalize()
 		return strings.Contains(uu.String(), "34567")
@@ -1550,7 +1552,7 @@ func TestAddContractListenerFiltersAndDeprecatedFail(t *testing.T) {
 	}
 
 	_, err := cm.AddContractListener(context.Background(), sub)
-	assert.Regexp(t, "FF10472", err)
+	assert.Regexp(t, "FF10474", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -4264,7 +4266,7 @@ func TestGenerateContractFiltersCheckDuplicatesError(t *testing.T) {
 
 	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.Error(t, err)
-	assert.Regexp(t, "FF10475", err)
+	assert.Regexp(t, "FF10477", err)
 }
 
 func TestGenerateContractFiltersSignature(t *testing.T) {
@@ -4450,7 +4452,7 @@ func TestGenerateContractFiltersSignatureOverlapping(t *testing.T) {
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location2).Return("0x1aa04bd8ca1b9ce9f19794faf790961134518445:firstEvent", nil).Once()
 	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.Error(t, err)
-	assert.Regexp(t, "FF10475", err.Error())
+	assert.Regexp(t, "FF10477", err.Error())
 }
 
 func TestGenerateContractFiltersSignatureSorted(t *testing.T) {
@@ -4587,7 +4589,7 @@ func TestGenerateContractFiltersSignatureDuplicateFail(t *testing.T) {
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil)
 	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.Error(t, err)
-	assert.Regexp(t, "FF10475", err.Error())
+	assert.Regexp(t, "FF10477", err.Error())
 }
 
 func TestGenerateContractFiltersSignatureDuplicateGenericFail(t *testing.T) {
@@ -4645,7 +4647,7 @@ func TestGenerateContractFiltersSignatureDuplicateGenericFail(t *testing.T) {
 	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location2).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil).Once()
 	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.Error(t, err)
-	assert.Regexp(t, "FF10475", err.Error())
+	assert.Regexp(t, "FF10477", err.Error())
 }
 
 func TestGenerateContractFiltersSignatureNormalizeError(t *testing.T) {

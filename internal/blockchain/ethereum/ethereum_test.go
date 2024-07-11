@@ -2123,7 +2123,7 @@ func TestAddSubscriptionMultipleFilters(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.NoError(t, err)
 }
@@ -2175,7 +2175,7 @@ func TestAddSubscriptionInvalidAbi(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10311", err)
 }
@@ -2214,7 +2214,7 @@ func TestAddSubscriptionMultipleFiltersInvalidAbi(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10311", err)
 }
@@ -2267,7 +2267,7 @@ func TestAddSubscriptionMultipleFiltersBadLocation(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 	assert.Error(t, err)
 	assert.Regexp(t, "FF10310", err)
 }
@@ -2346,8 +2346,8 @@ func TestAddListenerNoFiltersFail(t *testing.T) {
 		},
 	}
 
-	err := e.AddContractListener(context.Background(), sub)
-	assert.Regexp(t, "FF10473", err)
+	err := e.AddContractListener(context.Background(), sub, "")
+	assert.Regexp(t, "FF10475", err)
 }
 
 func TestAddSubscriptionFail(t *testing.T) {

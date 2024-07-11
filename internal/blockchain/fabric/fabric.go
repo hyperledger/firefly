@@ -984,7 +984,7 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
-	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, listener.Event.Name, listener.Options.FirstEvent, lastProtocolID)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, filter.Event.Name, listener.Options.FirstEvent, lastProtocolID)
 	if err != nil {
 		return err
 	}

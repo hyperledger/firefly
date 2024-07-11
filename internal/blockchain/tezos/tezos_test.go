@@ -941,9 +941,9 @@ func TestAddSubscriptionNoFiltersFail(t *testing.T) {
 		},
 	}
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
-	assert.Regexp(t, "FF10473", err)
+	assert.Regexp(t, "FF10475", err)
 }
 
 func TestAddSubscriptionTwoManyFiltersFail(t *testing.T) {
@@ -975,9 +975,9 @@ func TestAddSubscriptionTwoManyFiltersFail(t *testing.T) {
 		},
 	}
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
-	assert.Regexp(t, "FF10474", err)
+	assert.Regexp(t, "FF10476", err)
 }
 
 func TestDeleteSubscription(t *testing.T) {

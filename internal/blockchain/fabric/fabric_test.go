@@ -1934,8 +1934,8 @@ func TestAddSubscriptionNoFiltersFail(t *testing.T) {
 		},
 	}
 
-	err := e.AddContractListener(context.Background(), sub)
-	assert.Regexp(t, "FF10473", err)
+	err := e.AddContractListener(context.Background(), sub, "")
+	assert.Regexp(t, "FF10475", err)
 }
 
 func TestAddSubscriptionTooManyFiltersFail(t *testing.T) {
@@ -1964,9 +1964,9 @@ func TestAddSubscriptionTooManyFiltersFail(t *testing.T) {
 		},
 	}
 
-	err := e.AddContractListener(context.Background(), sub)
+	err := e.AddContractListener(context.Background(), sub, "")
 
-	assert.Regexp(t, "FF10474", err)
+	assert.Regexp(t, "FF10476", err)
 }
 
 func TestAddSubscriptionNoChannel(t *testing.T) {
