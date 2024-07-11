@@ -465,3 +465,15 @@ func TestUpsertContractListenerFailSelect(t *testing.T) {
 	assert.Regexp(t, "FF00176", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestUpsertContractListenerFailUpdate(t *testing.T) {
+	s, mock := newMockProvider().init()
+	id := fftypes.NewUUID()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(id.String()))
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{ID: id}, true)
+	assert.Regexp(t, "pop", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
