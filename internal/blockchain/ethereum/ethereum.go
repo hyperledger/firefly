@@ -860,7 +860,7 @@ func (e *Ethereum) CheckOverlappingLocations(ctx context.Context, left *fftypes.
 	}
 
 	// For Ethereum just compared addresses
-	return parsedLeft.Address == parsedRight.Address, nil
+return strings.EqualFold(parsedLeft.Address, parsedRight.Address), nil
 }
 
 func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
