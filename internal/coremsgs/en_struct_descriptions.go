@@ -313,7 +313,7 @@ var (
 	ContractListenerTopic     = ffm("ContractListener.topic", "A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need")
 	ContractListenerOptions   = ffm("ContractListener.options", "Options that control how the listener subscribes to events from the underlying blockchain")
 	ContractListenerEventPath = ffm("ContractListener.eventPath", "Deprecated: Please use 'eventPath' in the array of 'filters' instead")
-	ContractListenerSignature = ffm("ContractListener.signature", "The stringified signature of the event, as computed by the blockchain plugin")
+	ContractListenerSignature = ffm("ContractListener.signature", "A concatenation of all the stringified signature of the event and location, as computed by the blockchain plugin")
 	ContractListenerState     = ffm("ContractListener.state", "This field is provided for the event listener implementation of the blockchain provider to record state, such as checkpoint information")
 
 	// ContractListenerOptions field descriptions
@@ -323,7 +323,7 @@ var (
 	ListenerFilterEvent     = ffm("ListenerFilter.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
 	ListenerFilterEventPath = ffm("ListenerFilter.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
 	ListenerFilterLocation  = ffm("ListenerFilter.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
-	ListenerFilterSignature = ffm("ListenerFilter.signature", "The stringified signature of the event, as computed by the blockchain plugin")
+	ListenerFilterSignature = ffm("ListenerFilter.signature", "The stringified signature of the event and location, as computed by the blockchain plugin")
 
 	// DIDDocument field descriptions
 	DIDDocumentContext            = ffm("DIDDocument.@context", "See https://www.w3.org/TR/did-core/#json-ld")

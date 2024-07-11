@@ -313,5 +313,5 @@ var (
 	MsgFiltersAndRootEventError                = ffe("FF10472", "Cannot provide both filters and deprecated event path, please only provide one option.", 500)
 	MsgFiltersEmpty                            = ffe("FF10473", "No filters specified in contract listener: %s.", 500)
 	MsgContractListenerBlockchainFilterLimit   = ffe("FF10474", "Blockchain plugin only supports one filter for contract listener: %s.", 500)
-	MsgDuplicateContractListenerFilterLocation = ffe("FF10475", "Duplicate filter provided for contract listener for location, %s", 400)
+	MsgDuplicateContractListenerFilterLocation = ffe("FF10475", "Duplicate filter provided for contract listener for location", 400)
 )

@@ -774,8 +774,8 @@ func TestAddContractListenerInline(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
@@ -812,7 +812,8 @@ func TestAddContractListenerInlineNilLocation(t *testing.T) {
 		},
 	}
 
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("*:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(cl *core.ContractListener) bool {
 		// Normalize is not called for this case
@@ -852,7 +853,8 @@ func TestAddContractListenerNoLocationOK(t *testing.T) {
 		},
 	}
 
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("*:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
@@ -901,8 +903,8 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
@@ -1233,7 +1235,7 @@ func TestAddContractListenerVerifyMigration(t *testing.T) {
 	mdi.On("UpsertContractListener", context.Background(), mock.Anything, true).Return(nil)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything, mock.Anything).Return("changed", nil)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
@@ -1254,7 +1256,7 @@ func TestAddContractListenerVerifyMigration(t *testing.T) {
 	mbi.AssertExpectations(t)
 }
 
-func TestAddContractListenerVerifyFailMigration(t *testing.T) {
+func TestVerifyListenersFailMigration(t *testing.T) {
 	cm := newTestContractManager()
 
 	ctx := context.Background()
@@ -1285,7 +1287,7 @@ func TestAddContractListenerVerifyFailMigration(t *testing.T) {
 	mdi.On("UpsertContractListener", context.Background(), mock.Anything, true).Return(fmt.Errorf("pop"))
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything, mock.Anything).Return("changed", nil)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
 	mbi.On("GetContractListenerStatus", ctx, "ns1", "23456", true).Return(false, nil, core.ContractListenerStatusUnknown, nil)
 	mbi.On("AddContractListener", ctx, mock.MatchedBy(func(l *core.ContractListener) bool {
@@ -1293,11 +1295,51 @@ func TestAddContractListenerVerifyFailMigration(t *testing.T) {
 		l.BackendID = "34567"
 		return prevBackendID == "23456" && len(l.Filters) != 0
 	})).Return(nil)
-
 	mdi.On("UpdateContractListener", ctx, "ns1", mock.Anything, mock.MatchedBy(func(u ffapi.Update) bool {
 		uu, _ := u.Finalize()
 		return strings.Contains(uu.String(), "34567")
 	})).Return(nil).Once()
+
+	err := cm.verifyListeners(ctx)
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestVerifyListenersFailUpgradeFilters(t *testing.T) {
+	cm := newTestContractManager()
+
+	ctx := context.Background()
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetContractListeners", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
+		fi, _ := f.Finalize()
+		return fi.Skip == 0 && fi.Limit == 50
+	})).Return([]*core.ContractListener{
+		{Namespace: "ns1", ID: fftypes.NewUUID(), BackendID: "12345"},
+		{
+			Namespace: "ns1",
+			ID:        fftypes.NewUUID(),
+			BackendID: "23456",
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "null"}`),
+						},
+					},
+				},
+			},
+		},
+	}, nil, nil).Once()
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything, mock.Anything).Return("changed", fmt.Errorf("pop"))
+	mbi.On("GetContractListenerStatus", ctx, "ns1", "12345", true).Return(true, struct{}{}, core.ContractListenerStatusSynced, nil)
 
 	err := cm.verifyListeners(ctx)
 	assert.Error(t, err)
@@ -1380,9 +1422,9 @@ func TestAddContractListenerNameConflict(t *testing.T) {
 			Name: "changed",
 		},
 	}, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
 	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(&core.ContractListener{}, nil)
 
 	_, err := cm.AddContractListener(context.Background(), sub)
@@ -1425,7 +1467,8 @@ func TestAddContractListenerNameError(t *testing.T) {
 			Name: "eventName",
 		},
 	}, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("eventSignature")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("eventSignature", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:eventSignature", nil)
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
 	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(nil, fmt.Errorf("pop"))
 
@@ -1537,8 +1580,8 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
 
@@ -1575,8 +1618,8 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), &sub.ContractListener).Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
@@ -1615,7 +1658,8 @@ func TestAddContractAPIListener(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, api.Location).Return(listener.Location, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(event, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListener) bool {
 		return *l.Interface.ID == *interfaceID && l.Topic == "test-topic"
@@ -1708,7 +1752,7 @@ func TestGetFFIWithChildren(t *testing.T) {
 	}, nil, nil)
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
-	})).Return("event1Sig")
+	})).Return("event1Sig", nil)
 	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
 		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
 	}, nil, nil)
@@ -1749,7 +1793,7 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	}, nil, nil)
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
-	})).Return("event1Sig")
+	})).Return("event1Sig", nil)
 	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
 		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
 	}, nil, nil)
@@ -3165,12 +3209,84 @@ func TestGetContractAPIListeners(t *testing.T) {
 	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(api, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(event, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
 	_, _, err := cm.GetContractAPIListeners(context.Background(), "simple", "changed", f.And())
 	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestGetContractAPIListenersSignatureFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+	api := &core.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: interfaceID,
+		},
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"address": "0x123",
+		}.String()),
+	}
+	event := &fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "changed",
+		},
+	}
+
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(api, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(event, nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", fmt.Errorf("pop"))
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
+	_, _, err := cm.GetContractAPIListeners(context.Background(), "simple", "changed", f.And())
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestGetContractAPIListenersOldSignatureFail(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+	api := &core.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: interfaceID,
+		},
+		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+			"address": "0x123",
+		}.String()),
+	}
+	event := &fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "changed",
+		},
+	}
+
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(api, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(event, nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", fmt.Errorf("pop"))
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
+	_, _, err := cm.GetContractAPIListeners(context.Background(), "simple", "changed", f.And())
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -3428,7 +3544,7 @@ func TestGetContractAPIInterface(t *testing.T) {
 	}, nil, nil)
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
-	})).Return("event1Sig")
+	})).Return("event1Sig", nil)
 	mdb.On("GetFFIErrors", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIError{
 		{ID: fftypes.NewUUID(), FFIErrorDefinition: fftypes.FFIErrorDefinition{Name: "customError1"}},
 	}, nil, nil)
@@ -4026,7 +4142,8 @@ func TestGenerateContractDeprecatedEventSignature(t *testing.T) {
 	cm := newTestContractManager()
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x123:changed", nil)
 
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
@@ -4050,7 +4167,6 @@ func TestGenerateContractDeprecatedEventSignature(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
 
 	output, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.NoError(t, err)
@@ -4076,7 +4192,8 @@ func TestGenerateContractFiltersCheckDuplicatesError(t *testing.T) {
 	location := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("firstEvent", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("*:firstEvent", nil)
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location).Return(location, nil)
 	mdi := cm.database.(*databasemocks.Plugin)
 	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
@@ -4109,7 +4226,6 @@ func TestGenerateContractFiltersCheckDuplicatesError(t *testing.T) {
 		},
 	}
 
-	mbi.On("StringifyContractLocation", context.Background(), location).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434", nil)
 	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.Error(t, err)
 	assert.Regexp(t, "FF10475", err)
@@ -4135,9 +4251,10 @@ func TestGenerateContractFiltersSignature(t *testing.T) {
 	location2 := fftypes.JSONAnyPtr(`{"address":"0x1aa04bd8ca1b9ce9f19794faf790961134518445"}`)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
+	mbi.On("CheckOverlappingLocations", context.Background(), location1, location2).Return(false, nil).Once()
 	mdi := cm.database.(*databasemocks.Plugin)
 	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
@@ -4169,11 +4286,135 @@ func TestGenerateContractFiltersSignature(t *testing.T) {
 		},
 	}
 
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434", nil)
-	mbi.On("StringifyContractLocation", context.Background(), location2).Return("0x1aa04bd8ca1b9ce9f19794faf790961134518445", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil).Once()
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location2).Return("0x1aa04bd8ca1b9ce9f19794faf790961134518445:firstEvent", nil).Once()
 	output, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.NoError(t, err)
-	assert.Equal(t, "0x1aa04bd8ca1b9ce9f19794faf790961134518445:changed;0x1fa04bd8ca1b9ce9f19794faf790961134518434:changed", output.Signature)
+	assert.Equal(t, "0x1aa04bd8ca1b9ce9f19794faf790961134518445:firstEvent;0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", output.Signature)
+}
+
+func TestGenerateContractFiltersSignatureOverlappingError(t *testing.T) {
+	cm := newTestContractManager()
+	event := &fftypes.FFIEvent{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "firstEvent",
+			Params: fftypes.FFIParams{
+				{
+					Name:   "value",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+				},
+			},
+		},
+	}
+
+	location1 := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
+	location2 := fftypes.JSONAnyPtr(`{"address":"0x1aa04bd8ca1b9ce9f19794faf790961134518445"}`)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
+	mbi.On("CheckOverlappingLocations", context.Background(), location1, location2).Return(false, fmt.Errorf("pop")).Once()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
+
+	sub := &core.ContractListenerInput{
+		Filters: []*core.ListenerFilterInput{
+			{
+				ListenerFilter: core.ListenerFilter{
+					Location: location1,
+					Interface: &fftypes.FFIReference{
+						ID: fftypes.NewUUID(),
+					},
+				},
+				EventPath: "firstEvent",
+			},
+			{
+				ListenerFilter: core.ListenerFilter{
+					Location: location2,
+					Interface: &fftypes.FFIReference{
+						ID: fftypes.NewUUID(),
+					},
+				},
+				EventPath: "firstEvent",
+			},
+		},
+		ContractListener: core.ContractListener{
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil).Once()
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location2).Return("0x1aa04bd8ca1b9ce9f19794faf790961134518445:firstEvent", nil).Once()
+	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestGenerateContractFiltersSignatureOverlapping(t *testing.T) {
+	cm := newTestContractManager()
+	event := &fftypes.FFIEvent{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "firstEvent",
+			Params: fftypes.FFIParams{
+				{
+					Name:   "value",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+				},
+			},
+		},
+	}
+
+	location1 := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
+	location2 := fftypes.JSONAnyPtr(`{"address":"0x1aa04bd8ca1b9ce9f19794faf790961134518445"}`)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
+	mbi.On("CheckOverlappingLocations", context.Background(), location1, location2).Return(true, nil).Once()
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
+
+	sub := &core.ContractListenerInput{
+		Filters: []*core.ListenerFilterInput{
+			{
+				ListenerFilter: core.ListenerFilter{
+					Location: location1,
+					Interface: &fftypes.FFIReference{
+						ID: fftypes.NewUUID(),
+					},
+				},
+				EventPath: "firstEvent",
+			},
+			{
+				ListenerFilter: core.ListenerFilter{
+					Location: location2,
+					Interface: &fftypes.FFIReference{
+						ID: fftypes.NewUUID(),
+					},
+				},
+				EventPath: "firstEvent",
+			},
+		},
+		ContractListener: core.ContractListener{
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil).Once()
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location2).Return("0x1aa04bd8ca1b9ce9f19794faf790961134518445:firstEvent", nil).Once()
+	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10475", err.Error())
 }
 
 func TestGenerateContractFiltersSignatureSorted(t *testing.T) {
@@ -4210,8 +4451,8 @@ func TestGenerateContractFiltersSignatureSorted(t *testing.T) {
 	location2 := fftypes.JSONAnyPtr(`{"address":"0x1aa04bd8ca1b9ce9f19794faf790961134518445"}`)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("firstEvent").Once()
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("secondEvent").Once()
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("firstEvent", nil).Once()
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("secondEvent", nil).Once()
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
 	mdi := cm.database.(*databasemocks.Plugin)
@@ -4246,11 +4487,11 @@ func TestGenerateContractFiltersSignatureSorted(t *testing.T) {
 		},
 	}
 
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434", nil)
-	mbi.On("StringifyContractLocation", context.Background(), location2).Return("0x1aa04bd8ca1b9ce9f19794faf790961134518445", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil).Once()
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location2).Return("0x1aa04bd8ca1b9ce9f19794faf790961134518445:secondEvent", nil).Once()
 	output, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.NoError(t, err)
-	assert.Equal(t, "0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent;0x1aa04bd8ca1b9ce9f19794faf790961134518445:secondEvent", output.Signature)
+	assert.Equal(t, "0x1aa04bd8ca1b9ce9f19794faf790961134518445:secondEvent;0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", output.Signature)
 }
 
 func TestGenerateContractFiltersSignatureDuplicateFail(t *testing.T) {
@@ -4273,7 +4514,7 @@ func TestGenerateContractFiltersSignatureDuplicateFail(t *testing.T) {
 	location2 := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
 	mdi := cm.database.(*databasemocks.Plugin)
@@ -4307,8 +4548,7 @@ func TestGenerateContractFiltersSignatureDuplicateFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434", nil)
-	mbi.On("StringifyContractLocation", context.Background(), location2).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, mock.Anything).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil)
 	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.Error(t, err)
 	assert.Regexp(t, "FF10475", err.Error())
@@ -4333,7 +4573,7 @@ func TestGenerateContractFiltersSignatureDuplicateGenericFail(t *testing.T) {
 	location2 := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
 	mdi := cm.database.(*databasemocks.Plugin)
 	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
@@ -4365,129 +4605,8 @@ func TestGenerateContractFiltersSignatureDuplicateGenericFail(t *testing.T) {
 		},
 	}
 
-	mbi.On("StringifyContractLocation", context.Background(), location2).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434", nil)
-	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
-	assert.Error(t, err)
-	assert.Regexp(t, "FF10475", err.Error())
-}
-
-func TestGenerateContractFiltersSignatureDuplicateStringifyFail(t *testing.T) {
-	cm := newTestContractManager()
-	event := &fftypes.FFIEvent{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		FFIEventDefinition: fftypes.FFIEventDefinition{
-			Name: "firstEvent",
-			Params: fftypes.FFIParams{
-				{
-					Name:   "value",
-					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
-				},
-			},
-		},
-	}
-
-	location1 := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
-	location2 := fftypes.JSONAnyPtr(`{"address":"0x1fa04bd8ca1b9ce9f19794faf790961134518434"}`)
-
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
-	mdi := cm.database.(*databasemocks.Plugin)
-	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
-	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
-
-	sub := &core.ContractListenerInput{
-		Filters: []*core.ListenerFilterInput{
-			{
-				ListenerFilter: core.ListenerFilter{
-					Location: location1,
-					Interface: &fftypes.FFIReference{
-						ID: fftypes.NewUUID(),
-					},
-				},
-				EventPath: "firstEvent",
-			},
-			{
-				ListenerFilter: core.ListenerFilter{
-					Location: location2,
-					Interface: &fftypes.FFIReference{
-						ID: fftypes.NewUUID(),
-					},
-				},
-				EventPath: "firstEvent",
-			},
-		},
-		ContractListener: core.ContractListener{
-			Options: &core.ContractListenerOptions{},
-			Topic:   "test-topic",
-		},
-	}
-
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434", nil).Once()
-	mbi.On("StringifyContractLocation", context.Background(), location2).Return("", fmt.Errorf("location error")).Once()
-	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
-	assert.Error(t, err)
-	assert.Regexp(t, "location error", err.Error())
-}
-
-func TestGenerateContractFiltersSignatureDuplicateContainsFail(t *testing.T) {
-	cm := newTestContractManager()
-	event := &fftypes.FFIEvent{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		FFIEventDefinition: fftypes.FFIEventDefinition{
-			Name: "firstEvent",
-			Params: fftypes.FFIParams{
-				{
-					Name:   "value",
-					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
-				},
-			},
-		},
-	}
-
-	location1 := fftypes.JSONAnyPtr(`{"channel":"my-channel"}`)
-	location2 := fftypes.JSONAnyPtr(`{"channel":"my-channel", "chaincode": "my-chaincode"}`)
-
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location2).Return(location2, nil).Once()
-	mdi := cm.database.(*databasemocks.Plugin)
-	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
-	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
-
-	sub := &core.ContractListenerInput{
-		Filters: []*core.ListenerFilterInput{
-			{
-				ListenerFilter: core.ListenerFilter{
-					Location: location1,
-					Interface: &fftypes.FFIReference{
-						ID: fftypes.NewUUID(),
-					},
-				},
-				EventPath: "firstEvent",
-			},
-			{
-				ListenerFilter: core.ListenerFilter{
-					Location: location2,
-					Interface: &fftypes.FFIReference{
-						ID: fftypes.NewUUID(),
-					},
-				},
-				EventPath: "firstEvent",
-			},
-		},
-		ContractListener: core.ContractListener{
-			Options: &core.ContractListenerOptions{},
-			Topic:   "test-topic",
-		},
-	}
-
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("my-channel", nil)
-	mbi.On("StringifyContractLocation", context.Background(), location2).Return("my-channel-my-chaincode", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, (*fftypes.JSONAny)(nil)).Return("*:firstEvent", nil).Once()
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, location2).Return("0x1fa04bd8ca1b9ce9f19794faf790961134518434:firstEvent", nil).Once()
 	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
 	assert.Error(t, err)
 	assert.Regexp(t, "FF10475", err.Error())
@@ -4511,7 +4630,7 @@ func TestGenerateContractFiltersSignatureNormalizeError(t *testing.T) {
 	location1 := fftypes.JSONAnyPtr(`{"channel":"my-channel"}`)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, fmt.Errorf("pop")).Once()
 	mdi := cm.database.(*databasemocks.Plugin)
 	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
@@ -4540,106 +4659,10 @@ func TestGenerateContractFiltersSignatureNormalizeError(t *testing.T) {
 	assert.Regexp(t, "pop", err.Error())
 }
 
-func TestGenerateContractFiltersCheckSignatureStringifyError(t *testing.T) {
-	cm := newTestContractManager()
-	event := &fftypes.FFIEvent{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		FFIEventDefinition: fftypes.FFIEventDefinition{
-			Name: "firstEvent",
-			Params: fftypes.FFIParams{
-				{
-					Name:   "value",
-					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
-				},
-			},
-		},
-	}
-	location1 := fftypes.JSONAnyPtr(`{"channel":"my-channel"}`)
-
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("my-channel", fmt.Errorf("pop")).Once()
-	mdi := cm.database.(*databasemocks.Plugin)
-	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
-	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
-
-	sub := &core.ContractListenerInput{
-		Filters: []*core.ListenerFilterInput{
-			{
-				ListenerFilter: core.ListenerFilter{
-					Location: location1,
-					Interface: &fftypes.FFIReference{
-						ID: fftypes.NewUUID(),
-					},
-				},
-				EventPath: "firstEvent",
-			},
-		},
-		ContractListener: core.ContractListener{
-			Options: &core.ContractListenerOptions{},
-			Topic:   "test-topic",
-		},
-	}
-
-	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
-	assert.Error(t, err)
-	assert.Regexp(t, "pop", err.Error())
-}
-
-func TestGenerateContractFiltersSignatureStringifyError(t *testing.T) {
-	cm := newTestContractManager()
-	event := &fftypes.FFIEvent{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		FFIEventDefinition: fftypes.FFIEventDefinition{
-			Name: "firstEvent",
-			Params: fftypes.FFIParams{
-				{
-					Name:   "value",
-					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
-				},
-			},
-		},
-	}
-	location1 := fftypes.JSONAnyPtr(`{"channel":"my-channel"}`)
-
-	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, location1).Return(location1, nil).Once()
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("my-channel", nil).Once()
-	mbi.On("StringifyContractLocation", context.Background(), location1).Return("my-channel", fmt.Errorf("pop")).Once()
-	mdi := cm.database.(*databasemocks.Plugin)
-	mdi.On("GetFFIByID", context.Background(), "ns1", mock.Anything).Return(&fftypes.FFI{}, nil)
-	mdi.On("GetFFIEvent", context.Background(), "ns1", mock.Anything, "firstEvent").Return(event, nil)
-
-	sub := &core.ContractListenerInput{
-		Filters: []*core.ListenerFilterInput{
-			{
-				ListenerFilter: core.ListenerFilter{
-					Location: location1,
-					Interface: &fftypes.FFIReference{
-						ID: fftypes.NewUUID(),
-					},
-				},
-				EventPath: "firstEvent",
-			},
-		},
-		ContractListener: core.ContractListener{
-			Options: &core.ContractListenerOptions{},
-			Topic:   "test-topic",
-		},
-	}
-
-	_, err := cm.ConstructContractListenerSignature(context.Background(), sub)
-	assert.Error(t, err)
-	assert.Regexp(t, "pop", err.Error())
-}
 func TestMigrateFilters(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything, mock.Anything).Return("changed", nil)
 
 	listener := &core.ContractListener{
 		Options: &core.ContractListenerOptions{},
@@ -4657,9 +4680,36 @@ func TestMigrateFilters(t *testing.T) {
 		},
 	}
 
-	migrated, listener := cm.MigrateToFiltersIfNeeded(context.Background(), listener)
+	migrated, listener, err := cm.MigrateToFiltersIfNeeded(context.Background(), listener)
+	assert.NoError(t, err)
 	assert.True(t, migrated)
 	assert.NotEmpty(t, listener.Filters)
+}
+
+func TestMigrateFiltersSignatureError(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything, mock.Anything).Return("changed", fmt.Errorf("pop"))
+
+	listener := &core.ContractListener{
+		Options: &core.ContractListenerOptions{},
+		Topic:   "test-topic",
+		Event: &core.FFISerializedEvent{
+			FFIEventDefinition: fftypes.FFIEventDefinition{
+				Name: "changed",
+				Params: fftypes.FFIParams{
+					{
+						Name:   "value",
+						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+					},
+				},
+			},
+		},
+	}
+
+	_, listener, err := cm.MigrateToFiltersIfNeeded(context.Background(), listener)
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
 }
 
 func TestAddContractListenerFail(t *testing.T) {
@@ -4689,8 +4739,8 @@ func TestAddContractListenerFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("db error"))
 
 	_, err := cm.AddContractListener(context.Background(), sub)
@@ -4728,8 +4778,8 @@ func TestAddContractListenerFailDuplicate(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{
 		&sub.ContractListener,
 	}, nil, nil)
@@ -4791,8 +4841,8 @@ func TestAddContractListenerFailDuplicateError(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{}, nil, nil).Once()
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{
 		&old.ContractListener,
@@ -4855,8 +4905,8 @@ func TestAddContractListenerFailDuplicatePrevious(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
-	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mbi.On("StringifyContractLocation", context.Background(), sub.Location).Return("0x123", nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{}, nil, nil).Once()
 	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{
 		&old.ContractListener,
@@ -4865,6 +4915,142 @@ func TestAddContractListenerFailDuplicatePrevious(t *testing.T) {
 	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Error(t, err)
 	assert.Regexp(t, "FF10383", err.Error())
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestParseContractListenerFiltersFailSignature(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", fmt.Errorf("pop"))
+
+	err := cm.parseContractListenerFilters(context.Background(), sub)
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestParseContractListenerFiltersFailEventSignature(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", fmt.Errorf("pop"))
+
+	err := cm.parseContractListenerFilters(context.Background(), sub)
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestGetFFIEventsSignatureFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+
+	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
+	}, nil, nil)
+	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
+		return ev.Name == "event1"
+	})).Return("event1Sig", fmt.Errorf("pop"))
+
+	_, err := cm.GetFFIEvents(context.Background(), fftypes.NewUUID())
+
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
+
+	mdb.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestParseContractListenerFiltersFailEventSignatureDuplicateCheck(t *testing.T) {
+	cm := newTestContractManager()
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	mdi := cm.database.(*databasemocks.Plugin)
+
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
+					Name: "changed",
+					Params: fftypes.FFIParams{
+						{
+							Name:   "value",
+							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+						},
+					},
+				},
+			},
+			Options: &core.ContractListenerOptions{},
+			Topic:   "test-topic",
+		},
+	}
+
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
+	mbi.On("NormalizeContractLocation", context.Background(), blockchain.NormalizeListener, sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignatureWithLocation", context.Background(), mock.Anything, sub.Location).Return("0x123:changed", nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", nil).Once()
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed", fmt.Errorf("pop"))
+
+	_, err := cm.verifyContractListener(context.Background(), sub)
+	assert.Error(t, err)
+	assert.Regexp(t, "pop", err.Error())
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)

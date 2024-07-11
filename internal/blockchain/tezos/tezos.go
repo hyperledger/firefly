@@ -406,6 +406,27 @@ func (t *Tezos) NormalizeContractLocation(ctx context.Context, ntype blockchain.
 	return t.encodeContractLocation(ctx, parsed)
 }
 
+func (t *Tezos) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	if left == nil || right == nil {
+		// No location on either side so overlapping
+		// as means listening to everything
+		return true, nil
+	}
+
+	parsedLeft, err := t.parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := t.parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// For Ethereum just compared addresses
+	return parsedLeft.Address == parsedRight.Address, nil
+}
+
 func (t *Tezos) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
 	parsed, err := t.parseContractLocation(ctx, location)
 	if err != nil {
@@ -482,8 +503,24 @@ func (t *Tezos) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValid
 	return nil, nil
 }
 
-func (t *Tezos) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	return event.Name
+func (t *Tezos) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
+	return event.Name, nil
+}
+
+func (t *Tezos) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	eventSignature, _ := t.GenerateEventSignature(ctx, event)
+
+	// No location set
+	if location == nil {
+		return fmt.Sprintf("*:%s", eventSignature), nil
+	}
+
+	parsed, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%s", parsed.Address, eventSignature), nil
 }
 
 func (t *Tezos) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {

@@ -889,6 +889,31 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]interface
 	return
 }
 
+func (f *Fabric) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	parsedLeft, err := parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// Different channel so not overlapping
+	if parsedLeft.Channel != parsedRight.Channel {
+		return false, nil
+	}
+
+	if parsedLeft.Chaincode == "" || parsedRight.Chaincode == "" {
+		// Either of them location is the whole channel
+		return true, nil
+	}
+
+	// No just compare chaincodes
+	return parsedLeft.Chaincode == parsedRight.Chaincode, nil
+}
+
 func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := parseContractLocation(ctx, location)
 	if err != nil {
@@ -897,7 +922,7 @@ func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain
 	return encodeContractLocation(ctx, ntype, parsed)
 }
 
-func (f *Fabric) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+func (f *Fabric) stringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
 	parsed, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return "", err
@@ -985,8 +1010,17 @@ func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFI
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
-func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	return event.Name
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
+	return event.Name, nil
+}
+
+func (f *Fabric) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	strLocation, err := f.stringifyContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%s", strLocation, event.Name), nil
 }
 
 func (f *Fabric) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {

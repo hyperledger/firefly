@@ -1505,8 +1505,8 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                           signature:
-                            description: The stringified signature of the event, as
-                              computed by the blockchain plugin
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
                             type: string
                         type: object
                       type: array
@@ -1551,8 +1551,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -1785,8 +1785,8 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                         signature:
-                          description: The stringified signature of the event, as
-                            computed by the blockchain plugin
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -1831,8 +1831,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -5946,8 +5946,8 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                           signature:
-                            description: The stringified signature of the event, as
-                              computed by the blockchain plugin
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
                             type: string
                         type: object
                       type: array
@@ -5992,8 +5992,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -6310,8 +6310,8 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                         signature:
-                          description: The stringified signature of the event, as
-                            computed by the blockchain plugin
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -6356,8 +6356,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -6548,8 +6548,8 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                         signature:
-                          description: The stringified signature of the event, as
-                            computed by the blockchain plugin
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -6594,8 +6594,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -6792,8 +6792,8 @@ paths:
               schema:
                 properties:
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                 type: object
           description: Success
@@ -14193,8 +14193,8 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                           signature:
-                            description: The stringified signature of the event, as
-                              computed by the blockchain plugin
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
                             type: string
                         type: object
                       type: array
@@ -14239,8 +14239,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -14568,8 +14568,8 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                         signature:
-                          description: The stringified signature of the event, as
-                            computed by the blockchain plugin
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -14614,8 +14614,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -19101,8 +19101,8 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                           signature:
-                            description: The stringified signature of the event, as
-                              computed by the blockchain plugin
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
                             type: string
                         type: object
                       type: array
@@ -19147,8 +19147,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -19472,8 +19472,8 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                         signature:
-                          description: The stringified signature of the event, as
-                            computed by the blockchain plugin
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -19518,8 +19518,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -19724,8 +19724,8 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                         signature:
-                          description: The stringified signature of the event, as
-                            computed by the blockchain plugin
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -19770,8 +19770,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -19975,8 +19975,8 @@ paths:
               schema:
                 properties:
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                 type: object
           description: Success

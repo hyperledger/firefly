@@ -1603,8 +1603,41 @@ func TestNormalizeContractLocationBlank(t *testing.T) {
 func TestGenerateEventSignature(t *testing.T) {
 	tz, cancel := newTestTezos()
 	defer cancel()
-	signature := tz.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	signature, err := tz.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	assert.NoError(t, err)
 	assert.Equal(t, "Changed", signature)
+}
+
+func TestGenerateEventSignatureWithLocationEmpty(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	signature, err := tz.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, "*:Changed", signature)
+}
+
+func TestGenerateEventSignatureWithLocationBlank(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = tz.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestGenerateEventSignatureWithLocation(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "KT1CosvuPHD6YnY4uYNguJj6m58UuHJWyS1u",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	signature, err := tz.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "KT1CosvuPHD6YnY4uYNguJj6m58UuHJWyS1u:Changed", signature)
 }
 
 func TestAddSubBadLocation(t *testing.T) {
@@ -2112,4 +2145,56 @@ func TestStringifyNormalizeContractLocationError(t *testing.T) {
 	_, err = e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Error(t, err)
 	assert.Regexp(t, "FF10310", err)
+}
+
+func TestCheckOverlappingLocationsEmpty(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	overlapping, err := e.CheckOverlappingLocations(context.Background(), nil, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.True(t, overlapping)
+}
+
+func TestCheckOverlappingLocationsBadLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverlappingLocationsOneLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	location2 := &Location{}
+	location2Bytes, err := json.Marshal(location2)
+	assert.NoError(t, err)
+	_, err = e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(location2Bytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverlappingLocationsSameLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.True(t, result)
 }

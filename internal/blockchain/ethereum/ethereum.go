@@ -843,21 +843,32 @@ func (e *Ethereum) QueryContract(ctx context.Context, signingKey string, locatio
 	return output, nil // note UNLIKE fabric this is just `output`, not `output.Result` - but either way the top level of what we return to the end user, is whatever the Connector sent us
 }
 
+func (e *Ethereum) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	if left == nil || right == nil {
+		// No location on either side so overlapping
+		return true, nil
+	}
+
+	parsedLeft, err := e.parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := e.parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// For Ethereum just compared addresses
+	return parsedLeft.Address == parsedRight.Address, nil
+}
+
 func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := e.parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
 	return e.encodeContractLocation(ctx, parsed)
-}
-
-func (e *Ethereum) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
-	parsed, err := e.parseContractLocation(ctx, location)
-	if err != nil {
-		return "", err
-	}
-
-	return parsed.Address, nil
 }
 
 func (e *Ethereum) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -974,17 +985,37 @@ func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVa
 	return &ffi2abi.ParamValidator{}, nil
 }
 
-func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
 	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, event)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	signature := ffi2abi.ABIMethodToSignature(abi)
 	indexedSignature := ABIMethodToIndexedSignature(abi)
 	if indexedSignature != "" {
 		signature = fmt.Sprintf("%s %s", signature, indexedSignature)
 	}
-	return signature
+	return signature, nil
+}
+
+func (e *Ethereum) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	eventSignature, err := e.GenerateEventSignature(ctx, event)
+	if err != nil {
+		// new error here needed
+		return "", err
+	}
+
+	// No location set
+	if location == nil {
+		return fmt.Sprintf("*:%s", eventSignature), nil
+	}
+
+	parsed, err := e.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%s", parsed.Address, eventSignature), nil
 }
 
 func ABIMethodToIndexedSignature(abi *abi.Entry) string {
