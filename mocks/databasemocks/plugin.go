@@ -3709,6 +3709,24 @@ func (_m *Plugin) UpsertContractAPI(ctx context.Context, api *core.ContractAPI, 
 	return r0
 }
 
+// UpsertContractListener provides a mock function with given fields: ctx, sub, allowExisting
+func (_m *Plugin) UpsertContractListener(ctx context.Context, sub *core.ContractListener, allowExisting bool) error {
+	ret := _m.Called(ctx, sub, allowExisting)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertContractListener")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener, bool) error); ok {
+		r0 = rf(ctx, sub, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertData provides a mock function with given fields: ctx, data, optimization
 func (_m *Plugin) UpsertData(ctx context.Context, data *core.Data, optimization database.UpsertOptimization) error {
 	ret := _m.Called(ctx, data, optimization)

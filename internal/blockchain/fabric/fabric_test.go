@@ -1897,11 +1897,15 @@ func TestAddSubscription(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"channel":   "firefly",
-			"chaincode": "mycode",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
@@ -1920,6 +1924,51 @@ func TestAddSubscription(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestAddSubscriptionNoFiltersFail(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	sub := &core.ContractListener{
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	err := e.AddContractListener(context.Background(), sub, "")
+	assert.Regexp(t, "FF10475", err)
+}
+
+func TestAddSubscriptionTooManyFiltersFail(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	err := e.AddContractListener(context.Background(), sub, "")
+
+	assert.Regexp(t, "FF10476", err)
+}
+
 func TestAddSubscriptionNoChannel(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -1932,10 +1981,14 @@ func TestAddSubscriptionNoChannel(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"chaincode": "mycode",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
@@ -1966,7 +2019,11 @@ func TestAddSubscriptionNoLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
@@ -1989,8 +2046,12 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(""),
-		Event:    &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(""),
+				Event:    &core.FFISerializedEvent{},
+			},
+		},
 	}
 
 	err := e.AddContractListener(context.Background(), sub, "")
@@ -2010,11 +2071,15 @@ func TestAddSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"channel":   "firefly",
-			"chaincode": "mycode",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"channel":   "firefly",
+					"chaincode": "mycode",
+				}.String()),
+				Event: &core.FFISerializedEvent{},
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
@@ -2890,8 +2955,43 @@ func TestGenerateFFI(t *testing.T) {
 
 func TestGenerateEventSignature(t *testing.T) {
 	e, _ := newTestFabric()
-	signature := e.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	signature, err := e.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	assert.NoError(t, err)
 	assert.Equal(t, "Changed", signature)
+}
+
+func TestStringifyContractLocationBadLocation(t *testing.T) {
+	e, _ := newTestFabric()
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"bad": "no good",
+	}.String())
+	_, err := e.stringifyContractLocation(context.Background(), location)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestGenerateEventSignatureWithBadLocation(t *testing.T) {
+	e, _ := newTestFabric()
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"bad": "no good",
+	}.String())
+	_, err := e.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, location)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestGenerateEventSignatureWithLocation(t *testing.T) {
+	e, _ := newTestFabric()
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+	signature, err := e.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, location)
+	assert.NoError(t, err)
+	assert.Equal(t, "firefly-simplestorage:Changed", signature)
 }
 
 func matchNetworkAction(action string, expectedSigningKey core.VerifierRef) interface{} {
@@ -3408,4 +3508,104 @@ func TestQueryContractBadFFI(t *testing.T) {
 
 	_, err := e.QueryContract(context.Background(), "", nil, nil, nil, nil)
 	assert.Regexp(t, "FF10457", err)
+}
+
+func TestCheckOverLappingLocationsEmpty(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), nil)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+	assert.False(t, result)
+}
+
+func TestCheckOverLappingLocationsBadLocation(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	locationBytes, err := json.Marshal("{}")
+	assert.NoError(t, err)
+	_, err = e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), nil)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverLappingLocationsDifferentChannel(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	location2 := &Location{
+		Channel:   "anotherchannel",
+		Chaincode: "simplestorage",
+	}
+	location2Bytes, err := json.Marshal(location2)
+	assert.NoError(t, err)
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(location2Bytes))
+	assert.NoError(t, err)
+	assert.False(t, result)
+}
+
+func TestCheckOverLappingLocationsSameChannel(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	location2 := &Location{
+		Channel: "firefly",
+	}
+	location2Bytes, err := json.Marshal(location2)
+	assert.NoError(t, err)
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(location2Bytes))
+	assert.NoError(t, err)
+	assert.True(t, result)
+}
+
+func TestCheckOverLappingLocationsSameChannelSameChaincode(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.True(t, result)
+}
+
+func TestCheckOverLappingLocationsSameChannelDifferentChaincode(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	location2 := &Location{
+		Channel:   "firefly",
+		Chaincode: "anotherchaincode",
+	}
+	location2Bytes, err := json.Marshal(location2)
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(location2Bytes))
+	assert.NoError(t, err)
+	assert.False(t, result)
 }

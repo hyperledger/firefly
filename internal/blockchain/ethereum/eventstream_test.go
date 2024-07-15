@@ -27,7 +27,7 @@ func TestCreateSubscriptionBadBlock(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	_, err := e.streams.createSubscription(context.Background(), nil, "", "", "wrongness", nil, "")
+	_, err := e.streams.createSubscription(context.Background(), "", "", "wrongness", nil, nil, []*filter{}, "")
 	assert.Regexp(t, "FF10473", err)
 }
 

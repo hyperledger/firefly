@@ -889,12 +889,52 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]interface
 	return
 }
 
+func (f *Fabric) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	parsedLeft, err := parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// Different channel so not overlapping
+	if parsedLeft.Channel != parsedRight.Channel {
+		return false, nil
+	}
+
+	if parsedLeft.Chaincode == "" || parsedRight.Chaincode == "" {
+		// Either of them location is the whole channel
+		return true, nil
+	}
+
+	// No just compare chaincodes
+	return parsedLeft.Chaincode == parsedRight.Chaincode, nil
+}
+
 func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
 	return encodeContractLocation(ctx, ntype, parsed)
+}
+
+func (f *Fabric) stringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	// Concatinate channel and chaincode if present
+	result := fmt.Sprintf("%s-*", parsed.Channel)
+	if parsed.Chaincode != "" {
+		result = fmt.Sprintf("%s-%s", parsed.Channel, parsed.Chaincode)
+	}
+
+	return result, nil
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -927,13 +967,24 @@ func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType,
 
 func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) error {
 	namespace := listener.Namespace
-	location, err := parseContractLocation(ctx, listener.Location)
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	if len(listener.Filters) > 1 {
+		return i18n.NewError(ctx, coremsgs.MsgContractListenerBlockchainFilterLimit, listener.Name)
+	}
+
+	filter := listener.Filters[0]
+
+	location, err := parseContractLocation(ctx, filter.Location)
 	if err != nil {
 		return err
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
-	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, listener.Event.Name, listener.Options.FirstEvent, lastProtocolID)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, filter.Event.Name, listener.Options.FirstEvent, lastProtocolID)
 	if err != nil {
 		return err
 	}
@@ -959,8 +1010,17 @@ func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFI
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
-func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	return event.Name
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
+	return event.Name, nil
+}
+
+func (f *Fabric) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	strLocation, err := f.stringifyContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%s", strLocation, event.Name), nil
 }
 
 func (f *Fabric) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {

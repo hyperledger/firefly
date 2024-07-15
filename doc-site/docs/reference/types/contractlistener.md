@@ -47,16 +47,17 @@ title: ContractListener
 | Field Name | Description | Type |
 |------------|-------------|------|
 | `id` | The UUID of the smart contract listener | [`UUID`](simpletypes.md#uuid) |
-| `interface` | A reference to an existing FFI, containing pre-registered type information for the event | [`FFIReference`](#ffireference) |
+| `interface` | Deprecated: Please use 'interface' in the array of 'filters' instead | [`FFIReference`](#ffireference) |
 | `namespace` | The namespace of the listener, which defines the namespace of all blockchain events detected by this listener | `string` |
 | `name` | A descriptive name for the listener | `string` |
 | `backendId` | An ID assigned by the blockchain connector to this listener | `string` |
-| `location` | A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel | [`JSONAny`](simpletypes.md#jsonany) |
+| `location` | Deprecated: Please use 'location' in the array of 'filters' instead | [`JSONAny`](simpletypes.md#jsonany) |
 | `created` | The creation time of the listener | [`FFTime`](simpletypes.md#fftime) |
-| `event` | The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI | [`FFISerializedEvent`](#ffiserializedevent) |
-| `signature` | The stringified signature of the event, as computed by the blockchain plugin | `string` |
+| `event` | Deprecated: Please use 'event' in the array of 'filters' instead | [`FFISerializedEvent`](#ffiserializedevent) |
+| `signature` | A concatenation of all the stringified signature of the event and location, as computed by the blockchain plugin | `string` |
 | `topic` | A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need | `string` |
 | `options` | Options that control how the listener subscribes to events from the underlying blockchain | [`ContractListenerOptions`](#contractlisteneroptions) |
+| `filters` | A list of filters for the contract listener. Each filter is made up of an Event and an optional Location. Events matching these filters will always be emitted in the order determined by the blockchain. | [`ListenerFilter[]`](#listenerfilter) |
 
 ## FFIReference
 
@@ -90,5 +91,15 @@ title: ContractListener
 | Field Name | Description | Type |
 |------------|-------------|------|
 | `firstEvent` | A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest' | `string` |
+
+
+## ListenerFilter
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `event` | The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI | [`FFISerializedEvent`](#ffiserializedevent) |
+| `location` | A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel | [`JSONAny`](simpletypes.md#jsonany) |
+| `interface` | A reference to an existing FFI, containing pre-registered type information for the event | [`FFIReference`](#ffireference) |
+| `signature` | The stringified signature of the event and location, as computed by the blockchain plugin | `string` |
 
 

@@ -90,6 +90,34 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	return r0
 }
 
+// CheckOverlappingLocations provides a mock function with given fields: ctx, left, right
+func (_m *Plugin) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	ret := _m.Called(ctx, left, right)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CheckOverlappingLocations")
+	}
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.JSONAny) (bool, error)); ok {
+		return rf(ctx, left, right)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.JSONAny) bool); ok {
+		r0 = rf(ctx, left, right)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, left, right)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // DeleteContractListener provides a mock function with given fields: ctx, subscription, okNotFound
 func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
 	ret := _m.Called(ctx, subscription, okNotFound)
@@ -155,7 +183,7 @@ func (_m *Plugin) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.
 }
 
 // GenerateEventSignature provides a mock function with given fields: ctx, event
-func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
 	ret := _m.Called(ctx, event)
 
 	if len(ret) == 0 {
@@ -163,13 +191,51 @@ func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFI
 	}
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEventDefinition) (string, error)); ok {
+		return rf(ctx, event)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEventDefinition) string); ok {
 		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFIEventDefinition) error); ok {
+		r1 = rf(ctx, event)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GenerateEventSignatureWithLocation provides a mock function with given fields: ctx, event, location
+func (_m *Plugin) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	ret := _m.Called(ctx, event, location)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GenerateEventSignatureWithLocation")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEventDefinition, *fftypes.JSONAny) (string, error)); ok {
+		return rf(ctx, event, location)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEventDefinition, *fftypes.JSONAny) string); ok {
+		r0 = rf(ctx, event, location)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFIEventDefinition, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, event, location)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GenerateFFI provides a mock function with given fields: ctx, generationRequest

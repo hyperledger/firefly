@@ -79,6 +79,36 @@ func (_m *Manager) AddContractListener(ctx context.Context, listener *core.Contr
 	return r0, r1
 }
 
+// ConstructContractListenerSignature provides a mock function with given fields: ctx, listener
+func (_m *Manager) ConstructContractListenerSignature(ctx context.Context, listener *core.ContractListenerInput) (*core.ContractListenerSignatureOutput, error) {
+	ret := _m.Called(ctx, listener)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ConstructContractListenerSignature")
+	}
+
+	var r0 *core.ContractListenerSignatureOutput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) (*core.ContractListenerSignatureOutput, error)); ok {
+		return rf(ctx, listener)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) *core.ContractListenerSignatureOutput); ok {
+		r0 = rf(ctx, listener)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.ContractListenerSignatureOutput)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *core.ContractListenerInput) error); ok {
+		r1 = rf(ctx, listener)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // DeleteContractAPI provides a mock function with given fields: ctx, apiName
 func (_m *Manager) DeleteContractAPI(ctx context.Context, apiName string) error {
 	ret := _m.Called(ctx, apiName)

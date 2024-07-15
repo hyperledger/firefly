@@ -2005,18 +2005,22 @@ func TestAddSubscription(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "0x123",
-		}.String()),
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
-				Params: fftypes.FFIParams{
-					{
-						Name:   "value",
-						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
 					},
 				},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
 			},
 		},
 		Options: &core.ContractListenerOptions{
@@ -2043,13 +2047,17 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
-				Params: fftypes.FFIParams{
-					{
-						Name:   "value",
-						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
 					},
 				},
 			},
@@ -2067,6 +2075,203 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestAddSubscriptionMultipleFilters(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.streamID["ns1"] = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
+					},
+				},
+			},
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed2",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value2",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
+					},
+				},
+				Location: fftypes.JSONAnyPtr(`{"address":"0x1234"}`),
+			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddContractListener(context.Background(), sub, "")
+
+	assert.NoError(t, err)
+}
+func TestAddSubscriptionInvalidAbi(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.streamID["ns1"] = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value2",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
+					},
+				},
+				Location: fftypes.JSONAnyPtr(`{"address":"0x1234"}`),
+			},
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed2",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`"not an abi"`),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddContractListener(context.Background(), sub, "")
+
+	assert.Regexp(t, "FF10311", err)
+}
+
+func TestAddSubscriptionMultipleFiltersInvalidAbi(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.streamID["ns1"] = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`"not an abi"`),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddContractListener(context.Background(), sub, "")
+
+	assert.Regexp(t, "FF10311", err)
+}
+
+func TestAddSubscriptionMultipleFiltersBadLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	e.streamID["ns1"] = "es-1"
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
+					},
+				},
+			},
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed2",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value2",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
+							},
+						},
+					},
+				},
+				Location: fftypes.JSONAnyPtr(`{""}`),
+			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
+		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
+
+	err := e.AddContractListener(context.Background(), sub, "")
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err)
+}
+
 func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
@@ -2078,18 +2283,22 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "0x123",
-		}.String()),
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
-				Params: fftypes.FFIParams{
-					{
-						Name:   "value",
-						Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+						Params: fftypes.FFIParams{
+							{
+								Name:   "value",
+								Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
+							},
+						},
 					},
 				},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
 			},
 		},
 	}
@@ -2114,13 +2323,31 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(""),
-		Event:    &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(""),
+				Event:    &core.FFISerializedEvent{},
+			},
+		},
 	}
 
 	err := e.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10310", err)
+}
+
+func TestAddListenerNoFiltersFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	sub := &core.ContractListener{
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
+		},
+	}
+
+	err := e.AddContractListener(context.Background(), sub, "")
+	assert.Regexp(t, "FF10475", err)
 }
 
 func TestAddSubscriptionFail(t *testing.T) {
@@ -2135,10 +2362,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "0x123",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x123",
+				}.String()),
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
@@ -3465,8 +3696,70 @@ func TestGenerateEventSignature(t *testing.T) {
 		},
 	}
 
-	signature := e.GenerateEventSignature(context.Background(), event)
+	signature, err := e.GenerateEventSignature(context.Background(), event)
+	assert.NoError(t, err)
 	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256))", signature)
+}
+
+func TestGenerateEventSignatureWithIndexedFields(t *testing.T) {
+	e, _ := newTestEthereum()
+	complexParam := fftypes.JSONObject{
+		"type": "object",
+		"details": fftypes.JSONObject{
+			"type": "tuple",
+		},
+		"properties": fftypes.JSONObject{
+			"prop1": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 0,
+				},
+			},
+			"prop2": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":    "uint256",
+					"index":   1,
+					"indexed": true,
+				},
+			},
+		},
+	}.String()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256", "indexed": true}}`),
+			},
+			{
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(complexParam),
+			},
+		},
+	}
+
+	signature, err := e.GenerateEventSignature(context.Background(), event)
+	assert.NoError(t, err)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256)) [i=1]", signature)
+}
+
+func TestGenerateEventSignatureWithEmptyDefinition(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Empty",
+	}
+
+	signature, err := e.GenerateEventSignature(context.Background(), event)
+	assert.NoError(t, err)
+	assert.Equal(t, "Empty()", signature)
 }
 
 func TestGenerateEventSignatureInvalid(t *testing.T) {
@@ -3481,7 +3774,8 @@ func TestGenerateEventSignatureInvalid(t *testing.T) {
 		},
 	}
 
-	signature := e.GenerateEventSignature(context.Background(), event)
+	signature, err := e.GenerateEventSignature(context.Background(), event)
+	assert.Error(t, err)
 	assert.Equal(t, "", signature)
 }
 
@@ -4569,4 +4863,142 @@ func TestValidateInvokeRequest(t *testing.T) {
 
 	err = e.ValidateInvokeRequest(context.Background(), parsedMethod, nil, true)
 	assert.Regexp(t, "FF10443", err)
+}
+func TestGenerateEventSignatureWithLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+		},
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.GenerateEventSignatureWithLocation(context.Background(), event, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "3081D84FD367044F4ED453F2024709242470388C:Changed(uint256,uint256)", result)
+}
+
+func TestGenerateEventSignatureWithEmptyLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+		},
+	}
+	result, err := e.GenerateEventSignatureWithLocation(context.Background(), event, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, "*:Changed(uint256,uint256)", result)
+}
+
+func TestGenerateEventSignatureWithLocationInvalidABI(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"invalid abi"}}`),
+			},
+		},
+	}
+	_, err := e.GenerateEventSignatureWithLocation(context.Background(), event, nil)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF22052", err.Error())
+}
+
+func TestGenerateEventSignatureWithLocationInvalidLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+		},
+	}
+	locationBytes, err := json.Marshal("{}")
+	assert.NoError(t, err)
+	_, err = e.GenerateEventSignatureWithLocation(context.Background(), event, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverLappingLocationsEmpty(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	result, err := e.CheckOverlappingLocations(context.Background(), nil, nil)
+	assert.NoError(t, err)
+	assert.True(t, result)
+}
+
+func TestCheckOverLappingLocationsBadLocation(t *testing.T) {
+	locationBytes, err := json.Marshal("{}")
+	assert.NoError(t, err)
+	e, cancel := newTestEthereum()
+	defer cancel()
+	_, err = e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverLappingLocationsBadLocationSecond(t *testing.T) {
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	goodLocationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	badLocationBytes, err := json.Marshal("{}")
+	assert.NoError(t, err)
+	e, cancel := newTestEthereum()
+	defer cancel()
+	_, err = e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(goodLocationBytes), fftypes.JSONAnyPtrBytes(badLocationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverLappingLocationsSame(t *testing.T) {
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	e, cancel := newTestEthereum()
+	defer cancel()
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.True(t, result)
 }

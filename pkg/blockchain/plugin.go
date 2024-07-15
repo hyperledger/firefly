@@ -115,7 +115,13 @@ type Plugin interface {
 	NormalizeContractLocation(ctx context.Context, ntype NormalizeType, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
 
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
-	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
+	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error)
+
+	// GenerateEventSignatureWithLocation generates a strigified signature for the event , incorporating any fields significant to identifying the event as unique and the location
+	GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error)
+
+	// CompareEventSignatures will compare both signatures return true if they overlap
+	CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error)
 
 	// GenerateErrorSignature generates a strigified signature for the custom error, incorporating any fields significant to identifying the error as unique
 	GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string
