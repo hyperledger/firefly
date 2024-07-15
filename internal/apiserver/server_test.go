@@ -549,3 +549,29 @@ func TestGetNamespacedWebSocketHandlerUnknownNamespace(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, 404, status)
 }
+
+func TestContractAPIDefaultNS(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	mffi := apiservermocks.NewFFISwaggerGen(t)
+	as.ffiSwaggerGen = mffi
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
+
+	api := &core.ContractAPI{
+		Interface: &fftypes.FFIReference{
+			ID: fftypes.NewUUID(),
+		},
+	}
+
+	mcm.On("GetContractAPIs", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default", mock.Anything).Return([]*core.ContractAPI{api}, nil, nil)
+
+	res, err := resty.New().R().
+		Get(fmt.Sprintf("http://%s/api/v1/apis", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode())
+}
