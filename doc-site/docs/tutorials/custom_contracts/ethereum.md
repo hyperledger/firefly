@@ -648,7 +648,7 @@ Here is an example of sending 100 wei with a transaction:
 
 Now that we've seen how to submit transactions and preform read-only queries to the blockchain, let's look at how to receive blockchain events so we know when things are happening in realtime.
 
-If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an **Event Listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events, and the topic to assign these events to. Topics are a way for applications to subscribe to events they are interested in.
+If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an **Event Listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events, and the topic to assign these events to. You can specify multiple filters for a listener, in this case we only specify one for our event. Topics are a way for applications to subscribe to events they are interested in.
 
 ### Request
 
@@ -656,13 +656,17 @@ If you look at the source code for the smart contract we're working with above, 
 
 ```json
 {
-  "interface": {
-    "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
-  },
-  "location": {
-    "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
-  },
-  "eventPath": "Changed",
+  "filters": [
+    {
+      "interface": {
+        "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+      },
+      "location": {
+        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+      },
+      "eventPath": "Changed"
+    }
+  ],
   "options": {
     "firstEvent": "newest"
   },
@@ -671,6 +675,7 @@ If you look at the source code for the smart contract we're working with above, 
 ```
 
 ### Response
+// TODO update this response
 
 ```json
 {
