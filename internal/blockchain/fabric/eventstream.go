@@ -167,6 +167,23 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub 
 	return sub, nil
 }
 
+func (s *streamManager) checkSubscriptionExistence(ctx context.Context, subID string) (found bool, err error) {
+	sub := &subscription{}
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetResult(&sub).
+		Get(fmt.Sprintf("/subscriptions/%s", subID))
+
+	if err != nil || !res.IsSuccess() {
+		if res.StatusCode() == 404 {
+			return false, nil
+		}
+		return false, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+	}
+
+	return true, nil
+}
+
 func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (string, error) {
 	if cachedValue := s.cache.GetString("sub:" + subID); cachedValue != "" {
 		return cachedValue, nil
