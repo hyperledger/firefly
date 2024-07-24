@@ -1000,11 +1000,7 @@ func (f *Fabric) GetContractListenerStatus(ctx context.Context, namespace, subID
 	// Fabconnect does not currently provide any additional status info for listener subscriptions.
 	// But we check for existence of the subscription
 	found, err := f.streams.checkSubscriptionExistence(ctx, subID)
-	if err != nil {
-		return found, nil, core.ContractListenerStatusUnknown, err
-	}
-
-	return found, nil, core.ContractListenerStatusUnknown, nil
+	return found, nil, core.ContractListenerStatusUnknown, err
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
