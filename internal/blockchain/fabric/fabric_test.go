@@ -3360,10 +3360,60 @@ func TestGetContractListenerStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	_, detail, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "id", true)
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/id",
+		httpmock.NewJsonResponderOrPanic(200, subscription{
+			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
+		}))
+
+	found, detail, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "id", true)
+	assert.True(t, found)
 	assert.Nil(t, detail)
 	assert.Equal(t, core.ContractListenerStatusUnknown, status)
 	assert.NoError(t, err)
+}
+
+func TestGetContractListenerStatusNotFound(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/id",
+		httpmock.NewJsonResponderOrPanic(404, nil))
+
+	found, detail, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "id", true)
+	assert.False(t, found)
+	assert.Nil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusUnknown, status)
+	assert.NoError(t, err)
+}
+
+func TestGetContractListenerStatusError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	e.streams = &streamManager{
+		client: e.client,
+	}
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions/id",
+		httpmock.NewJsonResponderOrPanic(500, nil))
+
+	found, detail, status, err := e.GetContractListenerStatus(context.Background(), "ns1", "id", true)
+	assert.False(t, found)
+	assert.Nil(t, detail)
+	assert.Equal(t, core.ContractListenerStatusUnknown, status)
+	assert.Error(t, err)
 }
 
 func TestGetTransactionStatus(t *testing.T) {
