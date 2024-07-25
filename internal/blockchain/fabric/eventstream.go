@@ -156,22 +156,25 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 	return subs, nil
 }
 
-func (s *streamManager) getSubscription(ctx context.Context, subID string) (sub *subscription, err error) {
+func (s *streamManager) getSubscription(ctx context.Context, subID string, okNotFound bool) (sub *subscription, err error) {
 	res, err := s.client.R().
 		SetContext(ctx).
 		SetResult(&sub).
 		Get(fmt.Sprintf("/subscriptions/%s", subID))
 	if err != nil || !res.IsSuccess() {
+		if okNotFound && res.StatusCode() == 404 {
+			return nil, nil
+		}
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return sub, nil
 }
 
-func (s *streamManager) getSubscriptionName(ctx context.Context, subID string) (string, error) {
+func (s *streamManager) getSubscriptionName(ctx context.Context, subID string, okNotFound bool) (string, error) {
 	if cachedValue := s.cache.GetString("sub:" + subID); cachedValue != "" {
 		return cachedValue, nil
 	}
-	sub, err := s.getSubscription(ctx, subID)
+	sub, err := s.getSubscription(ctx, subID, okNotFound)
 	if err != nil {
 		return "", err
 	}
