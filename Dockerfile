@@ -12,7 +12,7 @@ ARG GIT_REF
 RUN apk add make=4.4.1-r2 \
     gcc=13.2.1_git20231014-r0 \
     build-base=0.5-r3 \
-    curl=8.5.0-r0 \
+    curl=8.9.0-r0 \
     git=2.43.4-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
@@ -68,7 +68,7 @@ ARG UI_RELEASE
 RUN apk add --update --no-cache \
     sqlite=3.44.2-r0 \
     postgresql16-client=16.3-r0 \
-    curl=8.5.0-r0 \
+    curl=8.9.0-r0 \
     jq=1.7.1-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
