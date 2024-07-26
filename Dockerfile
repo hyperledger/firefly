@@ -38,7 +38,7 @@ USER 1001
 ADD --chown=1001:0 smart_contracts/fabric/firefly-go .
 RUN GO111MODULE=on go mod vendor
 WORKDIR /tmp/fabric
-RUN wget https://github.com/hyperledger/fabric/releases/download/v2.3.2/hyperledger-fabric-linux-amd64-2.3.2.tar.gz
+RUN curl https://github.com/hyperledger/fabric/releases/download/v2.3.2/hyperledger-fabric-linux-amd64-2.3.2.tar.gz -L --output hyperledger-fabric-linux-amd64-2.3.2.tar.gz
 RUN tar -zxf hyperledger-fabric-linux-amd64-2.3.2.tar.gz
 ENV FABRIC_CFG_PATH /tmp/fabric/config/
 RUN ./bin/peer lifecycle chaincode package /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz --path /firefly/smart_contracts/fabric/firefly-go --lang golang --label firefly_1.0

@@ -396,7 +396,7 @@ func (f *Fabric) buildEventLocationString(chaincode string) string {
 
 func (f *Fabric) processContractEvent(ctx context.Context, events common.EventsToDispatch, msgJSON fftypes.JSONObject) (err error) {
 	subID := msgJSON.GetString("subId")
-	subName, err := f.streams.getSubscriptionName(ctx, subID)
+	subName, err := f.streams.getSubscriptionName(ctx, subID, false)
 	if err != nil {
 		return err // this is a problem - we should be able to find the listener that dispatched this to us
 	}
@@ -411,7 +411,7 @@ func (f *Fabric) processContractEvent(ctx context.Context, events common.EventsT
 	return nil
 }
 
-func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract, lastProtocolID string) (string, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
@@ -437,7 +437,7 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace *core.Nam
 	if !ok {
 		return "", i18n.NewError(ctx, coremsgs.MsgInternalServerError, "eventstream ID not found")
 	}
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, streamID, batchPinEvent)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace.Name, version, fabricOnChainLocation, contract.FirstEvent, streamID, batchPinEvent, lastProtocolID)
 	if err != nil {
 		return "", err
 	}
@@ -889,12 +889,52 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]interface
 	return
 }
 
+func (f *Fabric) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	parsedLeft, err := parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// Different channel so not overlapping
+	if parsedLeft.Channel != parsedRight.Channel {
+		return false, nil
+	}
+
+	if parsedLeft.Chaincode == "" || parsedRight.Chaincode == "" {
+		// Either of them location is the whole channel
+		return true, nil
+	}
+
+	// No just compare chaincodes
+	return parsedLeft.Chaincode == parsedRight.Chaincode, nil
+}
+
 func (f *Fabric) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
 	}
 	return encodeContractLocation(ctx, ntype, parsed)
+}
+
+func (f *Fabric) stringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	// Concatinate channel and chaincode if present
+	result := fmt.Sprintf("%s-*", parsed.Channel)
+	if parsed.Chaincode != "" {
+		result = fmt.Sprintf("%s-%s", parsed.Channel, parsed.Chaincode)
+	}
+
+	return result, nil
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -925,15 +965,26 @@ func encodeContractLocation(ctx context.Context, ntype blockchain.NormalizeType,
 	return result, err
 }
 
-func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener) error {
+func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) error {
 	namespace := listener.Namespace
-	location, err := parseContractLocation(ctx, listener.Location)
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	if len(listener.Filters) > 1 {
+		return i18n.NewError(ctx, coremsgs.MsgContractListenerBlockchainFilterLimit, listener.Name)
+	}
+
+	filter := listener.Filters[0]
+
+	location, err := parseContractLocation(ctx, filter.Location)
 	if err != nil {
 		return err
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
-	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, listener.Event.Name, listener.Options.FirstEvent)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID[namespace], subName, filter.Event.Name, listener.Options.FirstEvent, lastProtocolID)
 	if err != nil {
 		return err
 	}
@@ -945,9 +996,15 @@ func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.
 	return f.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (f *Fabric) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, error) {
+func (f *Fabric) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, core.ContractListenerStatus, error) {
 	// Fabconnect does not currently provide any additional status info for listener subscriptions.
-	return true, nil, nil
+	// But we check for existence of the subscription
+	sub, err := f.streams.getSubscription(ctx, subID, okNotFound)
+	if err != nil || sub == nil {
+		return false, nil, core.ContractListenerStatusUnknown, err
+	}
+
+	return true, nil, core.ContractListenerStatusUnknown, err
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
@@ -959,8 +1016,17 @@ func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFI
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
-func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	return event.Name
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
+	return event.Name, nil
+}
+
+func (f *Fabric) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	strLocation, err := f.stringifyContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%s", strLocation, event.Name), nil
 }
 
 func (f *Fabric) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {

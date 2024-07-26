@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -155,7 +155,23 @@ func (mm *multipartyManager) configureContractCommon(ctx context.Context, migrat
 		}
 	}
 
-	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, current)
+	// For the case that we're establishing a listener from "latest" we obtain the protocol ID
+	// of the latest event confirmed from the blockchain for a given subscription.
+	// This protocolID should be parsed and used by the blockchain plugin if SubOptsFirstEventNewest
+	// is passed through, and the listener does not exist.
+	fb := database.BlockchainEventQueryFactory.NewFilter(ctx).Sort("-protocolid").Limit(1)
+	latestEvents, _, err := mm.database.GetBlockchainEvents(ctx, mm.namespace.Name, fb.Eq(
+		"listener", nil,
+	))
+	if err != nil {
+		return err
+	}
+	lastProtocolID := ""
+	if len(latestEvents) > 0 {
+		lastProtocolID = latestEvents[0].ProtocolID
+	}
+
+	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, current, lastProtocolID)
 	if err == nil {
 		active.Location = current.Location
 		active.FirstEvent = current.FirstEvent

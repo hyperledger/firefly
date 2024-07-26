@@ -271,7 +271,7 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract, lastProtocolID string) (string, error) {
 	ethLocation, err := e.parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
@@ -286,7 +286,7 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace *core.N
 	if !ok {
 		return "", i18n.NewError(ctx, coremsgs.MsgInternalServerError, "eventstream ID not found")
 	}
-	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, streamID, batchPinEventABI)
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace.Name, version, ethLocation.Address, contract.FirstEvent, streamID, batchPinEventABI, lastProtocolID)
 
 	if err != nil {
 		return "", err
@@ -843,6 +843,26 @@ func (e *Ethereum) QueryContract(ctx context.Context, signingKey string, locatio
 	return output, nil // note UNLIKE fabric this is just `output`, not `output.Result` - but either way the top level of what we return to the end user, is whatever the Connector sent us
 }
 
+func (e *Ethereum) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	if left == nil || right == nil {
+		// No location on either side so overlapping
+		return true, nil
+	}
+
+	parsedLeft, err := e.parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := e.parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// For Ethereum just compared addresses
+	return strings.EqualFold(parsedLeft.Address, parsedRight.Address), nil
+}
+
 func (e *Ethereum) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	parsed, err := e.parseContractLocation(ctx, location)
 	if err != nil {
@@ -874,18 +894,49 @@ func (e *Ethereum) encodeContractLocation(ctx context.Context, location *Locatio
 	return result, err
 }
 
-func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
-	var location *Location
+func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) (err error) {
 	namespace := listener.Namespace
-	if listener.Location != nil {
-		location, err = e.parseContractLocation(ctx, listener.Location)
+	filters := make([]*filter, 0)
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	// For ethconnect we need to use one event and one location as it does not support filters
+	// Note: the first filter event gets copied to the root of the listener for backwards
+	// compatibility so available here
+	// it will be ignored by evmconnect
+	var firstEventABI *abi.Entry
+	firstEventABI, err = ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Filters[0].Event.FFIEventDefinition)
+	if err != nil {
+		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+	}
+
+	// First filter location is copied over to the root
+	var location *Location
+	if listener.Filters[0].Location != nil {
+		location, err = e.parseContractLocation(ctx, listener.Filters[0].Location)
 		if err != nil {
 			return err
 		}
 	}
-	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
-	if err != nil {
-		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+
+	for _, f := range listener.Filters {
+		abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &f.Event.FFIEventDefinition)
+		if err != nil {
+			return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
+		}
+		evmFilter := &filter{
+			Event: abi,
+		}
+		if f.Location != nil {
+			location, err := e.parseContractLocation(ctx, f.Location)
+			if err != nil {
+				return err
+			}
+			evmFilter.Address = location.Address
+		}
+		filters = append(filters, evmFilter)
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
@@ -893,7 +944,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
 	}
-	result, err := e.streams.createSubscription(ctx, location, e.streamID[namespace], subName, firstEvent, abi)
+	result, err := e.streams.createSubscription(ctx, e.streamID[namespace], subName, firstEvent, location, firstEventABI, filters, lastProtocolID)
 	if err != nil {
 		return err
 	}
@@ -905,11 +956,11 @@ func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *cor
 	return e.streams.deleteSubscription(ctx, subscription.BackendID, okNotFound)
 }
 
-func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, detail interface{}, status core.ContractListenerStatus, err error) {
 	esID := e.streamID[namespace]
 	sub, err := e.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil || sub.Stream != esID {
-		return false, nil, err
+		return false, nil, core.ContractListenerStatusUnknown, err
 	}
 
 	checkpoint := &ListenerStatus{
@@ -921,19 +972,69 @@ func (e *Ethereum) GetContractListenerStatus(ctx context.Context, namespace, sub
 		},
 	}
 
-	return true, checkpoint, nil
+	// reduce checkpoint data to a single enum
+	status = core.ContractListenerStatusSynced
+	if sub.Catchup {
+		status = core.ContractListenerStatusSyncing
+	}
+
+	return true, checkpoint, status, nil
 }
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	return &ffi2abi.ParamValidator{}, nil
 }
 
-func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
 	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, event)
 	if err != nil {
+		return "", err
+	}
+	signature := ffi2abi.ABIMethodToSignature(abi)
+	indexedSignature := ABIMethodToIndexedSignature(abi)
+	if indexedSignature != "" {
+		signature = fmt.Sprintf("%s %s", signature, indexedSignature)
+	}
+	return signature, nil
+}
+
+func (e *Ethereum) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	eventSignature, err := e.GenerateEventSignature(ctx, event)
+	if err != nil {
+		// new error here needed
+		return "", err
+	}
+
+	// No location set
+	if location == nil {
+		return fmt.Sprintf("*:%s", eventSignature), nil
+	}
+
+	parsed, err := e.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%s", parsed.Address, eventSignature), nil
+}
+
+func ABIMethodToIndexedSignature(abi *abi.Entry) string {
+	if len(abi.Inputs) == 0 {
 		return ""
 	}
-	return ffi2abi.ABIMethodToSignature(abi)
+	positions := []string{}
+	for i, param := range abi.Inputs {
+		if param.Indexed {
+			positions = append(positions, fmt.Sprint(i))
+		}
+	}
+
+	// No indexed fields
+	if len(positions) == 0 {
+		return ""
+	}
+
+	return "[i=" + strings.Join(positions, ",") + "]"
 }
 
 func (e *Ethereum) GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string {

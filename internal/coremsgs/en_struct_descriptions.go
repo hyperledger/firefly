@@ -302,21 +302,28 @@ var (
 
 	// ContractListener field descriptions
 	ContractListenerID        = ffm("ContractListener.id", "The UUID of the smart contract listener")
-	ContractListenerInterface = ffm("ContractListener.interface", "A reference to an existing FFI, containing pre-registered type information for the event")
+	ContractListenerInterface = ffm("ContractListener.interface", "Deprecated: Please use 'interface' in the array of 'filters' instead")
 	ContractListenerNamespace = ffm("ContractListener.namespace", "The namespace of the listener, which defines the namespace of all blockchain events detected by this listener")
 	ContractListenerName      = ffm("ContractListener.name", "A descriptive name for the listener")
 	ContractListenerBackendID = ffm("ContractListener.backendId", "An ID assigned by the blockchain connector to this listener")
-	ContractListenerLocation  = ffm("ContractListener.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ContractListenerLocation  = ffm("ContractListener.location", "Deprecated: Please use 'location' in the array of 'filters' instead")
 	ContractListenerCreated   = ffm("ContractListener.created", "The creation time of the listener")
-	ContractListenerEvent     = ffm("ContractListener.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
+	ContractListenerEvent     = ffm("ContractListener.event", "Deprecated: Please use 'event' in the array of 'filters' instead")
+	ContractListenerFilters   = ffm("ContractListener.filters", "A list of filters for the contract listener. Each filter is made up of an Event and an optional Location. Events matching these filters will always be emitted in the order determined by the blockchain.")
 	ContractListenerTopic     = ffm("ContractListener.topic", "A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need")
 	ContractListenerOptions   = ffm("ContractListener.options", "Options that control how the listener subscribes to events from the underlying blockchain")
-	ContractListenerEventPath = ffm("ContractListener.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
-	ContractListenerSignature = ffm("ContractListener.signature", "The stringified signature of the event, as computed by the blockchain plugin")
+	ContractListenerEventPath = ffm("ContractListener.eventPath", "Deprecated: Please use 'eventPath' in the array of 'filters' instead")
+	ContractListenerSignature = ffm("ContractListener.signature", "A concatenation of all the stringified signature of the event and location, as computed by the blockchain plugin")
 	ContractListenerState     = ffm("ContractListener.state", "This field is provided for the event listener implementation of the blockchain provider to record state, such as checkpoint information")
 
 	// ContractListenerOptions field descriptions
 	ContractListenerOptionsFirstEvent = ffm("ContractListenerOptions.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest'")
+
+	ListenerFilterInterface = ffm("ListenerFilter.interface", "A reference to an existing FFI, containing pre-registered type information for the event")
+	ListenerFilterEvent     = ffm("ListenerFilter.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
+	ListenerFilterEventPath = ffm("ListenerFilter.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
+	ListenerFilterLocation  = ffm("ListenerFilter.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ListenerFilterSignature = ffm("ListenerFilter.signature", "The stringified signature of the event and location, as computed by the blockchain plugin")
 
 	// DIDDocument field descriptions
 	DIDDocumentContext            = ffm("DIDDocument.@context", "See https://www.w3.org/TR/did-core/#json-ld")
@@ -415,6 +422,7 @@ var (
 	MultipartyContractFirstEvent   = ffm("MultipartyContract.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors")
 	MultipartyContractLocation     = ffm("MultipartyContract.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
 	MultipartyContractSubscription = ffm("MultipartyContract.subscription", "The backend identifier of the subscription for the FireFly BatchPin contract")
+	MultipartyContractStatus       = ffm("MultipartyContract.status", "The status of the contract listener. One of 'syncing', 'synced', or 'unknown'")
 	MultipartyContractInfo         = ffm("MultipartyContract.info", "Additional info about the current status of the multi-party contract")
 	NetworkActionType              = ffm("NetworkAction.type", "The action to be performed")
 
@@ -430,16 +438,20 @@ var (
 	NamespaceMultiparty = ffm("NamespaceStatus.multiparty", "Information about the multi-party system configured on this namespace")
 
 	// NamespaceStatusNode field descriptions
-	NamespaceStatusNodeName       = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
-	NamespaceStatusNodeRegistered = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
-	NamespaceStatusNodeID         = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
+	NamespaceStatusNodeName                  = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
+	NamespaceStatusNodeRegistered            = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
+	NamespaceStatusNodeStatus                = ffm("NamespaceStatusNode.status", "The status of the node registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
+	NamespaceStatusNodeRegistrationMessageID = ffm("NamespaceStatusNode.pendingRegistrationMessageId", "The ID of the pending message that broadcast the identity claim to the network")
+	NamespaceStatusNodeID                    = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
 
 	// NamespaceStatusOrg field descriptions
-	NamespaceStatusOrgName       = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
-	NamespaceStatusOrgRegistered = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
-	NamespaceStatusOrgDID        = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
-	NamespaceStatusOrgID         = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
-	NamespaceStatusOrgVerifiers  = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
+	NamespaceStatusOrgName                  = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
+	NamespaceStatusOrgRegistered            = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
+	NamespaceStatusOrgStatus                = ffm("NamespaceStatusOrg.status", "The status of the organization registration, one of 'unregistered', 'registering', 'registered', and 'unknown'")
+	NamespaceStatusOrgRegistrationMessageID = ffm("NamespaceStatusOrg.pendingRegistrationMessageId", "The ID of the pending message that broadcast the identity claim to the network")
+	NamespaceStatusOrgDID                   = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
+	NamespaceStatusOrgID                    = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
+	NamespaceStatusOrgVerifiers             = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
 
 	// NamespaceStatusDefaults field descriptions
 	NamespaceStatusDefaultsNamespace = ffm("NamespaceStatusDefaults.namespace", "The default namespace on this node")
@@ -460,6 +472,12 @@ var (
 	// NamespaceStatusMultiparty field descriptions
 	NamespaceMultipartyEnabled  = ffm("NamespaceStatusMultiparty.enabled", "Whether multi-party mode is enabled for this namespace")
 	NamespaceMultipartyContract = ffm("NamespaceStatusMultiparty.contract", "Information about the multi-party smart contract configured for this namespace")
+
+	// NamespaceMultipartyStatus field descriptions
+	NamespaceMultipartyStatusEnabled   = ffm("NamespaceMultipartyStatus.enabled", "Whether multi-party mode is enabled for this namespace")
+	NamespaceMultipartyStatusNode      = ffm("NamespaceMultipartyStatus.node", "Details of the local node")
+	NamespaceMultipartyStatusOrg       = ffm("NamespaceMultipartyStatus.org", "Details of the root organization identity registered for this namespace on the local node")
+	NamespaceMultipartyStatusContracts = ffm("NamespaceMultipartyStatus.contracts", "Information about the active and terminated multi-party smart contracts configured for this namespace")
 
 	// BatchManagerStatus field descriptions
 	BatchManagerStatusProcessors = ffm("BatchManagerStatus.processors", "An array of currently active batch processors")

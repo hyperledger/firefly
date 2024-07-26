@@ -19,8 +19,10 @@ package multiparty
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -115,8 +117,15 @@ func TestConfigureContract(t *testing.T) {
 	defer mp.cleanup(t)
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
-	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, "001/002/003").Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.MatchedBy(func(f ffapi.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		return fi.Limit == 1 && strings.Contains(fi.String(), "listener")
+	})).Return([]*core.BlockchainEvent{
+		{Namespace: "ns1", ID: fftypes.NewUUID(), ProtocolID: "001/002/003"},
+	}, nil, nil).Once()
 
 	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
 		FirstEvent: "0",
@@ -141,6 +150,7 @@ func TestConfigureContractLocationChanged(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil).Once()
 
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{
@@ -168,6 +178,7 @@ func TestConfigureContractDeprecatedConfig(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil).Once()
 
 	err := mp.ConfigureContract(context.Background())
 
@@ -263,6 +274,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil).Once()
 	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction, core.IdempotencyKey("")).Return(txid, nil)
 	mp.mbi.On("Name").Return("ut")
 	mp.mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
@@ -306,11 +318,38 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil).Once()
 	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction, core.IdempotencyKey("")).Return(nil, fmt.Errorf("pop"))
 
 	err := mp.ConfigureContract(context.Background())
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate}, false)
+	assert.EqualError(t, err, "pop")
+
+	mp.mbi.AssertExpectations(t)
+	mp.mth.AssertExpectations(t)
+}
+
+func TestConfigureContractLookupBlockchainEventFail(t *testing.T) {
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
+	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
+		Active: &core.MultipartyContract{Index: 0},
+	}
+	mp.multipartyManager.config.Contracts = []blockchain.MultipartyContract{{
+		FirstEvent: "0",
+		Location:   location,
+	}}
+
+	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+
+	err := mp.ConfigureContract(context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mp.mbi.AssertExpectations(t)
@@ -337,6 +376,7 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil).Once()
 	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction, core.IdempotencyKey("")).Return(txid, nil)
 	mp.mbi.On("Name").Return("ut")
 	mp.mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
@@ -362,6 +402,7 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil).Once()
 
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
@@ -623,6 +664,7 @@ func TestGetNetworkVersion(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil).Once()
 
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},
@@ -651,6 +693,7 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mdi.On("UpsertNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(nil)
+	mp.mdi.On("GetBlockchainEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, nil)
 
 	mp.multipartyManager.namespace.Contracts = &core.MultipartyContracts{
 		Active: &core.MultipartyContract{Index: 0},

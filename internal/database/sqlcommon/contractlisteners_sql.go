@@ -44,6 +44,7 @@ var (
 		"topic",
 		"options",
 		"created",
+		"filters",
 	}
 	contractListenerFilterFieldMap = map[string]string{
 		"interface": "interface_id",
@@ -52,6 +53,84 @@ var (
 )
 
 const contractlistenersTable = "contractlisteners"
+
+func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *core.ContractListener, allowExisting bool) (err error) {
+	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.RollbackTx(ctx, tx, autoCommit)
+
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		listenerRows, _, err := s.QueryTx(ctx, contractlistenersTable, tx,
+			sq.Select("id").
+				From(contractlistenersTable).
+				Where(sq.Eq{
+					"namespace": listener.Namespace,
+					"name":      listener.Name,
+				}),
+		)
+		if err != nil {
+			return err
+		}
+
+		existing = listenerRows.Next()
+		if existing {
+			var id fftypes.UUID
+			_ = listenerRows.Scan(&id)
+			if listener.ID != nil {
+				if *listener.ID != id {
+					listenerRows.Close()
+					return database.IDMismatch
+				}
+			}
+			listener.ID = &id // Update on returned object
+		}
+		listenerRows.Close()
+	}
+
+	if existing {
+		var interfaceID *fftypes.UUID
+		if listener.Interface != nil {
+			interfaceID = listener.Interface.ID
+		}
+		// Update the listener
+		if _, err = s.UpdateTx(ctx, contractlistenersTable, tx,
+			sq.Update(contractlistenersTable).
+				// Note we do not update ID
+				Set("backend_id", listener.BackendID).
+				Set("filters", listener.Filters).
+				Set("event", listener.Event).
+				Set("signature", listener.Signature).
+				Set("options", listener.Options).
+				Set("topic", listener.Topic).
+				Set("location", listener.Location).
+				Set("interface_id", interfaceID).
+				Where(sq.Eq{
+					"namespace": listener.Namespace,
+					"name":      listener.Name,
+				}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
+			},
+		); err != nil {
+			return err
+		}
+	} else {
+		if listener.ID == nil {
+			listener.ID = fftypes.NewUUID()
+		}
+
+		err = s.InsertContractListener(ctx, listener)
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.CommitTx(ctx, tx, autoCommit)
+}
 
 func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
 	ctx, tx, autoCommit, err := s.BeginOrUseTx(ctx)
@@ -81,6 +160,7 @@ func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.C
 				listener.Topic,
 				listener.Options,
 				listener.Created,
+				listener.Filters,
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeCreated, listener.Namespace, listener.ID)
@@ -108,10 +188,14 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 		&listener.Topic,
 		&listener.Options,
 		&listener.Created,
+		&listener.Filters,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, contractlistenersTable)
 	}
+
+	// Note: If we have a legacy "event" and "address" stored in the DB, it will be returned as before with the event at the top level
+
 	return &listener, nil
 }
 

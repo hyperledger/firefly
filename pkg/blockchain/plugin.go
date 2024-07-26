@@ -97,13 +97,13 @@ type Plugin interface {
 	QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
-	AddContractListener(ctx context.Context, subscription *core.ContractListener) error
+	AddContractListener(ctx context.Context, subscription *core.ContractListener, lastProtocolID string) error
 
 	// DeleteContractListener deletes a previously-created subscription
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error
 
 	// GetContractListenerStatus gets the status of a contract listener from the backend connector. Returns false if not found
-	GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, error)
+	GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, core.ContractListenerStatus, error)
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
 	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
@@ -115,7 +115,13 @@ type Plugin interface {
 	NormalizeContractLocation(ctx context.Context, ntype NormalizeType, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
 
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
-	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
+	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error)
+
+	// GenerateEventSignatureWithLocation generates a strigified signature for the event , incorporating any fields significant to identifying the event as unique and the location
+	GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error)
+
+	// CompareEventSignatures will compare both signatures return true if they overlap
+	CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error)
 
 	// GenerateErrorSignature generates a strigified signature for the custom error, incorporating any fields significant to identifying the error as unique
 	GenerateErrorSignature(ctx context.Context, errorDef *fftypes.FFIErrorDefinition) string
@@ -127,7 +133,7 @@ type Plugin interface {
 	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
 
 	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
-	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *MultipartyContract) (subID string, err error)
+	AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *MultipartyContract, lastProtocolID string) (subID string, err error)
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
 	RemoveFireflySubscription(ctx context.Context, subID string)

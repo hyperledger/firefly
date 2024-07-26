@@ -261,7 +261,11 @@ func (t *Tezos) Capabilities() *blockchain.Capabilities {
 	return t.capabilities
 }
 
-func (t *Tezos) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+func (t *Tezos) AddFireflySubscription(ctx context.Context,
+	namespace *core.Namespace,
+	contract *blockchain.MultipartyContract,
+	_ string, // Tezos lexicographically sortable protocol IDs for not yet implemented for events
+) (string, error) {
 	tezosLocation, err := t.parseContractLocation(ctx, contract.Location)
 	if err != nil {
 		return "", err
@@ -406,10 +410,54 @@ func (t *Tezos) NormalizeContractLocation(ctx context.Context, ntype blockchain.
 	return t.encodeContractLocation(ctx, parsed)
 }
 
-func (t *Tezos) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
+func (t *Tezos) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	if left == nil || right == nil {
+		// No location on either side so overlapping
+		// as means listening to everything
+		return true, nil
+	}
+
+	parsedLeft, err := t.parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := t.parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// For Ethereum just compared addresses
+	return parsedLeft.Address == parsedRight.Address, nil
+}
+
+func (t *Tezos) StringifyContractLocation(ctx context.Context, location *fftypes.JSONAny) (string, error) {
+	parsed, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return parsed.Address, nil
+}
+
+func (t *Tezos) AddContractListener(
+	ctx context.Context,
+	listener *core.ContractListener,
+	_ string, // Tezos lexicographically sortable protocol IDs for not yet implemented for events
+) (err error) {
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	if len(listener.Filters) > 1 {
+		return i18n.NewError(ctx, coremsgs.MsgContractListenerBlockchainFilterLimit, listener.Name)
+	}
+
+	filter := listener.Filters[0]
+
 	var location *Location
-	if listener.Location != nil {
-		location, err = t.parseContractLocation(ctx, listener.Location)
+	if filter.Location != nil {
+		location, err = t.parseContractLocation(ctx, filter.Location)
 		if err != nil {
 			return err
 		}
@@ -420,7 +468,7 @@ func (t *Tezos) AddContractListener(ctx context.Context, listener *core.Contract
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
 	}
-	result, err := t.streams.createSubscription(ctx, location, t.streamID, subName, listener.Event.Name, firstEvent)
+	result, err := t.streams.createSubscription(ctx, location, t.streamID, subName, filter.Event.Name, firstEvent)
 	if err != nil {
 		return err
 	}
@@ -433,10 +481,10 @@ func (t *Tezos) DeleteContractListener(ctx context.Context, subscription *core.C
 }
 
 // Note: In state of development. Approach can be changed.
-func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, status interface{}, err error) {
+func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, detail interface{}, status core.ContractListenerStatus, err error) {
 	sub, err := t.streams.getSubscription(ctx, subID, okNotFound)
 	if err != nil || sub == nil {
-		return false, nil, err
+		return false, nil, core.ContractListenerStatusUnknown, err
 	}
 
 	checkpoint := &ListenerStatus{
@@ -449,7 +497,13 @@ func (t *Tezos) GetContractListenerStatus(ctx context.Context, namespace, subID 
 		},
 	}
 
-	return true, checkpoint, nil
+	// reduce checkpoint data to a single enum
+	status = core.ContractListenerStatusSynced
+	if sub.Catchup {
+		status = core.ContractListenerStatusSyncing
+	}
+
+	return true, checkpoint, status, nil
 }
 
 func (t *Tezos) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
@@ -457,8 +511,24 @@ func (t *Tezos) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValid
 	return nil, nil
 }
 
-func (t *Tezos) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	return event.Name
+func (t *Tezos) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
+	return event.Name, nil
+}
+
+func (t *Tezos) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	eventSignature, _ := t.GenerateEventSignature(ctx, event)
+
+	// No location set
+	if location == nil {
+		return fmt.Sprintf("*:%s", eventSignature), nil
+	}
+
+	parsed, err := t.parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s:%s", parsed.Address, eventSignature), nil
 }
 
 func (t *Tezos) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {

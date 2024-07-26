@@ -16,14 +16,14 @@ The FireFly API for digital assets, data flows, and blockchain transactions make
 
 The best place to learn about FireFly is in the [documentation](https://hyperledger.github.io/firefly).
 
-There you will find our [Getting Started Guide](https://hyperledger.github.io/firefly/gettingstarted/),
+There you will find our [Getting Started Guide](https://hyperledger.github.io/firefly/latest/gettingstarted/),
 which will get you a running FireFly network of Supernodes on your local machine in a few minutes.
 
 Your development environment will come with:
 
 FireFly CLI                   |  FireFly Explorer UI                | FireFly Sandbox  |
 :----------------------------:|:-----------------------------------:|:----------------:|
-![](./images/firefly_cli.png) | ![](./images/firefly_explorer.png) | ![](./images/firefly_sandbox.png) |
+[![CLI](./images/firefly_cli.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/firefly_cli/#install-the-firefly-cli) | [![UI](./images/firefly_explorer.png)](https://github.com/hyperledger/firefly-ui) | [![Sandbox](./images/firefly_sandbox.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/sandbox/#use-the-sandbox) |
 
 ## Engage with the community
 
@@ -38,13 +38,13 @@ So if there aren't yet instructions for making FireFly a Supernode for your favo
 don't worry. There is almost certainly a straightforward path to plugging it in that will save you from re-building
 all the plumbing for your blockchain application from scratch.
 
-[![Hyperledger FireFly Architecture Overview](./docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/docs/images/firefly_architecture_overview.jpg)
+[![Hyperledger FireFly Architecture Overview](./doc-site/docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/doc-site/docs/images/firefly_architecture_overview.jpg)
 
 ## Start contributing to Hyperledger FireFy
 
 There are lots of places you can contribute, regardless of whether your skills are front-end, backend-end, or full-stack.
 
-Check out our [Contributor Guide](https://hyperledger.github.io/firefly/contributors/), and **welcome!**.
+Check out our [Contributor Guide](https://hyperledger.github.io/firefly/latest/contributors/), and **welcome!**.
 
 ## Other repos
 
@@ -297,7 +297,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │
   │           ┌───────────────┐  - Database Interactions
   ├───────────┤ database  [Di]│    * Create, Read, Update, Delete (CRUD) actions
-  │           │ interace      │    * Filtering and update definition interace
+  │           │ interface     │    * Filtering and update definition interface
   │           └─────┬─────────┘    * Migrations and Indexes
   │                 │
   │                 ├───────── ... extensible to NoSQL (CouchDB / MongoDB etc.)

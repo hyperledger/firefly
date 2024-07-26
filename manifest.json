@@ -6,23 +6,23 @@
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.3.8",
-    "sha": "b4afb5bd4032a87f7f4145d49480f204a873302f21b476f85c39e93a776e3a1c"
+    "tag": "v1.3.14",
+    "sha": "7fbd5b236262b8f13ed43e1c691aad0ee31437f2db20e675d75864b568afe9ed"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.19",
-    "sha": "9479213b0114619c7690fa924ebbe7f837cf851c4ea9bd901798c7783edfc7e7"
+    "tag": "v0.9.20",
+    "sha": "e597be0db4dc34b455e2e001abf0f8e867874ae6984a60a3db91bce3f8fdc542"
   },
   "tezosconnect": {
     "image": "ghcr.io/hyperledger/firefly-tezosconnect",
-    "tag": "v0.2.2",
-    "sha": "238cef711f2ee8f841ad767be12ad33710136d6f5ab160de74715c0225188b94"
+    "tag": "v0.2.4",
+    "sha": "cbb0bef8ae8b5d4adffd564591ddab0e1ca68442c10183679ba207049e64a59e"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v1.2.0",
-    "sha": "4ac765f7a07b9d17ab5648b3c789875791db364659c975a23626ec5921f11ce4"
+    "tag": "v1.3.0",
+    "sha": "1e01b0d5fc3cfd95de150d47c09ba419b8ec98345d105a6d67d7bc7101aeea89"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
@@ -59,6 +59,6 @@
     "release": "v1.3.0"
   },
   "cli": {
-    "tag": "v1.3.0"
+    "tag": "v1.3.1-rc2"
   }
 }

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -48,6 +48,10 @@ type MultipartyContracts struct {
 	Active     *MultipartyContract   `ffstruct:"MultipartyContracts" json:"active"`
 	Terminated []*MultipartyContract `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`
 }
+type MultipartyContractsWithActiveStatus struct {
+	Active     *MultipartyContractWithStatus `ffstruct:"MultipartyContracts" json:"active"`
+	Terminated []*MultipartyContract         `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`
+}
 
 // MultipartyContract represents identifying details about a FireFly multiparty contract, as read from the config file
 type MultipartyContract struct {
@@ -55,6 +59,22 @@ type MultipartyContract struct {
 	Location   *fftypes.JSONAny       `ffstruct:"MultipartyContract" json:"location,omitempty"`
 	FirstEvent string                 `ffstruct:"MultipartyContract" json:"firstEvent,omitempty"`
 	Info       MultipartyContractInfo `ffstruct:"MultipartyContract" json:"info"`
+}
+
+type ContractListenerStatus = fftypes.FFEnum
+
+var (
+	// contract is in catch-up mode
+	ContractListenerStatusSyncing = fftypes.FFEnumValue("contractlistenerstatus", "syncing")
+	// contract is within tolerance of the latest block
+	ContractListenerStatusSynced = fftypes.FFEnumValue("contractlistenerstatus", "synced")
+	// status couldn't be determined
+	ContractListenerStatusUnknown = fftypes.FFEnumValue("contractlistenerstatus", "unknown")
+)
+
+type MultipartyContractWithStatus struct {
+	MultipartyContract
+	Status ContractListenerStatus `ffstruct:"MultipartyContract" json:"status"`
 }
 
 // MultipartyContractInfo stores additional info about the FireFly multiparty contract that is computed during node operation
