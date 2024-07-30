@@ -675,21 +675,20 @@ If you look at the source code for the smart contract we're working with above, 
 ```
 
 ### Response
-// TODO update this response
 
 ```json
 {
-  "id": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14",
+  "id": "e7c8457f-4ffd-42eb-ac11-4ad8aed30de1",
   "interface": {
-    "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+    "id": "55fdb62a-fefc-4313-99e4-e3f95fcca5f0"
   },
   "namespace": "default",
-  "name": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
-  "protocolId": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
+  "name": "019104d7-bb0a-c008-76a9-8cb923d91b37",
+  "backendId": "019104d7-bb0a-c008-76a9-8cb923d91b37",
   "location": {
     "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
   },
-  "created": "2022-02-17T22:02:36.34549538Z",
+  "created": "2024-07-30T18:12:12.704964Z",
   "event": {
     "name": "Changed",
     "description": "",
@@ -717,9 +716,49 @@ If you look at the source code for the smart contract we're working with above, 
       }
     ]
   },
+  "signature": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1:Changed(address,uint256) [i=0]",
+  "topic": "simple-storage",
   "options": {
-    "firstEvent": "oldest"
-  }
+    "firstEvent": "newest"
+  },
+  "filters": [
+    {
+      "event": {
+        "name": "Changed",
+        "description": "",
+        "params": [
+          {
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "details": {
+                "type": "address",
+                "internalType": "address",
+                "indexed": true
+              }
+            }
+          },
+          {
+            "name": "value",
+            "schema": {
+              "type": "integer",
+              "details": {
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            }
+          }
+        ]
+      },
+      "location": {
+        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+      },
+      "interface": {
+        "id": "55fdb62a-fefc-4313-99e4-e3f95fcca5f0"
+      },
+      "signature": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1:Changed(address,uint256) [i=0]"
+    }
+  ]
 }
 ```
 
