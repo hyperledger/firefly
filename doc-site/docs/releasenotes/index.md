@@ -8,7 +8,7 @@ title: Release Notes
 
 What's New:
 
-- Enable contract listeners with multiple filters
+- Enable contract listeners with multiple filters, old format is persevered for backwards compatibility
 - New multiparty status API at `/status/multiparty`
 
 ## [v1.3.0 - April 25, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.1.0)
