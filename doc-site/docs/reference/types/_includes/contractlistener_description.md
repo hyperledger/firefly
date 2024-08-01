@@ -5,7 +5,6 @@ of the interface for that event.
 Check out the [Custom Contracts Tutorial](../../tutorials/custom_contracts/index.md) for
 a walk-through of how to set up listeners for the events from your smart contracts.
  
-
 See below for a deep dive into the format of contract listeners and important concepts to understand when managing them. 
 
 ###  Multiple filters
@@ -25,3 +24,58 @@ As mentioned above, we have introduced a new format for signatures of contract l
 - Each contract listener signature will be a concatination of all the filter signatures
 
 Furthemore, we noticed that specifically for Ethereum the ABI does not include a differenciation between indexed and non-indexed fields so we included a new section to the Ethereum specific event signature to add the index of the indexed fields on the signature, as such a filter listening to the event `Changed(address indexed from, uint256 value)` at address `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1` will result in `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1:Changed(address,uint256) [i=0]` where `[i=0]` specifies that the first field is indexed. If there were more indexed fields, it will be a comma separate list of the index of those indexed fields such as `[i=0,2,3]` specifies that fields at index 0, 2, and 3 are indexed fields.
+
+
+### Formats supported
+
+As described above, there are two formats supported by the API for backwards compatibility with previous releases.
+
+*** Muliple Filters ***
+
+```json
+{
+  "filters": [
+    {
+      "interface": {
+        "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+      },
+      "location": {
+        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+      },
+      "eventPath": "Changed"
+    },
+    {
+      "interface": {
+        "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+      },
+      "location": {
+        "address": "0xa4ea5d0b6b2eaf194716f0cc73981939dca27da1"
+      },
+      "eventPath": "AnotherEvent"
+    },
+  ],
+  "options": {
+    "firstEvent": "newest"
+  },
+  "topic": "simple-storage"
+}
+```
+
+*** One filter with old format ***
+
+
+```json
+{
+  "interface": {
+    "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+  },
+  "location": {
+    "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+  },
+  "eventPath": "Changed",
+  "options": {
+    "firstEvent": "newest"
+  },
+  "topic": "simple-storage"
+}
+```
