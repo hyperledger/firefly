@@ -4,6 +4,14 @@ title: Release Notes
 
 [Full release notes](https://github.com/hyperledger/firefly/releases)
 
+## [v1.3.1 - Aug 5, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.1)
+
+What's New:
+
+- Enable contract listeners with multiple filters
+    See [Contract Listeners](../reference/types/contractlistener.md) for details
+- New multiparty status API at `/status/multiparty`
+
 ## [v1.3.0 - April 25, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.1.0)
 
 [Migration guide](1.3_migration_guide.md)

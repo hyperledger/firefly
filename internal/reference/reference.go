@@ -389,10 +389,35 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 					},
 				},
 			},
-			Signature: "Changed(uint256)",
+			Signature: "0x596003a91a97757ef1916c8d6c0d42592630d2cf:Changed(uint256)",
 			Topic:     "app1_topic",
 			Options: &core.ContractListenerOptions{
 				FirstEvent: "newest",
+			},
+			Filters: core.ListenerFilters{
+				{
+					Event: &core.FFISerializedEvent{
+						FFIEventDefinition: fftypes.FFIEventDefinition{
+							Name: "Changed",
+							Params: fftypes.FFIParams{
+								{
+									Name: "x",
+									Schema: fftypes.JSONAnyPtr(`{
+										"type": "integer",
+										"details": {
+										"type": "uint256",
+										"internalType": "uint256"
+										}
+									}`),
+								},
+							},
+						},
+					},
+					Signature: "0x596003a91a97757ef1916c8d6c0d42592630d2cf:Changed(uint256)",
+					Location: fftypes.JSONAnyPtr(`{
+						"address": "0x596003a91a97757ef1916c8d6c0d42592630d2cf"
+					}`),
+				},
 			},
 		},
 
