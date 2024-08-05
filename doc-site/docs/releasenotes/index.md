@@ -4,7 +4,7 @@ title: Release Notes
 
 [Full release notes](https://github.com/hyperledger/firefly/releases)
 
-## [v1.3.1 - Aug 1, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.1)
+## [v1.3.1 - Aug 5, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.1)
 
 What's New:
 
