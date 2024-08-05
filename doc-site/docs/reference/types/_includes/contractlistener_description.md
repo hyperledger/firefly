@@ -9,7 +9,13 @@ See below for a deep dive into the format of contract listeners and important co
 
 ### Multiple filters
 
-From v1.3.1 onwards, a contract listener can be created with multiple filters under a single topic when supported by the connector.
+From v1.3.1 onwards, a contract listener can be created with multiple filters under a single topic when supported by the connector. Each filter contains:
+
+- a reference to a specific blockchain event to listen for
+- (optional) a specific location/address to listen from
+- a connector-specific signature (generated from the event and the location)
+
+In addition to this list of multiple filters, the listener specifies a single `topic` to identify the stream of events. This new feature will allow better management of contract listeners, and strong ordering of events matching multiple filters.
 
 Before this change, each contract listener would only support listening to one specific event from an interface previously defined. Each listener would be comprised of:
 
@@ -18,40 +24,66 @@ Before this change, each contract listener would only support listening to one s
 - a connector-specific signature (generated from the event), which allows you to easily identify and search for the contact listener for an event
 - a `topic` which determines the ordered stream that these events are part of
 
-This format is still supported by the API. However, it may not fully guarantee accurate ordering of events coming from multiple listeners, even if they share the same `topic` (such as during cases of blockchain catch-up, or when one listener is created much later than the others).
+For backwards compatibility, this format is still supported by the API.
 
-From v1.3.1, you can supply multiple filters on a single listener. Each filter contains:
+### Signature strings
 
-- a reference to a specific blockchain event to listen for
-- (optional) a specific location/address to listen from
-- a connector-specific signature (generated from the event and the location)
+Each filter is identified by a generated `signature` that matches a single event, and each contract listener is identified by a `signature` computed from its filters.
 
-In addition to this list of multiple filters, the listener specifies a single `topic` to identify the stream of events. This new feature will allow better management of contract listeners and strong ordering of all of the events your application cares about.
+Ethereum provides a string standard for event signatures, of the form `EventName(uint256,bytes)`. Prior to v1.3.1, the signature of each Ethereum contract listener would exactly follow this Ethereum format.
 
-Note: For backwards compatibility, the response from the API will populate top-level `event` and `location` fields with the contents of the first event filter in the array.
+As of v1.3.1, Ethereum signature strings have been changed, because this format does not fully describe the event - particularly because each top-level parameter can in the ABI definition be marked as `indexed`. For example, while the following two Solidity events have the same signature, they are serialized differently due to the different placement of `indexed` parameters, and thus a listener must define both individually to be able to process them:
+
+- ERC-20 `Transfer`
+
+  ```solidity
+  event Transfer(address indexed _from, address indexed _to, uint256 _value)
+  ```
+
+- ERC-721 `Transfer`
+
+  ```solidity
+  event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
+  ```
+
+The two above will now be expressed in the following manner by the Ethereum blockchain connector:
+
+```solidity
+Transfer(address,address,uint256) [i=0,1]
+Transfer(address,address,uint256) [i=0,1,2]
+```
+
+The `[i=]` listing at the end of the signature indicates the position of all parameters that are marked as `indexed`.
+
+Building on the blockchain-specific signature format for each event, FireFly will then compute the final signature for each filter and each contract listener as follows:
+
+- Each filter signature will be a combination of the location and the specific connector event signature, such as `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1:Changed(address,uint256) [i=0]`
+- Each contract listener signature will be a concatenation of all the filter signatures, separated by `;`
 
 ### Duplicate filters
 
-FireFly will restrict the creation of a contract listener with duplicate filters or superset filters. For example, if two filters are listening to the same event, but one has specified a location and the other hasn't, then the latter will be a superset, and already be listening to all the events matching the first filter. Creation of duplicate or superset filters will be blocked.
+FireFly will restrict the creation of a contract listener containing duplicate filters or superset filters. For example, if two filters are listening to the same event, but one has specified a location and the other hasn't, then the latter will be a superset, and already be listening to all the events matching the first filter. Creation of duplicate or superset filters within a single listener will be blocked.
 
 ### Duplicate listeners
 
-As of v1.3.1, each filter on a listener includes a signature generated from the filter location + event, and the listener concatenates all of these signatures to build the overall contract listener signature. This contract listener signature - containing all the locations and event signatures combined with the listener topic - will guarantee uniqueness of the contract listener. If you tried to create the same listener again, you would receive HTTP 409. This combination can allow a developer to assert that their listener exists, without the risk of creating duplicates.
+As noted above, each listener has a generated signature. This signature - containing all the locations and event signatures combined with the listener topic - will guarantee uniqueness of the contract listener. If you tried to create the same listener again, you would receive HTTP 409. This combination can allow a developer to assert that their listener exists, without the risk of creating duplicates.
 
-Note: Prior to v1.3.1, FireFly would detect duplicates simply by requiring a unique combination of signature + topic + location for each listener. When using muliple filters, we cannot rely on the signature of one event and the location of one filter to calculate uniqueness of a contract listener, hence the need for the more sophisticated uniqueness checks described here.
+**Note:** Prior to v1.3.1, FireFly would detect duplicates simply by requiring a unique combination of signature + topic + location for each listener. The updated behavior for the listener signature is intended to preserve similar functionality, even when dealing with listeners that contain many event filters.
 
-### Signature enhancements
+### Backwards compatibility
 
-As mentioned above, we have introduced a new format for signatures of contract listener and filter signature:
+As noted throughout this document, the behavior of listeners is changed in v1.3.1. However, the following behaviors are retained for backwards-compatibility, to ensure that code written prior to v1.3.1 should continue to function.
 
-- Each filter signature will be a combination of the location and the specific connector event signature
-- Each contract listener signature will be a concatenation of all the filter signatures
+- The response from all query APIs of `listeners` will continue to populate top-level `event` and `location` fields
+  - The first entry from the `filters` array is duplicated to these fields
+- On input to create a new `listener`, the `event` and `location` fields are still supported
+  - They function identically to supplying a `filters` array with a single entry
+- The `signature` field is preserved at the listener level
+  - The format has been changed as described above
 
-Furthermore, because Ethereum ABI does not include a differentiation between indexed and non-indexed fields, we have included a new section in the Ethereum-specific event signature to add the index of the indexed fields. As such, a filter listening to the event `Changed(address indexed from, uint256 value)` at address `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1` will result in `0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1:Changed(address,uint256) [i=0]` where `[i=0]` specifies that the first field is indexed. If there were more indexed fields, it will be a comma-separated list of the index of those indexed fields such as `[i=0,2,3]` (specifies that fields at index 0, 2, and 3 are indexed fields).
+### Input formats
 
-### Formats supported
-
-As described above, there are two input formats supported by the API for backwards compatibility with previous releases.
+The two input formats supported when creating a contract listener are shown below.
 
 **Muliple Filters**
 
