@@ -70,7 +70,11 @@ Building on the blockchain-specific signature format for each event, FireFly wil
 
 #### Duplicate filters
 
-FireFly will restrict the creation of a contract listener containing duplicate filters or superset filters. For example, if two filters are listening to the same event, but one has specified a location and the other hasn't, then the latter will be a superset, and already be listening to all the events matching the first filter. Creation of duplicate or superset filters within a single listener will be blocked.
+FireFly restricts the creation of a contract listener containing duplicate filters.
+
+This includes the special case where one filter is a superset of another filter, due to a wildcard location.
+
+For example, if two filters are listening to the same event, but one has specified a location and the other hasn't, then the latter will be a superset, and already be listening to all the events matching the first filter. Creation of duplicate or superset filters within a single listener will be blocked.
 
 #### Duplicate listeners
 
