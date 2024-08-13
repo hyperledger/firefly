@@ -33,7 +33,7 @@ jobs:
               https://api.github.com/repos/${{ github.repository }}/releases/latest \
               | jq -r '.tag_name'
           )
-          IS_LATEST=${{ env.LATEST_TAG == github.event.release.tag_name }}
+          IS_LATEST=${{ $LATEST_TAG == github.event.release.tag_name }}
           echo This release is: "${{ github.event.release.tag_name }}"
           echo The latest release is: "$LATEST_TAG"
           echo "IS_LATEST_RELEASE=$IS_LATEST" >> "$GITHUB_ENV"
