@@ -27,10 +27,10 @@ import (
 
 var patchUpdateIdentity = &ffapi.Route{
 	Name:   "patchUpdateIdentity",
-	Path:   "identities/{iid}",
+	Path:   "identities/{id}",
 	Method: http.MethodPatch,
 	PathParams: []*ffapi.PathParam{
-		{Name: "iid", Description: coremsgs.APIParamsIdentityID},
+		{Name: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmMsgQueryParam, IsBool: true},
@@ -43,8 +43,7 @@ var patchUpdateIdentity = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			org, err := cr.or.NetworkMap().UpdateIdentity(cr.ctx, r.PP["iid"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
-			return org, err
+			return cr.or.NetworkMap().UpdateIdentity(cr.ctx, r.PP["id"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
 		},
 	},
 }

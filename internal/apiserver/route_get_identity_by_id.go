@@ -32,7 +32,7 @@ var getIdentityByID = &ffapi.Route{
 	Path:   "identities/{id:.+}",
 	Method: http.MethodGet,
 	PathParams: []*ffapi.PathParam{
-		{Name: "id", Example: "id", Description: coremsgs.APIParamsIdentityID},
+		{Name: "id", Example: "id", Description: coremsgs.APIParamsIdentityIDs},
 	},
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
