@@ -71,20 +71,21 @@ func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, 
 	return l, nil
 }
 
-func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent, listener *core.ContractListener) error {
+// handleBlockchainBatchPinEvent handles a blockchain event, returning true if the event was created, false if it was a duplicate
+func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent, listener *core.ContractListener) (bool, error) {
 	existing, err := em.txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if existing != nil {
 		log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", chainEvent.ProtocolID)
 		// Return the ID of the existing event
 		chainEvent.ID = existing.ID
-		return nil
+		return false, nil
 	}
 	topic := em.getTopicForChainListener(listener)
 	ffEvent := core.NewEvent(core.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, topic)
-	return em.database.InsertEvent(ctx, ffEvent)
+	return true, em.database.InsertEvent(ctx, ffEvent)
 }
 
 func (em *eventManager) getChainListenerCached(cacheKey string, getter func() (*core.ContractListener, error)) (*core.ContractListener, error) {

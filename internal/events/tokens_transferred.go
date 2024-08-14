@@ -89,10 +89,13 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		Type:         transfer.TX.Type,
 		BlockchainID: transfer.Event.BlockchainTXID,
 	})
-	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
+	created, err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil)
+	if err != nil {
 		return false, err
 	}
-	em.emitBlockchainEventMetric(transfer.Event)
+	if created {
+		em.emitBlockchainEventMetric(transfer.Event)
+	}
 	transfer.BlockchainEvent = chainEvent.ID
 
 	// This is a no-op if we've already persisted this token transfer
