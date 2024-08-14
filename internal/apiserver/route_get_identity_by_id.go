@@ -20,17 +20,19 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getIdentityByID = &ffapi.Route{
 	Name:   "getIdentityByID",
-	Path:   "identities/{iid}",
+	Path:   "identities/{id:.+}",
 	Method: http.MethodGet,
 	PathParams: []*ffapi.PathParam{
-		{Name: "iid", Example: "id", Description: coremsgs.APIParamsIdentityID},
+		{Name: "id", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
@@ -41,10 +43,30 @@ var getIdentityByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-				return cr.or.NetworkMap().GetIdentityByIDWithVerifiers(cr.ctx, r.PP["iid"])
+			switch id := r.PP["id"]; {
+			case isUUID(id):
+				if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+					return cr.or.NetworkMap().GetIdentityByIDWithVerifiers(cr.ctx, id)
+				}
+				return cr.or.NetworkMap().GetIdentityByID(cr.ctx, id)
+			case isDID(id):
+				if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+					return cr.or.NetworkMap().GetIdentityByDIDWithVerifiers(cr.ctx, id)
+				}
+				return cr.or.NetworkMap().GetIdentityByDID(cr.ctx, id)
 			}
-			return cr.or.NetworkMap().GetIdentityByID(cr.ctx, r.PP["iid"])
+			return nil, i18n.NewError(cr.ctx, i18n.MsgUnknownIdentityType)
 		},
 	},
+}
+
+// isUUID checks if the given string is a UUID
+func isUUID(s string) bool {
+	_, err := uuid.Parse(s)
+	return err == nil
+}
+
+// isDID checks if the given string is a potential DID
+func isDID(s string) bool {
+	return strings.HasPrefix(s, "did:")
 }

@@ -534,7 +534,7 @@ func (sm *subscriptionManager) connectionClosed(ei events.Plugin, connID string)
 	sm.mux.Lock()
 	conn, ok := sm.connections[connID]
 	if ok && conn.ei != ei {
-		log.L(sm.ctx).Warnf(i18n.ExpandWithCode(sm.ctx, i18n.MessageKey(coremsgs.MsgMismatchedTransport), connID, ei.Name(), conn.ei.Name()))
+		log.L(sm.ctx).Warnln(i18n.ExpandWithCode(sm.ctx, i18n.MessageKey(coremsgs.MsgMismatchedTransport), connID, ei.Name(), conn.ei.Name()))
 		sm.mux.Unlock()
 		return
 	}

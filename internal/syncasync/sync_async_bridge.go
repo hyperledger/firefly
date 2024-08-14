@@ -155,7 +155,7 @@ func (sa *syncAsyncBridge) getInFlight(ns string, reqType requestType, id *fftyp
 		return nil
 	}
 	inflightNS := sa.inflight[ns]
-	if inflightNS != nil && id != nil {
+	if inflightNS != nil {
 		inflight := inflightNS[*id]
 		if inflight != nil && inflight.reqType == reqType {
 			return inflight
@@ -615,7 +615,7 @@ func (sa *syncAsyncBridge) resolveSuccessfulOperation(inflight *inflightRequest,
 
 func (sa *syncAsyncBridge) resolveFailedOperation(inflight *inflightRequest, typeName string, op *core.Operation) {
 	log.L(sa.ctx).Debugf("Resolving %s request '%s' with error '%s'", typeName, inflight.id, op.Error)
-	inflight.response <- inflightResponse{err: fmt.Errorf(op.Error)}
+	inflight.response <- inflightResponse{err: fmt.Errorf("%s", op.Error)}
 }
 
 func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftypes.UUID, reqType requestType, send SendFunction) (interface{}, error) {
