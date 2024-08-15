@@ -71,7 +71,7 @@ func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, 
 	return l, nil
 }
 
-// handleBlockchainBatchPinEvent handles a blockchain event, returning true if the event was created, false if it was a duplicate
+// handleBlockchainBatchPinEvent handles a blockchain event, returning true if the event was created, false if it was a duplicate along with an error if any failures occur
 func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent, listener *core.ContractListener) (bool, error) {
 	existing, err := em.txHelper.InsertOrGetBlockchainEvent(ctx, chainEvent)
 	if err != nil {
