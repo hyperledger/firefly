@@ -108,7 +108,7 @@ var (
 	APIEndpointsGetGroupByHash                  = ffm("api.endpoints.getGroupByHash", "Gets a group by its ID (hash)")
 	APIEndpointsGetGroups                       = ffm("api.endpoints.getGroups", "Gets a list of groups")
 	APIEndpointsGetIdentities                   = ffm("api.endpoints.getIdentities", "Gets a list of all identities that have been registered in the namespace")
-	APIEndpointsGetIdentityByID                 = ffm("api.endpoints.getIdentityByID", "Gets an identity by its ID (UUID/DID)")
+	APIEndpointsGetIdentityByIDOrDID            = ffm("api.endpoints.getIdentityByIDOrDID", "Gets an identity by its ID or DID")
 	APIEndpointsGetIdentityDID                  = ffm("api.endpoints.getIdentityDID", "Gets the DID for an identity based on its ID")
 	APIEndpointsGetIdentityVerifiers            = ffm("api.endpoints.getIdentityVerifiers", "Gets the verifiers for an identity")
 	APIEndpointsGetMsgByID                      = ffm("api.endpoints.getMsgByID", "Gets a message by its ID")

@@ -27,9 +27,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getIdentityByID = &ffapi.Route{
-	Name:   "getIdentityByID",
-	Path:   "identities/{id:.+}",
+var getIdentityByIDOrDID = &ffapi.Route{
+	Name:   "getIdentityByIDOrDID",
+	Path:   "identities/{id:.+}", // Allow any character in the ID (including slashes), othrwise the DID will be split into multiple path segments
 	Method: http.MethodGet,
 	PathParams: []*ffapi.PathParam{
 		{Name: "id", Example: "id", Description: coremsgs.APIParamsIdentityIDs},
@@ -37,7 +37,7 @@ var getIdentityByID = &ffapi.Route{
 	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
-	Description:     coremsgs.APIEndpointsGetIdentityByID,
+	Description:     coremsgs.APIEndpointsGetIdentityByIDOrDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

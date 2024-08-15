@@ -86,7 +86,7 @@ var routes = append(
 		getGroupByHash,
 		getGroups,
 		getIdentities,
-		getIdentityByID,
+		getIdentityByIDOrDID,
 		getIdentityDID,
 		getIdentityVerifiers,
 		getMsgByID,
