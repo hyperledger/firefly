@@ -151,54 +151,34 @@ func TestContractEventWrongNS(t *testing.T) {
 
 }
 
+// TODO: Add test case for event not existing
 func TestPersistBlockchainEventDuplicate(t *testing.T) {
-	type testCase struct {
-		name            string
-		event           *core.BlockchainEvent
-		existingID      *fftypes.UUID
-		expectedID      *fftypes.UUID
-		expectedError   error
-		expectedCreated bool
-	}
+	em := newTestEventManager(t)
+	defer em.cleanup(t)
 
-	testCases := []testCase{
-		{
-			name: "Event already exists",
-			event: &core.BlockchainEvent{
-				ID:         fftypes.NewUUID(),
-				Name:       "Changed",
-				Namespace:  "ns1",
-				ProtocolID: "10/20/30",
-				Output: fftypes.JSONObject{
-					"value": "1",
-				},
-				Info: fftypes.JSONObject{
-					"blockNumber": "10",
-				},
-				Listener: fftypes.NewUUID(),
-			},
-			existingID:      fftypes.NewUUID(),
-			expectedID:      fftypes.NewUUID(),
-			expectedError:   nil,
-			expectedCreated: false,
+	ev := &core.BlockchainEvent{
+		ID:         fftypes.NewUUID(),
+		Name:       "Changed",
+		Namespace:  "ns1",
+		ProtocolID: "10/20/30",
+		Output: fftypes.JSONObject{
+			"value": "1",
 		},
-		// TODO: Add test case for event not existing
+		Info: fftypes.JSONObject{
+			"blockNumber": "10",
+		},
+		Listener: fftypes.NewUUID(),
 	}
+	existingID := fftypes.NewUUID()
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			em := newTestEventManager(t)
-			defer em.cleanup(t)
+	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, ev).
+		Return(&core.BlockchainEvent{ID: existingID}, nil)
 
-			em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, tc.event).
-				Return(&core.BlockchainEvent{ID: tc.existingID}, tc.expectedError)
+	created, err := em.maybePersistBlockchainEvent(em.ctx, ev, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, existingID, ev.ID)
+	assert.False(t, created)
 
-			created, err := em.maybePersistBlockchainEvent(em.ctx, tc.event, nil)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.existingID, tc.event.ID)
-			assert.Equal(t, tc.expectedCreated, created)
-		})
-	}
 }
 
 func TestGetTopicForChainListenerFallback(t *testing.T) {
