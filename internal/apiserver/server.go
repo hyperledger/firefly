@@ -288,7 +288,7 @@ func (as *apiServer) nsOpenAPIHandlerFactory(req *http.Request, publicURL string
 	}
 }
 
-func (as *apiServer) namespacedSwaggerHandler(hf *ffapi.HandlerFactory, r *mux.Router, publicURL, relativePath string) {
+func (as *apiServer) namespacedSwaggerHandler(hf *ffapi.HandlerFactory, r *mux.Router, publicURL, relativePath string, format ffapi.OpenAPIFormat) {
 	r.HandleFunc(`/api/v1/namespaces/{ns}`+relativePath, hf.APIWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		return as.nsOpenAPIHandlerFactory(req, publicURL).OpenAPIHandler("", ffapi.OpenAPIFormatJSON, nsRoutes)(res, req)
 	}))
@@ -300,7 +300,7 @@ func (as *apiServer) namespacedSwaggerUI(hf *ffapi.HandlerFactory, r *mux.Router
 	}))
 }
 
-func (as *apiServer) namespacedContractSwaggerGenerator(hf *ffapi.HandlerFactory, r *mux.Router, mgr namespace.Manager, relativePath string, format ffapi.OpenAPIFormat) {
+func (as *apiServer) namespacedContractSwaggerGenerator(hf *ffapi.HandlerFactory, r *mux.Router, mgr namespace.Manager, publicURL, relativePath string, format ffapi.OpenAPIFormat) {
 	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}`+relativePath, hf.APIWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		vars := mux.Vars(req)
 		or, err := mgr.Orchestrator(req.Context(), vars["ns"], false)
@@ -372,16 +372,16 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	r.HandleFunc(`/api/openapi.yaml`, hf.APIWrapper(oaf.OpenAPIHandler(`/api/v1`, ffapi.OpenAPIFormatYAML, routes)))
 	r.HandleFunc(`/api`, hf.APIWrapper(oaf.SwaggerUIHandler(`/api/openapi.yaml`)))
 	// Namespace relative APIs
-	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/swagger.json`)
-	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/openapi.json`)
-	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/swagger.yaml`)
-	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/openapi.yaml`)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/swagger.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/openapi.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/swagger.yaml`, ffapi.OpenAPIFormatYAML)
+	as.namespacedSwaggerHandler(hf, r, as.apiPublicURL, `/api/openapi.yaml`, ffapi.OpenAPIFormatYAML)
 	as.namespacedSwaggerUI(hf, r, as.apiPublicURL, `/api`)
 	// Dynamic swagger for namespaced contract APIs
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, `/api/swagger.json`, ffapi.OpenAPIFormatJSON)
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, `/api/openapi.json`, ffapi.OpenAPIFormatJSON)
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, `/api/swagger.yaml`, ffapi.OpenAPIFormatYAML)
-	as.namespacedContractSwaggerGenerator(hf, r, mgr, `/api/openapi.yaml`, ffapi.OpenAPIFormatYAML)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/swagger.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/openapi.json`, ffapi.OpenAPIFormatJSON)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/swagger.yaml`, ffapi.OpenAPIFormatYAML)
+	as.namespacedContractSwaggerGenerator(hf, r, mgr, as.apiPublicURL, `/api/openapi.yaml`, ffapi.OpenAPIFormatYAML)
 	as.namespacedContractSwaggerUI(hf, r, as.apiPublicURL, `/api`)
 
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
