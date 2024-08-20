@@ -12,23 +12,32 @@ FireFly's unified API creates a consistent application experience regardless of 
 
 FireFly defines the following constructs to support custom smart contracts:
 
-- **Contract Interface**: FireFly defines a common, blockchain agnostic way to describe smart contracts. This is referred to as a Contract Interface. A contract interface is written in the FireFly Interface (FFI) format. It is a simple JSON document that has a name, a namespace, a version, a list of methods, and a list of events.
+### Contract Interface
+
+FireFly defines a common, blockchain agnostic way to describe smart contracts. This is referred to as a Contract Interface. A contract interface is written in the FireFly Interface (FFI) format. It is a simple JSON document that has a name, a namespace, a version, a list of methods, and a list of events.
 
 For more details, you can also have a look at the [Reference page for the FireFly Interface Format](../../reference/firefly_interface_format.md).
 
-For blockchains that offer a DSL describing the smart contract interface, such as Ethereum's ABI (Application Binary Interface), FireFly offers a convenience tool to convert the DSL into the FFI format.
+For blockchains that offer a DSL describing the smart contract interface, such as Ethereum's ABI (Application Binary Interface), FireFly offers an API to [convert the DSL into the FFI format](../custom_contracts/ethereum.md#the-firefly-interface-format).
+
 
 > **NOTE**: Contract interfaces are scoped to a namespace. Within a namespace each contract interface must have a unique name and version combination. The same name and version combination can exist in _different_ namespaces simultaneously.
 
-- **HTTP API**: Based on a Contract Interface, FireFly further defines an HTTP API for the smart contract, which is complete with an OpenAPI Specification and the Swagger UI. An HTTP API defines an `/invoke` root path to submit transactions, and a `/query` root path to send query requests to read the state back out.
+### HTTP API
 
-How the invoke vs. query requests get interpreted into the native blockchain requests are specific to the blockchain's connector. For instance, the Ethereum connector translates `/invoke` calls to `eth_sendTransaction` JSON-RPC requests, while `/query` calls are translated into `eth_call` JSON-RPC requests. One the other hand, the Fabric connector translates `/invoke` calls to the multiple requests required to submit a transaction to a Fabric channel (which first collects endorsements from peer nodes, and then sends the assembled transaction payload to an orderer, for details please refer to the Fabric documentation).
+Based on a Contract Interface, FireFly further defines an HTTP API for the smart contract, which is complete with an OpenAPI Specification and the Swagger UI. An HTTP API defines an `/invoke` root path to submit transactions, and a `/query` root path to send query requests to read the state back out.
 
-- **Blockchain Event Listener**: Regardless of a blockchain's specific design, transaction processing are always asynchronous. This means a transaction is submitted to the network, at which point the submitting client gets an acknowledgement that it has been accepted for further processing. The client then listens for notifications by the blockchain when the transaction gets committed to the blockchain's ledger.
+How the invoke vs. query requests get interpreted into the native blockchain requests are specific to the blockchain's connector. For instance, the Ethereum connector translates `/invoke` calls to `eth_sendTransaction` JSON-RPC requests, while `/query` calls are translated into `eth_call` JSON-RPC requests. On the other hand, the Fabric connector translates `/invoke` calls to the multiple requests required to submit a transaction to a Fabric channel (which first collects endorsements from peer nodes, and then sends the assembled transaction payload to an orderer, for details please refer to the Fabric documentation).
+
+### Blockchain Event Listener
+
+Regardless of a blockchain's specific design, transaction processing are always asynchronous. This means a transaction is submitted to the network, at which point the submitting client gets an acknowledgement that it has been accepted for further processing. The client then listens for notifications by the blockchain when the transaction gets committed to the blockchain's ledger.
 
 FireFly defines event listeners to allow the client application to specify the relevant blockchain events to keep track of. A client application can then receive the notifications from FireFly via an event subscription.
 
-- **Event Subscription**: While an event listener tells FireFly to keep track of certain events emitted by the blockchain, an event subscription tells FireFly to relay those events to the client application. Each subscriptions represents a stream of events that can be delivered to a listening client with various modes of delivery with at-least-once delivery guarantee.
+### Event Subscription
+
+An event listener in FireFly tracks specific blockchain events, while an event subscription directs FireFly to send those events to the client application. Each subscription creates a stream of events that can be delivered to the client with various delivery options, ensuring an at-least-once delivery guarantee.
 
 This is exactly the same as listening for any other events from FireFly. For more details on how Subscriptions work in FireFly you can read the [Getting Started guide to Listen for events](../events.md).
 
