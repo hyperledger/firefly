@@ -25,8 +25,8 @@ the blockchain plugins to try and create some consistency.
 An example `protocolId` string is: `000000000041/000020/000003`
 
 - `000000000041` - this is the block number
-- `000020` - this is the transaction index within that block
-- `000003` - this is the event (/log) index within that transaction
+- `000020` - this is the **transaction** index within that **block**
+- `000003` - this is the **event (/log)** index within that **block**
 
 The string is alphanumerically sortable as a plain string;
 
