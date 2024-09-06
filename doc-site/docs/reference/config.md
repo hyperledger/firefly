@@ -291,15 +291,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## events.webhooks.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## events.webhooks.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -343,11 +353,14 @@ title: Configuration Reference
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -420,11 +433,14 @@ title: Configuration Reference
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -490,11 +506,14 @@ title: Configuration Reference
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -620,15 +639,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].ethereum.addressResolver.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.blockchain[].ethereum.addressResolver.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -686,15 +715,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].ethereum.ethconnect.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.blockchain[].ethereum.ethconnect.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -748,15 +787,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].ethereum.fftm.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.blockchain[].ethereum.fftm.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -815,15 +864,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].fabric.fabconnect.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.blockchain[].fabric.fabconnect.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -883,15 +942,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].tezos.addressResolver.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.blockchain[].tezos.addressResolver.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -947,15 +1016,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.blockchain[].tezos.tezosconnect.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.blockchain[].tezos.tezosconnect.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -1076,15 +1155,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.dataexchange[].ffdx.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.dataexchange[].ffdx.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -1152,15 +1241,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.sharedstorage[].ipfs.api.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.sharedstorage[].ipfs.api.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -1202,15 +1301,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.sharedstorage[].ipfs.gateway.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.sharedstorage[].ipfs.gateway.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -1277,15 +1386,25 @@ title: Configuration Reference
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## plugins.tokens[].fftokens.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
 ## plugins.tokens[].fftokens.tls
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
@@ -1346,11 +1465,14 @@ title: Configuration Reference
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
 |caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
 |certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 |requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
 
