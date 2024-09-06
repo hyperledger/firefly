@@ -1901,7 +1901,7 @@ func TestHandleNamespaceStartedEnsureActiveError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
 	_, err := h.handleMessage(context.Background(), "ns1", []byte(`{"event":"started","data":{"namespace": "ns1"}}`))
-	assert.NoError(t, err)
+	assert.Error(t, err)
 }
 
 func TestHandlePoolActivated(t *testing.T) {
