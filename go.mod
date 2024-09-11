@@ -1,6 +1,8 @@
 module github.com/hyperledger/firefly
 
-go 1.21
+go 1.22
+
+toolchain go1.22.7
 
 require (
 	blockwatch.cc/tzgo v1.17.1
@@ -15,8 +17,8 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-	github.com/hyperledger/firefly-common v1.4.9
-	github.com/hyperledger/firefly-signer v1.1.14
+	github.com/hyperledger/firefly-common v1.4.10
+	github.com/hyperledger/firefly-signer v1.1.15
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.19
