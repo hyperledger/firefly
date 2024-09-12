@@ -3,8 +3,19 @@ name: Go
 on:
   push:
     branches: [main]
+    paths:
+      - '**'  # include all files
+      - '!.github/**' # exclude .github directory
+      - '!**.md' # exclude all markdown files
+      - 'doc-site/docs/reference/**.md' # include markdown files that are auto generated and need to be tested
+
   pull_request:
-    branches: [main]
+    paths:
+      - '**'  # include all files
+      - '!.github/**' # exclude .github directory
+      - '!**.md' # exclude all markdown files
+      - 'doc-site/docs/reference/**.md' # include markdown files that are auto generated and need to be tested
+
   workflow_dispatch:
 
 jobs:
