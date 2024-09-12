@@ -4,6 +4,13 @@ title: Release Notes
 
 [Full release notes](https://github.com/hyperledger/firefly/releases)
 
+## [v1.3.2 - Sept 13, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.2)
+
+What's New:
+
+- Support for JSON numbers larger than `2^53-1`
+    See [FFBigInt](../reference/types/simpletypes.md#ffbigint) 
+
 ## [v1.3.1 - Aug 5, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.1)
 
 What's New:
