@@ -12,7 +12,7 @@
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
     "tag": "v0.9.21",
-    "sha": "e597be0db4dc34b455e2e001abf0f8e867874ae6984a60a3db91bce3f8fdc542"
+    "sha": "394262c5888fb6647a7b8b1f3f8d652e1db941b67e3c68bccfbedfa53c4d874d"
   },
   "tezosconnect": {
     "image": "ghcr.io/hyperledger/firefly-tezosconnect",
