@@ -11,7 +11,7 @@ What's New:
 - Support for JSON numbers larger than `2^53-1`
     See [FFBigInt](../reference/types/simpletypes.md#ffbigint) 
 - Ability to install FireFly CLI with Brew for MacOS users
-    See [Brew](../) 
+    See [Brew](../gettingstarted/firefly_cli.md#install-via-homebrew-macOS) 
 - Miscellaneous bug fixes and minor improvements
 - FireFly has been upgraded to use Go 1.22
 
