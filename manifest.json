@@ -1,17 +1,17 @@
 {
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.3.1",
-    "sha": "4b78a0f88a06d2de1e6868b0cbeef44b9be622b7ef46b5a8d6ca381a36c1c6a5"
+    "tag": "v3.3.2",
+    "sha": "bdbfa05a0bc1610813ba0ef65b2c8f9f7df4a5ead5643a580e3ba5927747c2cf"
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.3.16",
-    "sha": "ada3a7e3d21e4096088e133d02feb67e5aa4ad01fbd663e5d60efe2b9f0956d8"
+    "tag": "v1.3.17",
+    "sha": "0fb12537b8be4fb463df713ed541aa03e2da42c582cc4c9e822f7c59a6962fef"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.20",
+    "tag": "v0.9.21",
     "sha": "e597be0db4dc34b455e2e001abf0f8e867874ae6984a60a3db91bce3f8fdc542"
   },
   "tezosconnect": {
@@ -36,8 +36,8 @@
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v1.1.14",
-    "sha": "eba976858677a6d101abb7d293f88ce785bdb5abe1a53e524cbcbce0b317d0de"
+    "tag": "v1.1.16",
+    "sha": "63a9de24e75c074d8cc96b503dc38c0b88b507491e9d5e24d75a575dea53053a"
   },
   "build": {
     "firefly-builder": {
@@ -59,6 +59,6 @@
     "release": "v1.3.0"
   },
   "cli": {
-    "tag": "v1.3.2-rc1"
+    "tag": "v1.3.2-rc.2"
   }
 }
