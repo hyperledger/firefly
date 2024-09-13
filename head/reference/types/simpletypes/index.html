@@ -2509,6 +2509,24 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#maximum-size-of-numbers-in-versions-of-firefly-up-to-v131" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maximum size of numbers in versions of FireFly up to v1.3.1
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maximum-size-of-numbers-in-versions-of-firefly-v132-and-higher" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maximum size of numbers in versions of FireFly v1.3.2 and higher
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#jsonany" class="md-nav__link">
     <span class="md-ellipsis">
       JSONAny
@@ -3382,6 +3400,24 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#maximum-size-of-numbers-in-versions-of-firefly-up-to-v131" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maximum size of numbers in versions of FireFly up to v1.3.1
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maximum-size-of-numbers-in-versions-of-firefly-v132-and-higher" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maximum size of numbers in versions of FireFly v1.3.2 and higher
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#jsonany" class="md-nav__link">
     <span class="md-ellipsis">
       JSONAny
@@ -3442,8 +3478,44 @@ handled in FireFly.</p>
 strings (with base 10).</p>
 <p>On input you can provide JSON string (string with an <code>0x</code> prefix are
 parsed at base 16), or a JSON number.</p>
-<p>Be careful when using JSON numbers, that the largest
-number that is safe to transfer using a JSON number is 2^53 - 1.</p>
+<h2 id="maximum-size-of-numbers-in-versions-of-firefly-up-to-v131">Maximum size of numbers in versions of FireFly up to <code>v1.3.1</code><a class="headerlink" href="#maximum-size-of-numbers-in-versions-of-firefly-up-to-v131" title="Permanent link">&para;</a></h2>
+<p>In versions of FireFly up to and including <code>v1.3.1</code>, be careful when using large JSON numbers. The largest number that is safe to transfer using a JSON number is 2^53 - 1 and it is
+possible to receive errors from the transaction manager, or for precision to be silently lost when passing numeric parameters larger than that. It is recommended to pass large numbers as strings to avoid loss of precision.</p>
+<h2 id="maximum-size-of-numbers-in-versions-of-firefly-v132-and-higher">Maximum size of numbers in versions of FireFly <code>v1.3.2</code> and higher<a class="headerlink" href="#maximum-size-of-numbers-in-versions-of-firefly-v132-and-higher" title="Permanent link">&para;</a></h2>
+<p>In FireFly <code>v1.3.2</code> support was added for 256-bit precision JSON numbers. Some application frameworks automatically serialize large JSON numbers to a string which FireFly already supports, but there is no upper limit
+to the size of a number that can be represented in JSON. FireFly now supports much larger JSON numbers, up to 256-bit precision. For example the following input parameter to a contract constructor is now supported:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>    ...
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    &quot;definition&quot;: [{
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        &quot;inputs&quot;: [
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>            {
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                &quot;internalType&quot;:&quot; uint256&quot;,
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                &quot;name&quot;: &quot;x&quot;,
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                &quot;type&quot;: &quot;uint256&quot;
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            }
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        ],
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        &quot;outputs&quot;:[],
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        &quot;type&quot;:&quot;constructor&quot;
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    }],
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    &quot;params&quot;: [ 10000000000000000000000000 ]
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    ...
+</code></pre></div>
+<p>Some application frameworks seralize large numbers in scientific notation e.g. <code>1e+25</code>. FireFly <code>v1.3.2</code> added supported for handling scientific numbers in parameters. This removes the need to change an application
+that uses this number format. For example the following input parameter to a contract constructor is now supported:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    ...
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    &quot;definition&quot;: [{
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        &quot;inputs&quot;: [
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>            {
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>                &quot;internalType&quot;:&quot; uint256&quot;,
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>                &quot;name&quot;: &quot;x&quot;,
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>                &quot;type&quot;: &quot;uint256&quot;
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            }
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        ],
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        &quot;outputs&quot;:[],
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        &quot;type&quot;:&quot;constructor&quot;
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    }],
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    &quot;params&quot;: [ 1e+25 ]
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    ...
+</code></pre></div>
 <!-- END INCLUDE -->
 
 <h2 id="jsonany">JSONAny<a class="headerlink" href="#jsonany" title="Permanent link">&para;</a></h2>
