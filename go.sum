@@ -77,10 +77,10 @@ github.com/hashicorp/go-multierror v1.1.1 h1:H5DkEtf6CXdFp0N0Em5UCwQpXMWke8IA0+l
 github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
-github.com/hyperledger/firefly-common v1.4.10 h1:NgUYorxZF3tNkL7bBqe3PlwA42pPAYlj0wStnUsjN9Y=
-github.com/hyperledger/firefly-common v1.4.10/go.mod h1:E7w/RxNtVnX52WXLQW9f2xVAgZnW70voZeE9sZrx/q0=
-github.com/hyperledger/firefly-signer v1.1.15 h1:oJXrX1ziDIxzSbRX+risVEmprx3McD1yi0S1S5La4zc=
-github.com/hyperledger/firefly-signer v1.1.15/go.mod h1:E/TO0Koi4BqSr8hRhKJVTxiynwX/EQYjqqKrlnsQK7o=
+github.com/hyperledger/firefly-common v1.4.11 h1:WKv2hQuNpS7yP51THxzpzrqU3jkln23C9vq5iminzBk=
+github.com/hyperledger/firefly-common v1.4.11/go.mod h1:E7w/RxNtVnX52WXLQW9f2xVAgZnW70voZeE9sZrx/q0=
+github.com/hyperledger/firefly-signer v1.1.17 h1:JV38nNeCS/K31kPDk5mwnoqw6SoulcYF+12JW8a3/Mw=
+github.com/hyperledger/firefly-signer v1.1.17/go.mod h1:HDaDdht94JypRTunRGrcPL5Pvxfh4yigjatTrie5JUI=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/invopop/yaml v0.2.0 h1:7zky/qH+O0DwAyoobXUqvVBwgBFRxKoQ/3FjcVpjTMY=
