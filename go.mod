@@ -17,8 +17,8 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-	github.com/hyperledger/firefly-common v1.4.10
-	github.com/hyperledger/firefly-signer v1.1.15
+	github.com/hyperledger/firefly-common v1.4.11
+	github.com/hyperledger/firefly-signer v1.1.17
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.19
