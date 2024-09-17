@@ -16,11 +16,6 @@
 
 package es
 
-import (
-	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"golang.org/x/text/language"
-)
-
 //revive:disable
 
 /*
@@ -42,11 +37,11 @@ MessageHeader    = ffm("Message.header", "The message header")
 
 */
 
-var ffm = func(key, translation string) i18n.MessageKey {
-	return i18n.FFM(language.Spanish, key, translation)
-}
+// var ffm = func(key, translation string) i18n.MessageKey {
+// 	return i18n.FFM(language.Spanish, key, translation)
+// }
 
-var (
-	// MessageHeader field descriptions
-	MessageHeaderID = ffm("MessageHeader.id", "El UUID del mensaje. Único para cada mensaje")
-)
+// var (
+// 	// MessageHeader field descriptions
+// 	MessageHeaderID = ffm("MessageHeader.id", "El UUID del mensaje. Único para cada mensaje")
+// )
