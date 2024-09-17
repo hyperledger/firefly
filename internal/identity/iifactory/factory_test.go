@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,4 +36,11 @@ func TestGetPlugin(t *testing.T) {
 	plugin, err := GetPlugin(ctx, "onchain")
 	assert.NoError(t, err)
 	assert.NotNil(t, plugin)
+}
+
+var root = config.RootSection("di")
+
+func TestInitConfig(t *testing.T) {
+	conf := root.SubArray("plugins")
+	InitConfig(conf)
 }

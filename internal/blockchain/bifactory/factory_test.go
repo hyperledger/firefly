@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,9 +31,30 @@ func TestGetPluginUnknown(t *testing.T) {
 	assert.Regexp(t, "FF10110", err)
 }
 
-func TestGetPlugin(t *testing.T) {
+func TestGetPluginEthereum(t *testing.T) {
 	ctx := context.Background()
 	plugin, err := GetPlugin(ctx, "ethereum")
 	assert.NoError(t, err)
 	assert.NotNil(t, plugin)
+}
+
+func TestGetPluginFabric(t *testing.T) {
+	ctx := context.Background()
+	plugin, err := GetPlugin(ctx, "fabric")
+	assert.NoError(t, err)
+	assert.NotNil(t, plugin)
+}
+
+func TestGetPluginTezos(t *testing.T) {
+	ctx := context.Background()
+	plugin, err := GetPlugin(ctx, "tezos")
+	assert.NoError(t, err)
+	assert.NotNil(t, plugin)
+}
+
+var root = config.RootSection("di")
+
+func TestInitConfig(t *testing.T) {
+	conf := root.SubArray("plugins")
+	InitConfig(conf)
 }
