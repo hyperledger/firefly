@@ -19,12 +19,31 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var configPath string = "../test/data/config/firefly.core.yaml"
+
+func TestMainFail(t *testing.T) {
+	// Run the crashing code when FLAG is set
+	if os.Getenv("FLAG") == "1" {
+		main()
+		return
+	}
+	// Run the test in a subprocess
+	cmd := exec.Command(os.Args[0], "-test.run=TestMainFail")
+	cmd.Env = append(os.Environ(), "FLAG=1")
+	err := cmd.Run()
+
+	// Cast the error as *exec.ExitError and compare the result
+	e, ok := err.(*exec.ExitError)
+	expectedErrorString := "exit status 1"
+	assert.Equal(t, true, ok)
+	assert.Equal(t, expectedErrorString, e.Error())
+}
 
 func TestConfigMigrateRootCmdErrorNoArgs(t *testing.T) {
 	rootCmd.SetArgs([]string{})
