@@ -68,6 +68,24 @@ func TestConfigMigrateCmd(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestMain(t *testing.T) {
+	// Run the exiting code when FLAG is set
+	if os.Getenv("FLAG") == "0" {
+		rootCmd.SetArgs([]string{"migrate", "-f", configPath})
+		main()
+		return
+	}
+
+	// Run the test in a subprocess
+	cmd := exec.Command(os.Args[0], "-test.run=TestMain")
+	cmd.Env = append(os.Environ(), "FLAG=0")
+	err := cmd.Run()
+
+	// Cast the error as *exec.ExitError and compare the result
+	_, ok := err.(*exec.ExitError)
+	assert.Equal(t, false, ok)
+}
+
 func TestConfigMigrateCmdWriteOutput(t *testing.T) {
 	tmpDir, err := os.MkdirTemp(os.TempDir(), "out")
 	assert.NoError(t, err)
