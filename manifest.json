@@ -16,8 +16,8 @@
   },
   "tezosconnect": {
     "image": "ghcr.io/hyperledger/firefly-tezosconnect",
-    "tag": "v0.2.6",
-    "sha": "ad5ba1ddc54140674575eed2edab0e46428895df1199b89e47599c5a45f353ba"
+    "tag": "v0.2.7",
+    "sha": "cee6ecda8208e24989a6db2c1a2dd1b0defb89363e7728571b8858e794a295be"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
