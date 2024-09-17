@@ -31,9 +31,16 @@ func TestGetPluginUnknown(t *testing.T) {
 	assert.Regexp(t, "FF10122", err)
 }
 
-func TestGetPlugin(t *testing.T) {
+func TestGetPluginPostgres(t *testing.T) {
 	ctx := context.Background()
 	plugin, err := GetPlugin(ctx, "postgres")
+	assert.NoError(t, err)
+	assert.NotNil(t, plugin)
+}
+
+func TestGetPluginSQLite(t *testing.T) {
+	ctx := context.Background()
+	plugin, err := GetPlugin(ctx, "sqlite3")
 	assert.NoError(t, err)
 	assert.NotNil(t, plugin)
 }
