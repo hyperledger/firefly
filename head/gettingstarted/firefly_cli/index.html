@@ -928,27 +928,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-the-package-for-your-os" class="md-nav__link">
+  <a href="#install-via-binary-package-download" class="md-nav__link">
     <span class="md-ellipsis">
-      Download the package for your OS
+      Install via Binary Package Download
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#extract-the-binary-and-move-it-to-usrbinlocal" class="md-nav__link">
+  <a href="#install-via-homebrew-macos" class="md-nav__link">
     <span class="md-ellipsis">
-      Extract the binary and move it to /usr/bin/local
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#macosusers" class="md-nav__link">
-    <span class="md-ellipsis">
-      macOSUsers
+      Install via Homebrew (macOS)
     </span>
   </a>
   
@@ -3459,27 +3450,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-the-package-for-your-os" class="md-nav__link">
+  <a href="#install-via-binary-package-download" class="md-nav__link">
     <span class="md-ellipsis">
-      Download the package for your OS
+      Install via Binary Package Download
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#extract-the-binary-and-move-it-to-usrbinlocal" class="md-nav__link">
+  <a href="#install-via-homebrew-macos" class="md-nav__link">
     <span class="md-ellipsis">
-      Extract the binary and move it to /usr/bin/local
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#macosusers" class="md-nav__link">
-    <span class="md-ellipsis">
-      macOSUsers
+      Install via Homebrew (macOS)
     </span>
   </a>
   
@@ -3553,27 +3535,31 @@
 </blockquote>
 <h2 id="install-the-cli">Install the CLI<a class="headerlink" href="#install-the-cli" title="Permanent link">&para;</a></h2>
 <p>There are several ways to install the FireFly CLI. The easiest way to get up and running with the FireFly CLI is to download a pre-compiled binary of the latest release.</p>
-<h3 id="download-the-package-for-your-os">Download the package for your OS<a class="headerlink" href="#download-the-package-for-your-os" title="Permanent link">&para;</a></h3>
-<p>Go to the <a href="https://github.com/hyperledger/firefly-cli/releases/latest">latest release page</a> and download the package for your OS and CPU architecture.</p>
-<h3 id="extract-the-binary-and-move-it-to-usrbinlocal">Extract the binary and move it to <code>/usr/bin/local</code><a class="headerlink" href="#extract-the-binary-and-move-it-to-usrbinlocal" title="Permanent link">&para;</a></h3>
-<p>Assuming you downloaded the package from GitHub into your <code>Downloads</code> directory, run the following command:</p>
+<h3 id="install-via-binary-package-download">Install via Binary Package Download<a class="headerlink" href="#install-via-binary-package-download" title="Permanent link">&para;</a></h3>
+<p>Download the package for your OS by navigating to the <a href="https://github.com/hyperledger/firefly-cli/releases/latest">latest release page</a> and downloading the appropriate package for your OS and architecture.</p>
+<h4 id="unpack-and-install-the-binary">Unpack and Install the Binary<a class="headerlink" href="#unpack-and-install-the-binary" title="Permanent link">&para;</a></h4>
+<p>Assuming you downloaded the package from GitHub into your <code>Downloads</code> directory, run the following command to extract the binary and move it to your system path:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo tar -zxf ~/Downloads/firefly-cli_*.tar.gz -C /usr/local/bin ff &amp;&amp; rm ~/Downloads/firefly-cli_*.tar.gz
 </code></pre></div>
-<p>If you downloaded the package from GitHub into a different directory, you will need to change the <code>tar</code> command above to wherever the <code>firefly-cli_*.tar.gz</code> file is located.</p>
-<h3 id="macosusers">macOSUsers<a class="headerlink" href="#macosusers" title="Permanent link">&para;</a></h3>
+<p>If you downloaded the package into a different directory, adjust the command to point to the correct location of the <code>firefly-cli_*.tar.gz</code> file.</p>
+<h4 id="macosusers">macOSUsers<a class="headerlink" href="#macosusers" title="Permanent link">&para;</a></h4>
 <blockquote>
 <p><strong>NOTE</strong>: On recent versions of macOS, default security settings will prevent the FireFly CLI binary from running, because it was downloaded from the internet. You will need to <a href="https://github.com/hyperledger/firefly-cli/blob/main/docs/mac_help.md">allow the FireFly CLI in System Preferences</a>, before it will run.</p>
 </blockquote>
+<h3 id="install-via-homebrew-macos">Install via Homebrew (macOS)<a class="headerlink" href="#install-via-homebrew-macos" title="Permanent link">&para;</a></h3>
+<p>You can also install the FireFly CLI using Homebrew:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>brew install firefly
+</code></pre></div>
 <h3 id="alternative-installation-method-install-via-go">Alternative installation method: Install via Go<a class="headerlink" href="#alternative-installation-method-install-via-go" title="Permanent link">&para;</a></h3>
 <p>If you have a local Go development environment, and you have included <code>${GOPATH}/bin</code> in your path, you could also use Go to install the FireFly CLI by running:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>go<span class="w"> </span>install<span class="w"> </span>github.com/hyperledger/firefly-cli/ff@latest
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>go<span class="w"> </span>install<span class="w"> </span>github.com/hyperledger/firefly-cli/ff@latest
 </code></pre></div>
 <h2 id="verify-the-installation">Verify the installation<a class="headerlink" href="#verify-the-installation" title="Permanent link">&para;</a></h2>
 <p>After using either installation method above, you can verify that the CLI is successfully installed by running <code>ff version</code>. This should print the current version like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>{
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  &quot;Version&quot;: &quot;v0.0.47&quot;,
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  &quot;License&quot;: &quot;Apache-2.0&quot;
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>{
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  &quot;Version&quot;: &quot;v0.0.47&quot;,
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  &quot;License&quot;: &quot;Apache-2.0&quot;
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>}
 </code></pre></div>
 <h2 id="next-steps-start-your-environment">Next steps: Start your environment<a class="headerlink" href="#next-steps-start-your-environment" title="Permanent link">&para;</a></h2>
 <p>Now that you've got the FireFly CLI set up on your machine, the next step is to create and start a FireFly stack.</p>
