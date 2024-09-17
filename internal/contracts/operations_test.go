@@ -16,7 +16,9 @@
 package contracts
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -34,6 +36,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+const sampleRequestLargeNumberInput = `{
+	"location": {
+	  "address": "0x1111"
+    },
+	"key": "0x123",
+	"method": {
+      "name": "set",
+      "params": null,
+      "returns": null
+    },
+	"input": {
+	  "value": 10000000000000000000000000001
+	}
+}`
 
 func reqWithMessage(msgType core.MessageType) *core.ContractCallRequest {
 	return &core.ContractCallRequest{
@@ -60,6 +77,7 @@ func reqWithMessage(msgType core.MessageType) *core.ContractCallRequest {
 }
 
 func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
+
 	cm := newTestContractManager()
 
 	op := &core.Operation{
@@ -92,6 +110,46 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, req, po.Data.(txcommon.BlockchainInvokeData).Request)
+
+	_, phase, err := cm.RunOperation(context.Background(), po)
+
+	assert.Equal(t, core.OpPhasePending, phase)
+	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestPrepareAndRunBlockchainInvokeLargeNumberInput(t *testing.T) {
+
+	cm := newTestContractManager()
+
+	var req core.ContractCallRequest
+	d := json.NewDecoder(bytes.NewReader([]byte(sampleRequestLargeNumberInput)))
+	d.UseNumber()
+	err := d.Decode(&req)
+	assert.NoError(t, err)
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+
+	err = addBlockchainReqInputs(op, req)
+	assert.NoError(t, err)
+
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
+	opaqueData := "anything"
+	mbi.On("ParseInterface", context.Background(), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+		return method.Name == req.Method.Name
+	}), req.Errors).Return(opaqueData, nil)
+	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
+		return loc.String() == req.Location.String()
+	}), opaqueData, req.Input, req.Options, (*blockchain.BatchPin)(nil)).Return(false, nil)
+
+	po, err := cm.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, &req, po.Data.(txcommon.BlockchainInvokeData).Request)
 
 	_, phase, err := cm.RunOperation(context.Background(), po)
 

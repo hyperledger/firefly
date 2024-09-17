@@ -17,6 +17,7 @@
 package contracts
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 
@@ -38,7 +39,9 @@ type blockchainContractDeployData struct {
 func addBlockchainReqInputs(op *core.Operation, req interface{}) (err error) {
 	var reqJSON []byte
 	if reqJSON, err = json.Marshal(req); err == nil {
-		err = json.Unmarshal(reqJSON, &op.Input)
+		d := json.NewDecoder(bytes.NewReader(reqJSON))
+		d.UseNumber()
+		err = d.Decode(&op.Input)
 	}
 	return err
 }
