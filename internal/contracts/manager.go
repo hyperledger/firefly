@@ -160,7 +160,12 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 	// cause recreation of all the listeners (noting that listeners that were specified to start
 	// from latest, will start from the new latest rather than replaying from the block they
 	// started from before they were deleted).
-	return cm, cm.verifyListeners(ctx)
+	err = cm.verifyListeners(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
 }
 
 func (cm *contractManager) Name() string {
