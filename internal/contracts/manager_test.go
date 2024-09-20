@@ -98,6 +98,33 @@ func TestName(t *testing.T) {
 	assert.Equal(t, "ContractManager", cm.Name())
 }
 
+func TestNewContractManagerVerifyListenersFails(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mbp := &batchmocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	mbi := &blockchainmocks.Plugin{}
+	mom := &operationmocks.Manager{}
+	txw := &txwritermocks.Writer{}
+	cmi := &cachemocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
+
+	ctx := context.Background()
+
+	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
+	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, nil)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
+	mbi.On("Name").Return("mockblockchain").Maybe()
+	mdi.On("GetContractListeners", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("KABOOM!")).Once()
+
+	cm, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mdm, mbm, mpm, mbp, mim, mom, txHelper, txw, msa, cmi)
+	assert.Nil(t, cm)
+	assert.NotNil(t, err)
+}
+
 func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}

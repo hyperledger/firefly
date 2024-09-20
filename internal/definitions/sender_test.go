@@ -105,6 +105,26 @@ func TestInitSenderFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestNewDefinitionSenderHandlerThrows(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mdx := &dataexchangemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	mim := &identitymanagermocks.Manager{}
+	mdm := &datamocks.Manager{}
+	mcm := &contractmocks.Manager{}
+
+	tokenBroadcastNames := make(map[string]string)
+	tokenBroadcastNames["connector1"] = "remote1"
+
+	ctx := context.Background()
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	ds, dh, err := NewDefinitionSender(ctx, ns, false, mdi, mbi, mdx, mbm, mim, mdm, nil, mcm, tokenBroadcastNames)
+	assert.Nil(t, ds)
+	assert.Nil(t, dh)
+	assert.NotNil(t, err)
+}
+
 func TestName(t *testing.T) {
 	ds := newTestDefinitionSender(t)
 	defer ds.cleanup(t)

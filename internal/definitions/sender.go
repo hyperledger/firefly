@@ -93,8 +93,12 @@ func NewDefinitionSender(ctx context.Context, ns *core.Namespace, multiparty boo
 		tokenBroadcastNames: tokenBroadcastNames,
 	}
 	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm, reverseMap(tokenBroadcastNames))
+	if err != nil {
+		return nil, nil, err
+	}
+
 	ds.handler = dh
-	return ds, dh, err
+	return ds, dh, nil
 }
 
 // reverseMap reverses the key/values of a given map
