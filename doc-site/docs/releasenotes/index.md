@@ -4,12 +4,13 @@ title: Release Notes
 
 [Full release notes](https://github.com/hyperledger/firefly/releases)
 
-## [v1.3.2 - Sept 13, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.2)
+## [v1.3.2 - Oct 3, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.2)
 
 What's New:
 
 - Support for JSON numbers larger than `2^53-1`
-    See [FFBigInt](../reference/types/simpletypes.md#ffbigint) 
+   - See [FFBigInt](../reference/types/simpletypes.md#ffbigint) for detailed explanation
+   - Support added to FireFly core, including the UI, FireFly Transaction Manager, and FireFly EVMConnect
 - Ability to install FireFly CLI with Brew for MacOS users
     See [Brew](../gettingstarted/firefly_cli.md#install-via-homebrew-macOS) 
 - Miscellaneous bug fixes and minor improvements
