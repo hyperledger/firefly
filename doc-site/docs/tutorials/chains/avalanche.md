@@ -1,5 +1,5 @@
 ---
-title: Aavalanche
+title: Avalanche
 ---
 
 Starting with FireFly v1.1, it's easy to connect to public Ethereum chains. This guide will walk you through the steps to create a local FireFly development environment and connect it to the Avalanche C-Chain Fuji testnet.
