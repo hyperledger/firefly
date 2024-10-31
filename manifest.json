@@ -1,7 +1,11 @@
 {
   "cardanoconnect": {
-    "image": "cardanoconnect",
-    "local": true
+    "image": "sundaeswap/firefly-cardanoconnect",
+    "tag": "main"
+  },
+  "cardanosigner": {
+    "image": "sundaeswap/firefly-cardanosigner",
+    "tag": "main"
   },
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
