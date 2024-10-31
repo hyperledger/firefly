@@ -151,7 +151,7 @@ func (c *Cardano) Capabilities() *blockchain.Capabilities {
 	return c.capabilities
 }
 
-func (c *Cardano) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract) (string, error) {
+func (c *Cardano) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract, lastProtocolID string) (string, error) {
 	return "", errors.New("AddFireflySubscription not supported")
 }
 
@@ -200,11 +200,15 @@ func (c *Cardano) ParseInterface(ctx context.Context, method *fftypes.FFIMethod,
 	}, nil
 }
 
+func (c *Cardano) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	return true, errors.New("CheckOverlappingLocations not supported")
+}
+
 func (c *Cardano) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
 	return nil, errors.New("NormalizeContractLocation not supported")
 }
 
-func (c *Cardano) AddContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
+func (c *Cardano) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) (err error) {
 	return errors.New("AddContractListener not supported")
 }
 
@@ -221,8 +225,12 @@ func (c *Cardano) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVal
 	return nil, nil
 }
 
-func (c *Cardano) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	return event.Name
+func (c *Cardano) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) (string, error) {
+	return "", errors.New("GenerateEventSignature not supported")
+}
+
+func (c *Cardano) GenerateEventSignatureWithLocation(ctx context.Context, event *fftypes.FFIEventDefinition, location *fftypes.JSONAny) (string, error) {
+	return "", errors.New("GenerateEventSignatureWithLocation not supported")
 }
 
 func (c *Cardano) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {
