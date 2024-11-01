@@ -1,5 +1,5 @@
 # ARG Definitions
-# Consider adding default values for the ARGs based on this warning: 
+# Consider adding default values for the ARGs based on this warning:
 # https://github.com/hyperledger/firefly/actions/runs/10795366695/job/29941873807#step:4:171
 ARG FIREFLY_BUILDER_TAG
 ARG FABRIC_BUILDER_TAG
@@ -64,10 +64,10 @@ RUN mkdir -p build/contracts \
 FROM alpine:3.19 AS sbom
 WORKDIR /
 ADD . /SBOM
-RUN apk add --no-cache curl 
+RUN apk add --no-cache curl
 RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.48.3
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
-RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --exit-code 1
+RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
 
 # Final executable build
 FROM $BASE_TAG
