@@ -636,6 +636,7 @@ func (bp *batchProcessor) dispatchBatch(payload *DispatchPayload) error {
 				conflictErr, conflictTestOk := err.(operations.ConflictError)
 				if conflictTestOk && conflictErr.IsConflictError() {
 					// We know that the connector has received our batch, so we shouldn't need to retry
+					payload.addMessageUpdate(payload.Messages, core.MessageStateReady, core.MessageStateSent)
 					return true, nil
 				}
 			} else {
