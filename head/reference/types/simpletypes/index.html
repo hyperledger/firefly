@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.43">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8c3ca2c6.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.0253249f.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -3456,22 +3456,15 @@
   <h1>Simple Types</h1>
 
 <h2 id="uuid">UUID<a class="headerlink" href="#uuid" title="Permanent link">&para;</a></h2>
-<!-- BEGIN INCLUDE ./_includes/uuid_description.md -->
 <p>IDs are generated as UUID V4 globally unique identifiers</p>
-<!-- END INCLUDE -->
-
 <h2 id="fftime">FFTime<a class="headerlink" href="#fftime" title="Permanent link">&para;</a></h2>
-<!-- BEGIN INCLUDE ./_includes/fftime_description.md -->
 <p>Times are serialized to JSON on the API in RFC 3339 / ISO 8601 nanosecond UTC time
 for example <code>2022-05-05T21:19:27.454767543Z</code>.</p>
 <p>Note that JavaScript can parse this format happily into millisecond time with <code>Date.parse()</code>.</p>
 <p>Times are persisted as a nanosecond resolution timestamps in the database.</p>
 <p>On input, and in queries, times can be parsed from RFC3339, or unix timestamps
 (second, millisecond or nanosecond resolution).</p>
-<!-- END INCLUDE -->
-
 <h2 id="ffbigint">FFBigInt<a class="headerlink" href="#ffbigint" title="Permanent link">&para;</a></h2>
-<!-- BEGIN INCLUDE ./_includes/ffbigint_description.md -->
 <p>Large integers of up to 256bits in size are common in blockchain, and
 handled in FireFly.</p>
 <p>In JSON output payloads in FireFly, including events, they are serialized as
@@ -3516,19 +3509,12 @@ that uses this number format. For example the following input parameter to a con
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    &quot;params&quot;: [ 1e+25 ]
 <a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    ...
 </code></pre></div>
-<!-- END INCLUDE -->
-
 <h2 id="jsonany">JSONAny<a class="headerlink" href="#jsonany" title="Permanent link">&para;</a></h2>
-<!-- BEGIN INCLUDE ./_includes/jsonany_description.md -->
 <p>Any JSON type. An <code>object</code>, <code>array</code>, <code>string</code>, <code>number</code>, <code>boolean</code> or <code>null</code>.</p>
 <p>FireFly stores object data with the same field order as was provided on the input,
 but with any whitespace removed.</p>
-<!-- END INCLUDE -->
-
 <h2 id="jsonobject">JSONObject<a class="headerlink" href="#jsonobject" title="Permanent link">&para;</a></h2>
-<!-- BEGIN INCLUDE ./_includes/jsonobject_description.md -->
 <p>Any JSON Object. Must be an object, rather than an array or a simple type.</p>
-<!-- END INCLUDE -->
 
 
 
@@ -3629,7 +3615,7 @@ but with any whitespace removed.</p>
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.top", "navigation.tracking", "navigation.path", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.525ec568.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.83f73b43.min.js"></script>
       
     
   </body>

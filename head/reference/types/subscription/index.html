@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.43">
     
     
       
@@ -24,7 +24,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8c3ca2c6.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.0253249f.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -3599,7 +3599,6 @@
 
   <h1>Subscription</h1>
 
-<!-- BEGIN INCLUDE ./_includes/subscription_description.md -->
 <p>Each <a href="#subscription">Subscription</a> tracks delivery of events to a particular
 application, and allows FireFly to ensure that messages are delivered reliably
 to that application.</p>
@@ -3762,8 +3761,6 @@ allowing you to customize your HTTP requests as follows:</p>
 <p><code>batch</code> | Events are delivered in batches in an ordered array. The batch size is capped to the readAhead limit. The event payload is always an array even if there is a single event in the batch. Commonly used with Webhooks to allow events to be delivered and acknowledged in batches. | <code>bool</code> |</p>
 <p><code>batchTimeout</code> | When batching is enabled, the optional timeout to send events even when the batch hasn't filled. Defaults to 2 seconds | <code>string</code></p>
 <p><strong>NOTE</strong>: When batch is enabled, <code>withData</code> cannot be used as these may alter the HTTP request based on a single event and in batching it does not make sense for now.</p>
-<!-- END INCLUDE -->
-
 <h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;c38d69fd-442e-4d6f-b5a4-bab1411c7fe8&quot;</span><span class="p">,</span>
@@ -4284,7 +4281,7 @@ allowing you to customize your HTTP requests as follows:</p>
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "navigation.footer", "navigation.instant", "navigation.top", "navigation.tracking", "navigation.path", "navigation.indexes"], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.525ec568.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.83f73b43.min.js"></script>
       
     
   </body>
