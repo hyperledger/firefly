@@ -75,6 +75,18 @@ func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
 	}
 }
 
+type testConflictError struct {
+	err error
+}
+
+func (tce *testConflictError) Error() string {
+	return tce.err.Error()
+}
+
+func (tce *testConflictError) IsConflictError() bool {
+	return true
+}
+
 func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
 	coreconfig.Reset()
@@ -127,6 +139,17 @@ func TestUnfilledBatch(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mim.AssertExpectations(t)
+}
+
+func TestHandleDispatchConflictError(t *testing.T) {
+	cancel, _, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
+		conflictErr := testConflictError{err: fmt.Errorf("pop")}
+		return &conflictErr
+	})
+	defer cancel()
+	bp.dispatchBatch(&DispatchPayload{})
+	bp.cancelCtx()
+	<-bp.done
 }
 
 func TestBatchSizeOverflow(t *testing.T) {
