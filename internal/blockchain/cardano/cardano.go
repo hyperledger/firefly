@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -68,6 +69,18 @@ type ffiMethodAndErrors struct {
 type cardanoWSCommandPayload struct {
 	Type  string `json:"type"`
 	Topic string `json:"topic,omitempty"`
+}
+
+type Location struct {
+	Address string `json:"address"`
+}
+
+type cardanoInvokeContractPayload struct {
+	ID      string             `json:"id"`
+	From    string             `json:"from"`
+	Address string             `json:"address"`
+	Method  *fftypes.FFIMethod `json:"method"`
+	Params  []interface{}      `json:"params"`
 }
 
 func (c *Cardano) Name() string {
@@ -186,7 +199,41 @@ func (c *Cardano) ValidateInvokeRequest(ctx context.Context, parsedMethod interf
 }
 
 func (c *Cardano) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}, batch *blockchain.BatchPin) (bool, error) {
-	return true, errors.New("InvokeContract not supported")
+	cardanoLocation, err := c.parseContractLocation(ctx, location)
+	if err != nil {
+		return true, err
+	}
+
+	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
+	if !ok || methodInfo.method == nil {
+		return true, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
+	}
+	method := methodInfo.method
+	params := make([]interface{}, 0)
+	for _, param := range method.Params {
+		params = append(params, input[param.Name])
+	}
+
+	body := map[string]interface{}{
+		"id":      nsOpID,
+		"address": cardanoLocation.Address,
+		"method":  method,
+		"params":  params,
+	}
+	if signingKey != "" {
+		body["from"] = signingKey
+	}
+
+	var resErr common.BlockchainRESTError
+	res, err := c.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/contracts/invoke")
+	if err != nil || !res.IsSuccess() {
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgCardanoconnectRESTErr)
+	}
+	return false, nil
 }
 
 func (c *Cardano) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
@@ -200,12 +247,47 @@ func (c *Cardano) ParseInterface(ctx context.Context, method *fftypes.FFIMethod,
 	}, nil
 }
 
-func (c *Cardano) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
-	return true, errors.New("CheckOverlappingLocations not supported")
+func (c *Cardano) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+	return location, nil
 }
 
-func (c *Cardano) NormalizeContractLocation(ctx context.Context, ntype blockchain.NormalizeType, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
-	return nil, errors.New("NormalizeContractLocation not supported")
+func (c *Cardano) CheckOverlappingLocations(ctx context.Context, left *fftypes.JSONAny, right *fftypes.JSONAny) (bool, error) {
+	if left == nil || right == nil {
+		// No location on either side so overlapping
+		return true, nil
+	}
+
+	parsedLeft, err := c.parseContractLocation(ctx, left)
+	if err != nil {
+		return false, err
+	}
+
+	parsedRight, err := c.parseContractLocation(ctx, right)
+	if err != nil {
+		return false, err
+	}
+
+	// For cardano just compare addresses
+	return strings.EqualFold(parsedLeft.Address, parsedRight.Address), nil
+}
+
+func (c *Cardano) parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
+	cardanoLocation := Location{}
+	if err := json.Unmarshal(location.Bytes(), &cardanoLocation); err != nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, err)
+	}
+	if cardanoLocation.Address == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'address' not set")
+	}
+	return &cardanoLocation, nil
+}
+
+func (c *Cardano) encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
+	normalized, err := json.Marshal(location)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func (c *Cardano) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) (err error) {
