@@ -1448,7 +1448,9 @@ namespaces:
 	assert.NoError(t, err)
 	assert.NotNil(t, tlsConfigs["myconfig"])
 	assert.True(t, tlsConfigs["myconfig"].RootCAs.Equal(expectedTLSConfig.RootCAs))
-	assert.Equal(t, tlsConfigs["myconfig"].Certificates, expectedTLSConfig.Certificates)
+	certificate, err := tlsConfigs["myconfig"].GetCertificate(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, *certificate, cert)
 }
 
 func TestLoadTLSConfigsDuplicateConfigs(t *testing.T) {
