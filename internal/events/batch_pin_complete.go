@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -125,10 +125,15 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 	log.L(ctx).Warnf("Batch insert of pins failed - assuming replay and performing upserts: %s", err)
 
 	// Fall back to an upsert
+	// Use a different context to not re-use DB TX from a group run
+	// We only get here if it fails so this would never work in the same DB TX
+	upsertCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	for _, pin := range pins {
-		if err := em.database.UpsertPin(ctx, pin); err != nil {
+		if err := em.database.UpsertPin(upsertCtx, pin); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

@@ -14,3 +14,4 @@ containerlogs
 .vscode/*.log
 .idea
 doc-site/site
+doc-site/venv
