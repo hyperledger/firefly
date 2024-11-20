@@ -131,22 +131,10 @@ func (em *eventManager) loadFromOperation(ctx context.Context, pool *tokens.Toke
 		return nil, nil
 	}
 
-	activateOp, _ := em.txHelper.FindOperationInTransaction(ctx, pool.TX.ID, core.OpTypeTokenActivatePool)
-	if activateOp != nil {
-		log.L(ctx).Debugf("There was a separate operation to active the pool for tx=%s status=%s", pool.TX.ID, core.OpTypeTokenActivatePool)
-	}
-
 	stagedPool, err = txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
 	if err != nil || stagedPool.ID == nil || stagedPool.Namespace == "" || stagedPool.Name == "" {
 		log.L(ctx).Errorf("Error loading pool info for transaction '%s' (%s) - ignoring: %v", pool.TX.ID, err, op.Input)
 		return nil, nil
-	}
-
-	// If we have successfully activated the pool
-	// Then set the pool published to true
-	// As it won't be in the initial payload
-	if activateOp != nil && activateOp.Status == core.OpStatusSucceeded {
-		stagedPool.Published = true
 	}
 
 	if err = addPoolDetailsFromPlugin(stagedPool, pool); err != nil {
