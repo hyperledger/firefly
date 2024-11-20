@@ -93,7 +93,7 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 		}
 
 		if existing.ID.Equals(pool.ID) {
-			log.L(ctx).Warnf("Received duplicate event for token pool creation with ID=%s, ignoring and carrying on for token connector: %s", pool.ID, pool.Connector)
+			log.L(ctx).Warnf("Received duplicate token pool creation with ID=%s, ignoring and carrying on for token connector: %s", pool.ID, pool.Connector)
 			break
 		}
 
