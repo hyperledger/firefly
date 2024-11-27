@@ -201,7 +201,7 @@ func (im *identityManager) ResolveInputVerifierRef(ctx context.Context, inputKey
 	}, nil
 }
 
-// ResolveInputIdentity takes in blockchain signing input information from an API call (which may
+// ResolveInputSigningIdentity takes in blockchain signing input information from an API call (which may
 // include author or key or both), and updates it with fully resolved and normalized values
 func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, signerRef *core.SignerRef) (err error) {
 	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", signerRef.Key, signerRef.Author)
