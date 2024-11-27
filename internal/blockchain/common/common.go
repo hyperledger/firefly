@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -392,8 +392,16 @@ func (s *subscriptions) GetSubscription(subID string) *SubscriptionInfo {
 }
 
 // Common function for handling receipts from blockchain connectors.
-func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainReceiptNotification, callbacks BlockchainCallbacks) error {
+func HandleReceipt(ctx context.Context, namespace string, plugin core.Named, reply *BlockchainReceiptNotification, callbacks BlockchainCallbacks) error {
 	l := log.L(ctx)
+
+	if namespace != "" {
+		opNamespace, _, _ := core.ParseNamespacedOpID(ctx, reply.Headers.ReceiptID)
+		if opNamespace != namespace {
+			l.Debugf("Ignoring operation update from other namespace: request=%s tx=%s message=%s", reply.Headers.ReceiptID, reply.TxHash, reply.Message)
+			return nil
+		}
+	}
 
 	if reply.Headers.ReceiptID == "" || reply.Headers.ReplyType == "" {
 		return fmt.Errorf("reply cannot be processed - missing fields: %+v", reply)
@@ -409,7 +417,7 @@ func HandleReceipt(ctx context.Context, plugin core.Named, reply *BlockchainRece
 		updateType = core.OpStatusFailed
 	}
 
-	// Slightly upgly conversion from ReceiptFromBlockchain -> JSONObject which the generic OperationUpdate() function requires
+	// Slightly ugly conversion from ReceiptFromBlockchain -> JSONObject which the generic OperationUpdate() function requires
 	var output fftypes.JSONObject
 	obj, err := json.Marshal(reply)
 	if err != nil {

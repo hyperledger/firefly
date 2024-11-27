@@ -540,7 +540,7 @@ func (f *Fabric) eventLoop(namespace string, wsconn wsclient.WSClient, closed ch
 				var receipt common.BlockchainReceiptNotification
 				_ = json.Unmarshal(msgBytes, &receipt)
 
-				err := common.HandleReceipt(ctx, f, &receipt, f.callbacks)
+				err := common.HandleReceipt(ctx, namespace, f, &receipt, f.callbacks)
 				if err != nil {
 					l.Errorf("Failed to process receipt: %+v", msgTyped)
 				}
