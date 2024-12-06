@@ -189,7 +189,21 @@ func (c *Cardano) SubmitNetworkAction(ctx context.Context, nsOpID string, signin
 }
 
 func (c *Cardano) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
-	return true, errors.New("DeployContract not supported")
+	body := map[string]interface{}{
+		"id":         nsOpID,
+		"contract":   contract,
+		"definition": definition,
+	}
+	var resErr common.BlockchainRESTError
+	res, err := c.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/contracts/deploy")
+	if err != nil || !res.IsSuccess() {
+		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgCardanoconnectRESTErr)
+	}
+	return false, nil
 }
 
 func (c *Cardano) ValidateInvokeRequest(ctx context.Context, parsedMethod interface{}, input map[string]interface{}, hasMessage bool) error {
