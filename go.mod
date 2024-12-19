@@ -17,8 +17,8 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-	github.com/hyperledger/firefly-common v1.4.12
-	github.com/hyperledger/firefly-signer v1.1.17
+	github.com/hyperledger/firefly-common v1.4.14
+	github.com/hyperledger/firefly-signer v1.1.19
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.19
@@ -30,8 +30,8 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/hfuss/mux-prometheus v0.0.5
-	golang.org/x/net v0.20.0
-	golang.org/x/text v0.14.0
+	golang.org/x/net v0.33.0
+	golang.org/x/text v0.21.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -85,10 +85,10 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e // indirect
-	golang.org/x/sys v0.16.0 // indirect
-	golang.org/x/term v0.16.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
