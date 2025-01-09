@@ -5,6 +5,8 @@
 [Material for MkDocs]: https://squidfunk.github.io/mkdocs-material/
 [Mike]: https://github.com/jimporter/mike
 
+[ENGLISH](./README.md) | [简体中文](./README_zh_CN.md)
+
 ## 前置条件
 
 需要以下工具去测试这些文档和升级已发布的站点:
