@@ -264,6 +264,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
@@ -607,6 +608,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |method|The HTTP method to use when making requests to the Address Resolver|`string`|`GET`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -675,6 +677,7 @@ title: Configuration Reference
 |instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |prefixLong|The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect|`string`|`fly`
@@ -759,6 +762,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
@@ -823,6 +827,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |prefixLong|The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect|`string`|`fly`
@@ -910,6 +915,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |method|The HTTP method to use when making requests to the Address Resolver|`string`|`GET`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -976,6 +982,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |prefixLong|The prefix that will be used for Tezosconnect specific HTTP headers when FireFly makes requests to Tezosconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Tezosconnect specific query parameters when FireFly makes requests to Tezosconnect|`string`|`fly`
@@ -1110,6 +1117,7 @@ title: Configuration Reference
 |manifestEnabled|Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector|`string`|`false`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
@@ -1213,6 +1221,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
@@ -1273,6 +1282,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
@@ -1341,6 +1351,7 @@ title: Configuration Reference
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
 |passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
