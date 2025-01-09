@@ -40,7 +40,7 @@ all the plumbing for your blockchain application from scratch.
 
 [![Hyperledger FireFly Architecture Overview](./doc-site/docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/doc-site/docs/images/firefly_architecture_overview.jpg)
 
-## Start contributing to Hyperledger FireFy
+## Start contributing to Hyperledger FireFly
 
 There are lots of places you can contribute, regardless of whether your skills are front-end, backend-end, or full-stack.
 
