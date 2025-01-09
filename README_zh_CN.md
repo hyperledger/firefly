@@ -12,9 +12,7 @@ Hyperledger FireFly 是HyperLedger出品的首款开源超级节点：企业构�
 
 FireFly 的数字资产、数据流和区块链交易上的API能够让企业能够在众多流行区块链和各种流行协议迅速构建起开箱即用的应用。
 
-## FireFly README.md 文件语言选择
-  * en [ENGLISH](./README.md)
-  * zh_CN [简体中文](./README_zh_CN.md)
+[ENGLISH](./README.md) | [简体中文](./README_zh_CN.md)
 
 ## 开始使用 Hyperledger FireFly
 
