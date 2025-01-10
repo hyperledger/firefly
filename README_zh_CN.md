@@ -16,7 +16,7 @@ FireFly 提供的数字资产、数据流和区块链交易的 API，使企业�
 
 ## 开始使用 Hyperledger FireFly
 
-学习使用FireFly的最佳方式: [文档](https://hyperledger.github.io/firefly).
+了解FireFly的最佳方式请参照 [文档](https://hyperledger.github.io/firefly)。
 
 在这里你能够找到 [开始指引](https://hyperledger.github.io/firefly/latest/gettingstarted/),
 在文档的指导下，你几分钟就可以在你的本地机器上运行起来FireFly超级节点。
