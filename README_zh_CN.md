@@ -8,7 +8,7 @@
 
 ![Hyperledger FireFly](./images/hyperledger_firefly_logo.png)
 
-Hyperledger FireFly 是HyperLedger出品的首款开源超级节点：企业构建和拓展一个安全的Web3应用的全栈式解决方案。
+Hyperledger FireFly 是首款开源的超级节点：一个安全的企业级的构建和拓展Web3应用的全栈式解决方案。
 
 FireFly 的数字资产、数据流和区块链交易上的API能够让企业能够在众多流行区块链和各种流行协议迅速构建起开箱即用的应用。
 
