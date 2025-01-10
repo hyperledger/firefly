@@ -39,19 +39,19 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
 
 [![Hyperledger FireFly 技术架构图](./doc-site/docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/doc-site/docs/images/firefly_architecture_overview.jpg)
 
-## 开始向 Hyperledger FireFy 产生贡献
+## 开始为 Hyperledger FireFly 做贡献
 
-你有很多种方式可以对 Hyperledger FireFly 项目产生贡献，无论你的技术栈是前端、后端或者全栈。
+无论您是前端、后端，还是全栈开发者，这里都有适合您的贡献机会。
 
-点击 [贡献指引](https://hyperledger.github.io/firefly/latest/contributors/)， **欢迎!**.
+请查看我们的 [贡献者指南](https://hyperledger.github.io/firefly/latest/contributors/)，**欢迎加入**！
 
-## 其他项目库
+## 其他存储库
 
-你当前处在“核心”库中，这是一个用Go语言编写的和有着托管API服务器和中央协调引擎的库。在这里你可找到用各种语言（TypeScript、Java以及其他重量级运行环境组件）编写的插件式微服务组件。
+您当前所在的是“核心”存储库，用Go语言编写，包含了API服务器和中央编排引擎。本库还提供多种插件接口，用于支持使用 TypeScript 和 Java 等语言编写的微服务连接器以及其他关键运行组件。
 
-你可能感兴趣的其他项目包含着微服务组件、用户体验、控制台和样例的库如下
+以下是您可能感兴趣的各个微服务组件、用户经验、CLI 和应用示例的存储库。
 
-> 提示：只罗列开源库和插件
+> 注意：以下仅列出了开源存储库和插件
 
 ### 区块链连接
 
