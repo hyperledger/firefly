@@ -55,16 +55,16 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
 
 ### 区块链连接
 
-- Transaction Manager - https://github.com/hyperledger/firefly-transaction-manager
-- RLP & ABI encoding, KeystoreV3 utilities and secp256k1 signer runtime -  https://github.com/hyperledger/firefly-signer
-- FFCAPI reference connector for EVM Chains - https://github.com/hyperledger/firefly-evmconnect
-  - Public EVM compatible chains: Learn more in the [documentation](https://hyperledger.github.io/firefly)
-- Permissioned Ethereum connector - https://github.com/hyperledger/firefly-ethconnect
-  - Private/permissioned: Hyperledger Besu / Quorum
-- Hyperledger Fabric connector - https://github.com/hyperledger/firefly-fabconnect
-- Tezos connector - https://github.com/hyperledger/firefly-tezosconnect
-- Corda connector starter: https://github.com/hyperledger/firefly-cordaconnect
-  - CorDapp specific customization is required
+- Transaction Manager （区块链交易管理组件）- https://github.com/hyperledger/firefly-transaction-manager
+- RLP & ABI 编码, Keystore V3实用工具 和 secp256k1 签名运行时 -  https://github.com/hyperledger/firefly-signer
+- 通用型以太坊区块链的参考连接器 - https://github.com/hyperledger/firefly-evmconnect
+  - EVM兼容公链: 请参见[文档](https://hyperledger.github.io/firefly)
+- 针对许可制以太坊区块链的连接器 - https://github.com/hyperledger/firefly-ethconnect
+  - 私有/许可制区块链: Hyperledger Besu / Quorum
+- Hyperledger Fabric连接器 - https://github.com/hyperledger/firefly-fabconnect
+- Tezos连接器 - https://github.com/hyperledger/firefly-tezosconnect
+- Corda连接器示例: https://github.com/hyperledger/firefly-cordaconnect
+  - 使用该连接器，需要对 CorDapp 进行定制化开发
 
 ### Token 标准
 
