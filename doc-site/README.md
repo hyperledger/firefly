@@ -5,8 +5,6 @@ This directory is based on the [Hyperledger documentation template](https://gith
 [Material for MkDocs]: https://squidfunk.github.io/mkdocs-material/
 [Mike]: https://github.com/jimporter/mike
 
-[ENGLISH](./README.md) | [简体中文](./README_zh_CN.md)
-
 ## Prerequisites
 
 To test the documents and update the published site, the following tools are needed:
