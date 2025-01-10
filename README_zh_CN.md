@@ -18,24 +18,24 @@ FireFly 提供的数字资产、数据流和区块链交易的 API，使企业�
 
 了解FireFly的最佳方式请参照 [文档](https://hyperledger.github.io/firefly)。
 
-在这里你能够找到 [开始指引](https://hyperledger.github.io/firefly/latest/gettingstarted/),
-在文档的指导下，你几分钟就可以在你的本地机器上运行起来FireFly超级节点。
+您可以在这里找到我们的 [入门指南](https://hyperledger.github.io/firefly/latest/gettingstarted/),
+通过该指南将帮助您在几分钟内在本地机器上运行起来一个FireFly超级节点网络的开发环境。
 
-你的本地机器将会安装上:
+您的开发环境将包括:
 
 FireFly CLI                   |  FireFly Explorer UI                | FireFly Sandbox  |
 :----------------------------:|:-----------------------------------:|:----------------:|
 [![CLI](./images/firefly_cli.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/firefly_cli/#install-the-firefly-cli) | [![UI](./images/firefly_explorer.png)](https://github.com/hyperledger/firefly-ui) | [![Sandbox](./images/firefly_sandbox.png)](https://hyperledger.github.io/firefly/latest/gettingstarted/sandbox/#use-the-sandbox) |
 
-## 与FireFly社区取得联系
+## 加入社区
 
 - [加入我们的 Discord](https://discord.gg/hyperledger)
 
 ## 技术架构
 
-Hyperledger FireFly 有着插件式的微服务架构。FireFly的所有服务都是插件式的，例如区块链技术、token ERC标准、自定义智能合约甚至到事件分发层以及私有数据库都是可插拔的。
+Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议、ERC代币标准、自定义智能合约，还是事件分发层以及私有数据库，一切都可以插件化。
 
-假如你在FireFly的技术架构图中还未发现你喜爱的区块链技术，你也不必担心。FireFly提供了清晰明确的方式可以让你去拓展，从而避免你花费大量时间去重新构建你自己的区块链应用程序。
+因此，即使您所需要的区块链技术目前还没有相对应的支持，您也不必担心。插件化的设计大大降低了添加更多的区块链技术的难度，避免你花费大量时间去重新构建不同区块链技术之间可以复用的基础设施。
 
 [![Hyperledger FireFly 技术架构图](./doc-site/docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/doc-site/docs/images/firefly_architecture_overview.jpg)
 
