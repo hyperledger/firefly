@@ -73,7 +73,7 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
 
 ### 私有数据总线连接
 
-- HTTPS Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
+- HTTPS 数据交换组件 - https://github.com/hyperledger/firefly-dataexchange-https
 
 ### 开发者生态系统
 
