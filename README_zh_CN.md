@@ -77,13 +77,13 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
 
 ### 开发者生态系统
 
-- Command Line Interface (CLI) - https://github.com/hyperledger/firefly-cli
-- Explorer UI - https://github.com/hyperledger/firefly-ui
+- 命令行界面 (CLI) - https://github.com/hyperledger/firefly-cli
+- 图形用户界面 - https://github.com/hyperledger/firefly-ui
 - Node.js SDK - https://github.com/hyperledger/firefly-sdk-nodejs
-- Sandbox / Exerciser - https://github.com/hyperledger/firefly-sandbox
-- Samples - https://github.com/hyperledger/firefly-samples
-- FireFly Performance CLI: https://github.com/hyperledger/firefly-perf-cli
-- Helm Charts for Deploying to Kubernetes: https://github.com/hyperledger/firefly-helm-charts
+- 沙盒/测试工具 - https://github.com/hyperledger/firefly-sandbox
+- 示例 - https://github.com/hyperledger/firefly-samples
+- FireFly 性能测试 CLI: https://github.com/hyperledger/firefly-perf-cli
+- 部署到Kubernetes的示例Helm Charts: https://github.com/hyperledger/firefly-helm-charts
 
 ## FireFly 核心代码层级结构
 
