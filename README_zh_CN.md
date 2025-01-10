@@ -66,10 +66,10 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
 - Corda连接器示例: https://github.com/hyperledger/firefly-cordaconnect
   - 使用该连接器，需要对 CorDapp 进行定制化开发
 
-### Token 标准
+### 代币标准
 
-- Tokens ERC20/ERC721 - https://github.com/hyperledger/firefly-tokens-erc20-erc721
-- Tokens ERC1155 - https://github.com/hyperledger/firefly-tokens-erc1155
+- ERC20/ERC721 代币 - https://github.com/hyperledger/firefly-tokens-erc20-erc721
+- ERC1155 代币 - https://github.com/hyperledger/firefly-tokens-erc1155
 
 ### 私有数据总线连接
 
