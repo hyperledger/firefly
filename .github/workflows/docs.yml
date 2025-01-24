@@ -1,55 +1,47 @@
-name: Docs Site
+name: update documentation site
 
 on:
   push:
     branches:
       - main
-  pull_request:
-  release:
-    types: [released]
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
 jobs:
-  build:
+  deplou:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Setup Docs Deploy
+          fetch-depth: 0 # fetch all commits/branches
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - uses: actions/cache@v4
+        with:
+          key: ${{ github.ref }}
+          path: .cache
+      - name: Install Python dependencies
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "noreply@github.com"
-
-      - name: Get the latest tag
+          cd doc-site
+          pip install -r requirements.txt
+      - name: Configure git user
         run: |
-          git fetch --tags
-          latest_tag=$(git tag -l | sort -V | grep -v "rc" | tail -n 1)
-          echo "latest tag: $latest_tag"
-          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
-
-      - name: Install docs dependencies
-        working-directory: doc-site
-        run: pip install -r requirements.txt
-
-      - name: Update doc site for release
-        if: github.event.action == 'released' && github.ref_name != env.LATEST_TAG
-        working-directory: doc-site
-        run: mike deploy ${{ github.event.release.tag_name }} --push
-
-      - name: Update doc site for latest release
-        if: github.event.action == 'released' && github.ref_name == env.LATEST_TAG
-        working-directory: doc-site
-        run: mike deploy ${{ github.event.release.tag_name }} latest -u --push
-
-      - name: Update doc site for `main` branch
-        if: ${{ github.event_name == 'push' }}
-        working-directory: doc-site
-        run: mike deploy head --push
-
-      - name: Test building the doc site but do not deploy it
-        if: ${{ github.event_name == 'pull_request' }}
-        working-directory: doc-site
-        run: mkdocs build
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Deploy docs
+        run: |
+          cd doc-site
+          # Strip git ref prefix from version
+          echo "${{ github.ref }}"
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && ALIAS=$(echo $VERSION | sed -e 's/^v//')
+          # If building from main, use latest as ALIAS
+          [ "$VERSION" == "main" ] && ALIAS=latest
+          echo $VERSION $ALIAS
+          mike deploy --push --update-aliases $VERSION $ALIAS
+          mike set-default latest
