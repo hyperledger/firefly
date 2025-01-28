@@ -102,7 +102,7 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
                     │
               ┌─────┴─────────┐  - REST 路由定义框架
               │ openapi   [Oa]│    * 标准化 Body，Path，Query， Filter 语义
-              │ spec          |      - OpenAPI 3.0 (Swagger) 生成器
+              │ spec          |      - 生成 OpenAPI 3.0 (Swagger) 文档
               └─────┬─────────┘    * 包括 Swagger. UI
                     │
               ┌─────┴─────────┐  - WebSocket 服务器
