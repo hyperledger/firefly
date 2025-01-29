@@ -40,7 +40,6 @@ import (
 
 func TestCacheInitFail(t *testing.T) {
 	cacheInitError := errors.New("Initialization error.")
-	coreconfig.Reset()
 	config.Set(coreconfig.MessageWriterCount, 1)
 	ctx := context.Background()
 	mdi := &databasemocks.Plugin{}
@@ -80,7 +79,6 @@ func TestCacheInitFail(t *testing.T) {
 }
 
 func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
-	coreconfig.Reset()
 	config.Set(coreconfig.MessageWriterCount, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
@@ -134,7 +132,6 @@ func testNewMessage() (*fftypes.UUID, *fftypes.Bytes32, *NewMessage) {
 
 func TestValidateE2E(t *testing.T) {
 
-	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -281,7 +278,6 @@ func TestInitBadDeps(t *testing.T) {
 }
 
 func TestValidatorLookupCached(t *testing.T) {
-	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -309,7 +305,6 @@ func TestValidatorLookupCached(t *testing.T) {
 
 func TestValidateBadHash(t *testing.T) {
 
-	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)

@@ -79,7 +79,6 @@ func TestGetStatusRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -141,7 +140,6 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -167,7 +165,6 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -220,7 +217,6 @@ func TestGetStatusUnregistered(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
@@ -247,7 +243,6 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -299,7 +294,6 @@ func TestGetStatusNodeError(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -333,7 +327,6 @@ func TestGetMultipartyStatusMultipartyNotEnabled(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.config.Multiparty.Enabled = false
@@ -348,7 +341,6 @@ func TestGetMultipartyStatusUnregistered(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
@@ -375,7 +367,6 @@ func TestGetMultipartyStatusRegisteringOrg(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
@@ -411,7 +402,6 @@ func TestGetMultipartyStatusMismatchedOrgRegistration(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
@@ -446,7 +436,6 @@ func TestGetMultipartyStatusOrgBadMessage(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
@@ -476,7 +465,6 @@ func TestGetMultipartyStatusMessageErrorRegisteringOrg(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.mim.On("GetRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
@@ -497,7 +485,6 @@ func TestGetMultipartyStatusRegisteringNode(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -548,7 +535,6 @@ func TestGetMultipartyStatusMismatchedNodeRegistration(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -596,7 +582,6 @@ func TestGetMultipartyStatusNodeBadMessage(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -641,7 +626,6 @@ func TestGetMultipartyStatusMessageErrorRegisteringNode(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -678,7 +662,6 @@ func TestGetMultipartyStatusUnregisteredNode(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -721,7 +704,6 @@ func TestGetMultipartyStatusRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -766,7 +748,6 @@ func TestGetMultipartyStatusErrorStatus(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -795,7 +776,6 @@ func TestCheckRegistrationType(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	or.config.Multiparty.Org.Name = "org1"
@@ -872,7 +852,6 @@ func TestGetMultipartyActiveListenerStatus(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()
@@ -923,7 +902,6 @@ func TestGetMultipartyErrorActiveListenerStatus(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
 
 	orgID := fftypes.NewUUID()

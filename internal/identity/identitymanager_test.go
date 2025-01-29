@@ -38,7 +38,6 @@ import (
 )
 
 func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
-	coreconfig.Reset()
 
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
@@ -67,7 +66,6 @@ func TestNewIdentityManagerMissingDeps(t *testing.T) {
 
 func TestCacheInitFail(t *testing.T) {
 	cacheInitError := errors.New("Initialization error.")
-	coreconfig.Reset()
 
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}

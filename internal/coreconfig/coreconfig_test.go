@@ -26,7 +26,6 @@ import (
 const configDir = "../../test/data/config"
 
 func TestInitConfigOK(t *testing.T) {
-	Reset()
 
 	assert.Equal(t, 25, config.GetInt(APIDefaultFilterLimit))
 	assert.Equal(t, "localhost", config.GetString(DebugAddress))
