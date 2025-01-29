@@ -43,7 +43,6 @@ import (
 )
 
 func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionManager, func()) {
-	coreconfig.Reset()
 	config.Set(coreconfig.EventTransportsEnabled, []string{})
 
 	mdi := &databasemocks.Plugin{}
@@ -526,7 +525,6 @@ func TestCreateSubscriptionSuccessBlockchainEvent(t *testing.T) {
 }
 
 func TestCreateSubscriptionSuccessTLSConfig(t *testing.T) {
-	coreconfig.Reset()
 
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
@@ -552,7 +550,6 @@ func TestCreateSubscriptionSuccessTLSConfig(t *testing.T) {
 }
 
 func TestCreateSubscriptionSuccessBatch(t *testing.T) {
-	coreconfig.Reset()
 
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)

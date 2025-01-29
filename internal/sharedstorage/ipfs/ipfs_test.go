@@ -37,7 +37,6 @@ import (
 var utConfig = config.RootSection("ipfs_unit_tests")
 
 func resetConf() {
-	coreconfig.Reset()
 	i := &IPFS{}
 	i.InitConfig(utConfig)
 }

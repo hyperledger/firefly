@@ -55,7 +55,6 @@ var utFabconnectConf = utConfig.SubSection(FabconnectConfigKey)
 var signer = "orgMSP::x509::CN=signer001,OU=client::CN=fabric-ca"
 
 func resetConf(e *Fabric) {
-	coreconfig.Reset()
 	e.InitConfig(utConfig)
 }
 

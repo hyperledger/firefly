@@ -83,7 +83,6 @@ func init() {
 }
 
 func resetConfig() {
-	coreconfig.Reset()
 	namespace.InitConfig()
 	apiserver.InitConfig()
 }

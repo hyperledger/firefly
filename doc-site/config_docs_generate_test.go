@@ -34,7 +34,6 @@ import (
 
 func TestGenerateConfigDocs(t *testing.T) {
 	// Initialize config of all plugins
-	coreconfig.Reset()
 	namespace.InitConfig()
 	apiserver.InitConfig()
 	f, err := os.Create(filepath.Join("docs", "reference", "config.md"))

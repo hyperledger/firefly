@@ -60,7 +60,6 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	return newEventDispatcher(ctx, enricher, mei, mdi, mdm, mbm, mpm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
 		cancel()
-		coreconfig.Reset()
 	}
 }
 

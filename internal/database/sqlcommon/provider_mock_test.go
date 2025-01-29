@@ -49,7 +49,6 @@ type mockProvider struct {
 }
 
 func newMockProvider() *mockProvider {
-	coreconfig.Reset()
 	conf := config.RootSection("unittest.db")
 	conf.AddKnownKey("url", "test")
 	mp := &mockProvider{
