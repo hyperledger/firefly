@@ -10,15 +10,15 @@
 
 Hyperledger FireFly 是首款开源的超级节点：一个安全的企业级的构建和拓展Web3应用的全栈式解决方案。
 
-FireFly 提供的数字资产、数据流和区块链交易的 API，使企业能够快速在流行的区块链技术和协议上构建生产就绪的应用程序。
+FireFly 提供的数字资产、数据流和区块链交易API，使企业能够快速在流行的区块链技术和协议上构建生产就绪的应用程序。
 
 [ENGLISH](./README.md) | [简体中文](./README_zh_CN.md)
 
 ## 开始使用 Hyperledger FireFly
 
-了解FireFly的最佳方式请参照 [文档](https://hyperledger.github.io/firefly)。
+了解FireFly的最佳方式请参照[文档](https://hyperledger.github.io/firefly)。
 
-您可以在这里找到我们的 [入门指南](https://hyperledger.github.io/firefly/latest/gettingstarted/),
+您可以在这里找到我们的[入门指南](https://hyperledger.github.io/firefly/latest/gettingstarted/),
 通过该指南将帮助您在几分钟内在本地机器上运行起来一个FireFly超级节点网络的开发环境。
 
 您的开发环境将包括:
@@ -43,7 +43,7 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
 
 无论您是前端、后端，还是全栈开发者，这里都有适合您的贡献机会。
 
-请查看我们的 [贡献者指南](https://hyperledger.github.io/firefly/latest/contributors/)，**欢迎加入**！
+请查看我们的[贡献者指南](https://hyperledger.github.io/firefly/latest/contributors/)，**欢迎加入**！
 
 ## 其他存储库
 
@@ -55,7 +55,7 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
 
 ### 区块链连接
 
-- Transaction Manager （区块链交易管理组件）- https://github.com/hyperledger/firefly-transaction-manager
+- Transaction Manager（区块链交易管理组件）- https://github.com/hyperledger/firefly-transaction-manager
 - RLP & ABI 编码, Keystore V3实用工具 和 secp256k1 签名运行时 -  https://github.com/hyperledger/firefly-signer
 - 通用型以太坊区块链的参考连接器 - https://github.com/hyperledger/firefly-evmconnect
   - EVM兼容公链: 请参见[文档](https://hyperledger.github.io/firefly)
@@ -140,8 +140,8 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
   │       │
   │       │   ┌───────────────┐  - 广播数据给所有网络中的成员
   │       ├───┤ broadcast [Bm]│    * 实现批量组件的分发
-  │       │   │ manager       |    * 与 shared storage 接口 [Ss] 插件的集成
-  │       │   └───────────────┘    * 与blockchain interface接口 [Bi] 插件的集成
+  │       │   │ manager       |    * 与 shared storage [Ss] 插件的集成
+  │       │   └───────────────┘    * 与blockchain interface [Bi] 插件的集成
   │       │
   │       │   ┌───────────────┐  - 发送私有数据给网络中的成员
   │       ├───┤ private   [Pm]│    * 实现批处理组件的调度器
@@ -186,13 +186,13 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
   │       │
   │       │   ┌───────────────┐  - 私有数据管理和验证
   │       ├───┤ event     [Em]│    * 实现批量组件的调度器
-  │       │   │ manager       │    * 集成数据交换 [Dx] 插件
-  │       │   └──────┬────────┘    * 集成区块链接口 [Bi] 插件
+  │       │   │ manager       │    * 与 data exchange [Dx] 插件的集成
+  │       │   └──────┬────────┘    * 与 blockchain interface [Bi] 插件的集成
   │       │          │
   │       │   ┌──────┴────────┐  - 处理传入的外部数据
-  │       │   │           [Ag]│    * 集成数据交换 [Dx] 插件
-  │       │   │ aggregator    │    * 集成共享数据接口 [Ss] 插件
-  │       │   │               │    * 集成区块链接口 [Bi] 插件
+  │       │   │           [Ag]│    * 与 data exchange [Dx] 插件的集成
+  │       │   │ aggregator    │    * 与 shared storage [Ss] 插件的集成
+  │       │   │               │    * 与 blockchain interface [Bi] 插件的集成
   │       │   │               │  - 确保只有所有数据都就绪时有效事件才会被分发
   │       │   └──────┬────────┘    * 上下文感知，避免“全局阻塞”场景的出现
   │       │          │
@@ -203,8 +203,8 @@ Hyperledger FireFly 拥有可插拔的微服务架构。无论是区块链协议
   │       │   └──────┬────────┘
   │       │          │
   │       │   ┌──────┴────────┐  - 管理事件到已连接应用的传递
-  │       │   │ event     [Ed]│    * 集成数据交换 [Dx] 插件
-  │       │   │ dispatcher    │    * 集成区块链接口 [Bi] 插件
+  │       │   │ event     [Ed]│    * 与 data exchange [Dx] 插件的集成
+  │       │   │ dispatcher    │    * 与 blockchain interface [Bi] 插件的集成
   │       │   └───────────────┘
   │       │
   │       │   ┌───────────────┐  - Token 创建、传输的初始化、索引和协同
