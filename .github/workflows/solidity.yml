@@ -3,9 +3,10 @@ name: Solidity Tests
 on:
   pull_request:
     branches: [main, workflow_token_permissions]
-  permissions:
-    contents: read
-    packages: read
+
+permissions:
+  contents: read
+  packages: read
 
 jobs:
   solidity-test:
