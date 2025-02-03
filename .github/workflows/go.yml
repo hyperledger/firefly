@@ -2,7 +2,7 @@ name: Go
 
 on:
   push:
-    branches: [main, workflow_token_permissions]
+    branches: [main] 
     paths:
       - '**'  # include all files
       - '!.github/**' # exclude .github directory

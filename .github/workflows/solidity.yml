@@ -2,7 +2,7 @@ name: Solidity Tests
 
 on:
   pull_request:
-    branches: [main, workflow_token_permissions]
+    branches: [main]
 
 permissions:
   contents: read
