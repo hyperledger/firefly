@@ -28,5 +28,7 @@
     * contributors/*
 * [API Spec](swagger/index.md)
 * [FAQs](faqs/index.md)
+* [Troubleshooting](troubleshooting/index.md)
+    * troubleshooting/*
 * [Release Notes](releasenotes/index.md)
     * releasenotes/*
