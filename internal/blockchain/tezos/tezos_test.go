@@ -548,7 +548,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	assert.NoError(t, err)
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
@@ -695,7 +695,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 
-	common.HandleReceipt(context.Background(), tz, &reply, tz.callbacks)
+	common.HandleReceipt(context.Background(), "", tz, &reply, tz.callbacks)
 
 	tm.AssertExpectations(t)
 }
@@ -780,7 +780,7 @@ func TestHandleReceiptTXUpdateTezosConnect(t *testing.T) {
 	assert.NoError(t, err)
 	expectedReceiptId := "ns1:" + operationID.String()
 	assert.Equal(t, reply.Headers.ReceiptID, expectedReceiptId)
-	common.HandleReceipt(context.Background(), tz, &reply, tz.callbacks)
+	common.HandleReceipt(context.Background(), "", tz, &reply, tz.callbacks)
 
 	tm.AssertExpectations(t)
 }
@@ -797,7 +797,7 @@ func TestHandleMsgBatchBadData(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	common.HandleReceipt(context.Background(), tz, &reply, tz.callbacks)
+	common.HandleReceipt(context.Background(), "", tz, &reply, tz.callbacks)
 }
 
 func TestAddSubscription(t *testing.T) {
@@ -811,12 +811,16 @@ func TestAddSubscription(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "KT123",
-		}.String()),
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+					},
+				},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
 			},
 		},
 		Options: &core.ContractListenerOptions{
@@ -827,7 +831,7 @@ func TestAddSubscription(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
 	assert.NoError(t, err)
 }
@@ -843,9 +847,13 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
-				Name: "Changed",
+		Filters: []*core.ListenerFilter{
+			{
+				Event: &core.FFISerializedEvent{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
+						Name: "Changed",
+					},
+				},
 			},
 		},
 		Options: &core.ContractListenerOptions{
@@ -856,7 +864,7 @@ func TestAddSubscriptionWithoutLocation(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewJsonResponderOrPanic(200, &subscription{}))
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
 	assert.NoError(t, err)
 }
@@ -873,11 +881,15 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(""),
-		Event:    &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Location: fftypes.JSONAnyPtr(""),
+				Event:    &core.FFISerializedEvent{},
+			},
+		},
 	}
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -893,10 +905,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &core.ContractListener{
-		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
-			"address": "KT123",
-		}.String()),
-		Event: &core.FFISerializedEvent{},
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
+			},
+		},
 		Options: &core.ContractListenerOptions{
 			FirstEvent: string(core.SubOptsFirstEventNewest),
 		},
@@ -905,9 +921,63 @@ func TestAddSubscriptionFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/subscriptions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := tz.AddContractListener(context.Background(), sub)
+	err := tz.AddContractListener(context.Background(), sub, "")
 
 	assert.Regexp(t, "FF10283.*pop", err)
+}
+
+func TestAddSubscriptionNoFiltersFail(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	tz.streamID = "es-1"
+	tz.streams = &streamManager{
+		client: tz.client,
+	}
+
+	sub := &core.ContractListener{
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
+		},
+	}
+
+	err := tz.AddContractListener(context.Background(), sub, "")
+
+	assert.Regexp(t, "FF10475", err)
+}
+
+func TestAddSubscriptionTwoManyFiltersFail(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+
+	tz.streamID = "es-1"
+	tz.streams = &streamManager{
+		client: tz.client,
+	}
+
+	sub := &core.ContractListener{
+		Filters: core.ListenerFilters{
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
+			},
+			{
+				Event: &core.FFISerializedEvent{},
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "KT123",
+				}.String()),
+			},
+		},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventNewest),
+		},
+	}
+
+	err := tz.AddContractListener(context.Background(), sub, "")
+
+	assert.Regexp(t, "FF10476", err)
 }
 
 func TestDeleteSubscription(t *testing.T) {
@@ -1533,8 +1603,41 @@ func TestNormalizeContractLocationBlank(t *testing.T) {
 func TestGenerateEventSignature(t *testing.T) {
 	tz, cancel := newTestTezos()
 	defer cancel()
-	signature := tz.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	signature, err := tz.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	assert.NoError(t, err)
 	assert.Equal(t, "Changed", signature)
+}
+
+func TestGenerateEventSignatureWithLocationEmpty(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	signature, err := tz.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, "*:Changed", signature)
+}
+
+func TestGenerateEventSignatureWithLocationBlank(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = tz.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestGenerateEventSignatureWithLocation(t *testing.T) {
+	tz, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "KT1CosvuPHD6YnY4uYNguJj6m58UuHJWyS1u",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	signature, err := tz.GenerateEventSignatureWithLocation(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"}, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "KT1CosvuPHD6YnY4uYNguJj6m58UuHJWyS1u:Changed", signature)
 }
 
 func TestAddSubBadLocation(t *testing.T) {
@@ -1549,7 +1652,7 @@ func TestAddSubBadLocation(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err := tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err := tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1597,7 +1700,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	subID, err := tz.AddFireflySubscription(tz.ctx, ns, contract)
+	subID, err := tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, tz.subs.GetSubscription("sub1"))
 
@@ -1641,7 +1744,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10283", err)
 }
 
@@ -1681,7 +1784,7 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	}
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
-	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract)
+	_, err = tz.AddFireflySubscription(tz.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10283", err)
 }
 
@@ -2018,4 +2121,80 @@ func TestStopNamespace(t *testing.T) {
 	defer cancel()
 	err := tz.StopNamespace(context.Background(), "ns1")
 	assert.NoError(t, err)
+}
+
+func TestStringifyNormalizeContractLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "3081D84FD367044F4ED453F2024709242470388C", result)
+}
+
+func TestStringifyNormalizeContractLocationError(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.StringifyContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestCheckOverlappingLocationsEmpty(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	overlapping, err := e.CheckOverlappingLocations(context.Background(), nil, fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.True(t, overlapping)
+}
+
+func TestCheckOverlappingLocationsBadLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverlappingLocationsOneLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	location2 := &Location{}
+	location2Bytes, err := json.Marshal(location2)
+	assert.NoError(t, err)
+	_, err = e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(location2Bytes))
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10310", err.Error())
+}
+
+func TestCheckOverlappingLocationsSameLocation(t *testing.T) {
+	e, cancel := newTestTezos()
+	defer cancel()
+	location := &Location{
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.CheckOverlappingLocations(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.True(t, result)
 }

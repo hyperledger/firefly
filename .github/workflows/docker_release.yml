@@ -5,13 +5,25 @@ on:
     types: [released, prereleased]
 
 jobs:
+   
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Get the latest tag
+        id: get_latest_tag
+        run: |
+          git fetch --tags
+          latest_tag=$(git tag -l | sort -V | tail -n 1)
+          echo "latest tag: $latest_tag"
+          echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+      
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -25,9 +37,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+      
       - name: Set latest tag
-        if: github.event.action == 'released'
+        if: github.event.action == 'released' && github.ref_name == env.LATEST_TAG
         run: |
           echo "DOCKER_TAGS=${{ env.DOCKER_TAGS }},ghcr.io/${{ github.repository }}:latest" >> $GITHUB_ENV
 

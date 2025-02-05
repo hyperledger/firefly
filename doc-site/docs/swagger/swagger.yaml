@@ -1299,6 +1299,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -1387,9 +1392,8 @@ paths:
                       format: date-time
                       type: string
                     event:
-                      description: The definition of the event, either provided in-line
-                        when creating the listener, or extracted from the referenced
-                        FFI
+                      description: 'Deprecated: Please use ''event'' in the array
+                        of ''filters'' instead'
                       properties:
                         description:
                           description: A description of the smart contract event
@@ -1425,13 +1429,94 @@ paths:
                             type: object
                           type: array
                       type: object
+                    filters:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      items:
+                        description: A list of filters for the contract listener.
+                          Each filter is made up of an Event and an optional Location.
+                          Events matching these filters will always be emitted in
+                          the order determined by the blockchain.
+                        properties:
+                          event:
+                            description: The definition of the event, either provided
+                              in-line when creating the listener, or extracted from
+                              the referenced FFI
+                            properties:
+                              description:
+                                description: A description of the smart contract event
+                                type: string
+                              details:
+                                additionalProperties:
+                                  description: Additional blockchain specific fields
+                                    about this event from the original smart contract.
+                                    Used by the blockchain plugin and for documentation
+                                    generation.
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                                type: object
+                              name:
+                                description: The name of the event
+                                type: string
+                              params:
+                                description: An array of event parameter/argument
+                                  definitions
+                                items:
+                                  description: An array of event parameter/argument
+                                    definitions
+                                  properties:
+                                    name:
+                                      description: The name of the parameter. Note
+                                        that parameters must be ordered correctly
+                                        on the FFI, according to the order in the
+                                        blockchain smart contract
+                                      type: string
+                                    schema:
+                                      description: FireFly uses an extended subset
+                                        of JSON Schema to describe parameters, similar
+                                        to OpenAPI/Swagger. Converters are available
+                                        for native blockchain interface definitions
+                                        / type systems - such as an Ethereum ABI.
+                                        See the documentation for more detail
+                                  type: object
+                                type: array
+                            type: object
+                          interface:
+                            description: A reference to an existing FFI, containing
+                              pre-registered type information for the event
+                            properties:
+                              id:
+                                description: The UUID of the FireFly interface
+                                format: uuid
+                                type: string
+                              name:
+                                description: The name of the FireFly interface
+                                type: string
+                              version:
+                                description: The version of the FireFly interface
+                                type: string
+                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          signature:
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
+                            type: string
+                        type: object
+                      type: array
                     id:
                       description: The UUID of the smart contract listener
                       format: uuid
                       type: string
                     interface:
-                      description: A reference to an existing FFI, containing pre-registered
-                        type information for the event
+                      description: 'Deprecated: Please use ''interface'' in the array
+                        of ''filters'' instead'
                       properties:
                         id:
                           description: The UUID of the FireFly interface
@@ -1445,9 +1530,8 @@ paths:
                           type: string
                       type: object
                     location:
-                      description: A blockchain specific contract identifier. For
-                        example an Ethereum contract address, or a Fabric chaincode
-                        name and channel
+                      description: 'Deprecated: Please use ''location'' in the array
+                        of ''filters'' instead'
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -1467,8 +1551,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -1513,9 +1597,47 @@ paths:
           application/json:
             schema:
               properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
                 location:
-                  description: A blockchain specific contract identifier. For example
-                    an Ethereum contract address, or a Fabric chaincode name and channel
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -1552,9 +1674,8 @@ paths:
                     format: date-time
                     type: string
                   event:
-                    description: The definition of the event, either provided in-line
-                      when creating the listener, or extracted from the referenced
-                      FFI
+                    description: 'Deprecated: Please use ''event'' in the array of
+                      ''filters'' instead'
                     properties:
                       description:
                         description: A description of the smart contract event
@@ -1590,13 +1711,92 @@ paths:
                           type: object
                         type: array
                     type: object
+                  filters:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    items:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      properties:
+                        event:
+                          description: The definition of the event, either provided
+                            in-line when creating the listener, or extracted from
+                            the referenced FFI
+                          properties:
+                            description:
+                              description: A description of the smart contract event
+                              type: string
+                            details:
+                              additionalProperties:
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                              type: object
+                            name:
+                              description: The name of the event
+                              type: string
+                            params:
+                              description: An array of event parameter/argument definitions
+                              items:
+                                description: An array of event parameter/argument
+                                  definitions
+                                properties:
+                                  name:
+                                    description: The name of the parameter. Note that
+                                      parameters must be ordered correctly on the
+                                      FFI, according to the order in the blockchain
+                                      smart contract
+                                    type: string
+                                  schema:
+                                    description: FireFly uses an extended subset of
+                                      JSON Schema to describe parameters, similar
+                                      to OpenAPI/Swagger. Converters are available
+                                      for native blockchain interface definitions
+                                      / type systems - such as an Ethereum ABI. See
+                                      the documentation for more detail
+                                type: object
+                              type: array
+                          type: object
+                        interface:
+                          description: A reference to an existing FFI, containing
+                            pre-registered type information for the event
+                          properties:
+                            id:
+                              description: The UUID of the FireFly interface
+                              format: uuid
+                              type: string
+                            name:
+                              description: The name of the FireFly interface
+                              type: string
+                            version:
+                              description: The version of the FireFly interface
+                              type: string
+                          type: object
+                        location:
+                          description: A blockchain specific contract identifier.
+                            For example an Ethereum contract address, or a Fabric
+                            chaincode name and channel
+                        signature:
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   id:
                     description: The UUID of the smart contract listener
                     format: uuid
                     type: string
                   interface:
-                    description: A reference to an existing FFI, containing pre-registered
-                      type information for the event
+                    description: 'Deprecated: Please use ''interface'' in the array
+                      of ''filters'' instead'
                     properties:
                       id:
                         description: The UUID of the FireFly interface
@@ -1610,9 +1810,8 @@ paths:
                         type: string
                     type: object
                   location:
-                    description: A blockchain specific contract identifier. For example
-                      an Ethereum contract address, or a Fabric chaincode name and
-                      channel
+                    description: 'Deprecated: Please use ''location'' in the array
+                      of ''filters'' instead'
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -1632,8 +1831,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -5069,7 +5268,8 @@ paths:
       description: Invokes a method on a smart contract. Performs a blockchain transaction.
       operationId: postContractInvoke
       parameters:
-      - description: When true the HTTP request blocks until the message is confirmed
+      - description: When true the HTTP request blocks until the blockchain transaction
+          is confirmed
         in: query
         name: confirm
         schema:
@@ -5541,6 +5741,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -5629,9 +5834,8 @@ paths:
                       format: date-time
                       type: string
                     event:
-                      description: The definition of the event, either provided in-line
-                        when creating the listener, or extracted from the referenced
-                        FFI
+                      description: 'Deprecated: Please use ''event'' in the array
+                        of ''filters'' instead'
                       properties:
                         description:
                           description: A description of the smart contract event
@@ -5667,13 +5871,94 @@ paths:
                             type: object
                           type: array
                       type: object
+                    filters:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      items:
+                        description: A list of filters for the contract listener.
+                          Each filter is made up of an Event and an optional Location.
+                          Events matching these filters will always be emitted in
+                          the order determined by the blockchain.
+                        properties:
+                          event:
+                            description: The definition of the event, either provided
+                              in-line when creating the listener, or extracted from
+                              the referenced FFI
+                            properties:
+                              description:
+                                description: A description of the smart contract event
+                                type: string
+                              details:
+                                additionalProperties:
+                                  description: Additional blockchain specific fields
+                                    about this event from the original smart contract.
+                                    Used by the blockchain plugin and for documentation
+                                    generation.
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                                type: object
+                              name:
+                                description: The name of the event
+                                type: string
+                              params:
+                                description: An array of event parameter/argument
+                                  definitions
+                                items:
+                                  description: An array of event parameter/argument
+                                    definitions
+                                  properties:
+                                    name:
+                                      description: The name of the parameter. Note
+                                        that parameters must be ordered correctly
+                                        on the FFI, according to the order in the
+                                        blockchain smart contract
+                                      type: string
+                                    schema:
+                                      description: FireFly uses an extended subset
+                                        of JSON Schema to describe parameters, similar
+                                        to OpenAPI/Swagger. Converters are available
+                                        for native blockchain interface definitions
+                                        / type systems - such as an Ethereum ABI.
+                                        See the documentation for more detail
+                                  type: object
+                                type: array
+                            type: object
+                          interface:
+                            description: A reference to an existing FFI, containing
+                              pre-registered type information for the event
+                            properties:
+                              id:
+                                description: The UUID of the FireFly interface
+                                format: uuid
+                                type: string
+                              name:
+                                description: The name of the FireFly interface
+                                type: string
+                              version:
+                                description: The version of the FireFly interface
+                                type: string
+                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          signature:
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
+                            type: string
+                        type: object
+                      type: array
                     id:
                       description: The UUID of the smart contract listener
                       format: uuid
                       type: string
                     interface:
-                      description: A reference to an existing FFI, containing pre-registered
-                        type information for the event
+                      description: 'Deprecated: Please use ''interface'' in the array
+                        of ''filters'' instead'
                       properties:
                         id:
                           description: The UUID of the FireFly interface
@@ -5687,9 +5972,8 @@ paths:
                           type: string
                       type: object
                     location:
-                      description: A blockchain specific contract identifier. For
-                        example an Ethereum contract address, or a Fabric chaincode
-                        name and channel
+                      description: 'Deprecated: Please use ''location'' in the array
+                        of ''filters'' instead'
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -5709,8 +5993,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -5743,8 +6027,8 @@ paths:
             schema:
               properties:
                 event:
-                  description: The definition of the event, either provided in-line
-                    when creating the listener, or extracted from the referenced FFI
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
                   properties:
                     description:
                       description: A description of the smart contract event
@@ -5781,13 +6065,90 @@ paths:
                       type: array
                   type: object
                 eventPath:
-                  description: When creating a listener from an existing FFI, this
-                    is the pathname of the event on that FFI to be detected by this
-                    listener
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
                   type: string
+                filters:
+                  description: A list of filters for the contract listener. Each filter
+                    is made up of an Event and an optional Location. Events matching
+                    these filters will always be emitted in the order determined by
+                    the blockchain.
+                  items:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    properties:
+                      event:
+                        description: The definition of the event, either provided
+                          in-line when creating the listener, or extracted from the
+                          referenced FFI
+                        properties:
+                          description:
+                            description: A description of the smart contract event
+                            type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
+                          name:
+                            description: The name of the event
+                            type: string
+                          params:
+                            description: An array of event parameter/argument definitions
+                            items:
+                              description: An array of event parameter/argument definitions
+                              properties:
+                                name:
+                                  description: The name of the parameter. Note that
+                                    parameters must be ordered correctly on the FFI,
+                                    according to the order in the blockchain smart
+                                    contract
+                                  type: string
+                                schema:
+                                  description: FireFly uses an extended subset of
+                                    JSON Schema to describe parameters, similar to
+                                    OpenAPI/Swagger. Converters are available for
+                                    native blockchain interface definitions / type
+                                    systems - such as an Ethereum ABI. See the documentation
+                                    for more detail
+                              type: object
+                            type: array
+                        type: object
+                      eventPath:
+                        description: When creating a listener from an existing FFI,
+                          this is the pathname of the event on that FFI to be detected
+                          by this listener
+                        type: string
+                      interface:
+                        description: A reference to an existing FFI, containing pre-registered
+                          type information for the event
+                        properties:
+                          id:
+                            description: The UUID of the FireFly interface
+                            format: uuid
+                            type: string
+                          name:
+                            description: The name of the FireFly interface
+                            type: string
+                          version:
+                            description: The version of the FireFly interface
+                            type: string
+                        type: object
+                      location:
+                        description: A blockchain specific contract identifier. For
+                          example an Ethereum contract address, or a Fabric chaincode
+                          name and channel
+                    type: object
+                  type: array
                 interface:
-                  description: A reference to an existing FFI, containing pre-registered
-                    type information for the event
+                  description: 'Deprecated: Please use ''interface'' in the array
+                    of ''filters'' instead'
                   properties:
                     id:
                       description: The UUID of the FireFly interface
@@ -5801,8 +6162,8 @@ paths:
                       type: string
                   type: object
                 location:
-                  description: A blockchain specific contract identifier. For example
-                    an Ethereum contract address, or a Fabric chaincode name and channel
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -5839,9 +6200,8 @@ paths:
                     format: date-time
                     type: string
                   event:
-                    description: The definition of the event, either provided in-line
-                      when creating the listener, or extracted from the referenced
-                      FFI
+                    description: 'Deprecated: Please use ''event'' in the array of
+                      ''filters'' instead'
                     properties:
                       description:
                         description: A description of the smart contract event
@@ -5877,13 +6237,92 @@ paths:
                           type: object
                         type: array
                     type: object
+                  filters:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    items:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      properties:
+                        event:
+                          description: The definition of the event, either provided
+                            in-line when creating the listener, or extracted from
+                            the referenced FFI
+                          properties:
+                            description:
+                              description: A description of the smart contract event
+                              type: string
+                            details:
+                              additionalProperties:
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                              type: object
+                            name:
+                              description: The name of the event
+                              type: string
+                            params:
+                              description: An array of event parameter/argument definitions
+                              items:
+                                description: An array of event parameter/argument
+                                  definitions
+                                properties:
+                                  name:
+                                    description: The name of the parameter. Note that
+                                      parameters must be ordered correctly on the
+                                      FFI, according to the order in the blockchain
+                                      smart contract
+                                    type: string
+                                  schema:
+                                    description: FireFly uses an extended subset of
+                                      JSON Schema to describe parameters, similar
+                                      to OpenAPI/Swagger. Converters are available
+                                      for native blockchain interface definitions
+                                      / type systems - such as an Ethereum ABI. See
+                                      the documentation for more detail
+                                type: object
+                              type: array
+                          type: object
+                        interface:
+                          description: A reference to an existing FFI, containing
+                            pre-registered type information for the event
+                          properties:
+                            id:
+                              description: The UUID of the FireFly interface
+                              format: uuid
+                              type: string
+                            name:
+                              description: The name of the FireFly interface
+                              type: string
+                            version:
+                              description: The version of the FireFly interface
+                              type: string
+                          type: object
+                        location:
+                          description: A blockchain specific contract identifier.
+                            For example an Ethereum contract address, or a Fabric
+                            chaincode name and channel
+                        signature:
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   id:
                     description: The UUID of the smart contract listener
                     format: uuid
                     type: string
                   interface:
-                    description: A reference to an existing FFI, containing pre-registered
-                      type information for the event
+                    description: 'Deprecated: Please use ''interface'' in the array
+                      of ''filters'' instead'
                     properties:
                       id:
                         description: The UUID of the FireFly interface
@@ -5897,9 +6336,8 @@ paths:
                         type: string
                     type: object
                   location:
-                    description: A blockchain specific contract identifier. For example
-                      an Ethereum contract address, or a Fabric chaincode name and
-                      channel
+                    description: 'Deprecated: Please use ''location'' in the array
+                      of ''filters'' instead'
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -5919,8 +6357,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -6000,9 +6438,8 @@ paths:
                     format: date-time
                     type: string
                   event:
-                    description: The definition of the event, either provided in-line
-                      when creating the listener, or extracted from the referenced
-                      FFI
+                    description: 'Deprecated: Please use ''event'' in the array of
+                      ''filters'' instead'
                     properties:
                       description:
                         description: A description of the smart contract event
@@ -6038,13 +6475,92 @@ paths:
                           type: object
                         type: array
                     type: object
+                  filters:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    items:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      properties:
+                        event:
+                          description: The definition of the event, either provided
+                            in-line when creating the listener, or extracted from
+                            the referenced FFI
+                          properties:
+                            description:
+                              description: A description of the smart contract event
+                              type: string
+                            details:
+                              additionalProperties:
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                              type: object
+                            name:
+                              description: The name of the event
+                              type: string
+                            params:
+                              description: An array of event parameter/argument definitions
+                              items:
+                                description: An array of event parameter/argument
+                                  definitions
+                                properties:
+                                  name:
+                                    description: The name of the parameter. Note that
+                                      parameters must be ordered correctly on the
+                                      FFI, according to the order in the blockchain
+                                      smart contract
+                                    type: string
+                                  schema:
+                                    description: FireFly uses an extended subset of
+                                      JSON Schema to describe parameters, similar
+                                      to OpenAPI/Swagger. Converters are available
+                                      for native blockchain interface definitions
+                                      / type systems - such as an Ethereum ABI. See
+                                      the documentation for more detail
+                                type: object
+                              type: array
+                          type: object
+                        interface:
+                          description: A reference to an existing FFI, containing
+                            pre-registered type information for the event
+                          properties:
+                            id:
+                              description: The UUID of the FireFly interface
+                              format: uuid
+                              type: string
+                            name:
+                              description: The name of the FireFly interface
+                              type: string
+                            version:
+                              description: The version of the FireFly interface
+                              type: string
+                          type: object
+                        location:
+                          description: A blockchain specific contract identifier.
+                            For example an Ethereum contract address, or a Fabric
+                            chaincode name and channel
+                        signature:
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   id:
                     description: The UUID of the smart contract listener
                     format: uuid
                     type: string
                   interface:
-                    description: A reference to an existing FFI, containing pre-registered
-                      type information for the event
+                    description: 'Deprecated: Please use ''interface'' in the array
+                      of ''filters'' instead'
                     properties:
                       id:
                         description: The UUID of the FireFly interface
@@ -6058,9 +6574,8 @@ paths:
                         type: string
                     type: object
                   location:
-                    description: A blockchain specific contract identifier. For example
-                      an Ethereum contract address, or a Fabric chaincode name and
-                      channel
+                    description: 'Deprecated: Please use ''location'' in the array
+                      of ''filters'' instead'
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -6080,14 +6595,206 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
                       Setting this topic on a number of listeners allows applications
                       to easily subscribe to all events they need
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /contracts/listeners/signature:
+    post:
+      description: Calculates the hash of a blockchain listener filters and events
+      operationId: postContractListenerSignature
+      parameters:
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
+                eventPath:
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
+                  type: string
+                filters:
+                  description: A list of filters for the contract listener. Each filter
+                    is made up of an Event and an optional Location. Events matching
+                    these filters will always be emitted in the order determined by
+                    the blockchain.
+                  items:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    properties:
+                      event:
+                        description: The definition of the event, either provided
+                          in-line when creating the listener, or extracted from the
+                          referenced FFI
+                        properties:
+                          description:
+                            description: A description of the smart contract event
+                            type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
+                          name:
+                            description: The name of the event
+                            type: string
+                          params:
+                            description: An array of event parameter/argument definitions
+                            items:
+                              description: An array of event parameter/argument definitions
+                              properties:
+                                name:
+                                  description: The name of the parameter. Note that
+                                    parameters must be ordered correctly on the FFI,
+                                    according to the order in the blockchain smart
+                                    contract
+                                  type: string
+                                schema:
+                                  description: FireFly uses an extended subset of
+                                    JSON Schema to describe parameters, similar to
+                                    OpenAPI/Swagger. Converters are available for
+                                    native blockchain interface definitions / type
+                                    systems - such as an Ethereum ABI. See the documentation
+                                    for more detail
+                              type: object
+                            type: array
+                        type: object
+                      eventPath:
+                        description: When creating a listener from an existing FFI,
+                          this is the pathname of the event on that FFI to be detected
+                          by this listener
+                        type: string
+                      interface:
+                        description: A reference to an existing FFI, containing pre-registered
+                          type information for the event
+                        properties:
+                          id:
+                            description: The UUID of the FireFly interface
+                            format: uuid
+                            type: string
+                          name:
+                            description: The name of the FireFly interface
+                            type: string
+                          version:
+                            description: The version of the FireFly interface
+                            type: string
+                        type: object
+                      location:
+                        description: A blockchain specific contract identifier. For
+                          example an Ethereum contract address, or a Fabric chaincode
+                          name and channel
+                    type: object
+                  type: array
+                interface:
+                  description: 'Deprecated: Please use ''interface'' in the array
+                    of ''filters'' instead'
+                  properties:
+                    id:
+                      description: The UUID of the FireFly interface
+                      format: uuid
+                      type: string
+                    name:
+                      description: The name of the FireFly interface
+                      type: string
+                    version:
+                      description: The version of the FireFly interface
+                      type: string
+                  type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
+                name:
+                  description: A descriptive name for the listener
+                  type: string
+                options:
+                  description: Options that control how the listener subscribes to
+                    events from the underlying blockchain
+                  properties:
+                    firstEvent:
+                      description: A blockchain specific string, such as a block number,
+                        to start listening from. The special strings 'oldest' and
+                        'newest' are supported by all blockchain connectors. Default
+                        is 'newest'
+                      type: string
+                  type: object
+                topic:
+                  description: A topic to set on the FireFly event that is emitted
+                    each time a blockchain event is detected from the blockchain.
+                    Setting this topic on a number of listeners allows applications
+                    to easily subscribe to all events they need
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  signature:
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                 type: object
           description: Success
@@ -13281,6 +13988,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -13369,9 +14081,8 @@ paths:
                       format: date-time
                       type: string
                     event:
-                      description: The definition of the event, either provided in-line
-                        when creating the listener, or extracted from the referenced
-                        FFI
+                      description: 'Deprecated: Please use ''event'' in the array
+                        of ''filters'' instead'
                       properties:
                         description:
                           description: A description of the smart contract event
@@ -13407,13 +14118,94 @@ paths:
                             type: object
                           type: array
                       type: object
+                    filters:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      items:
+                        description: A list of filters for the contract listener.
+                          Each filter is made up of an Event and an optional Location.
+                          Events matching these filters will always be emitted in
+                          the order determined by the blockchain.
+                        properties:
+                          event:
+                            description: The definition of the event, either provided
+                              in-line when creating the listener, or extracted from
+                              the referenced FFI
+                            properties:
+                              description:
+                                description: A description of the smart contract event
+                                type: string
+                              details:
+                                additionalProperties:
+                                  description: Additional blockchain specific fields
+                                    about this event from the original smart contract.
+                                    Used by the blockchain plugin and for documentation
+                                    generation.
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                                type: object
+                              name:
+                                description: The name of the event
+                                type: string
+                              params:
+                                description: An array of event parameter/argument
+                                  definitions
+                                items:
+                                  description: An array of event parameter/argument
+                                    definitions
+                                  properties:
+                                    name:
+                                      description: The name of the parameter. Note
+                                        that parameters must be ordered correctly
+                                        on the FFI, according to the order in the
+                                        blockchain smart contract
+                                      type: string
+                                    schema:
+                                      description: FireFly uses an extended subset
+                                        of JSON Schema to describe parameters, similar
+                                        to OpenAPI/Swagger. Converters are available
+                                        for native blockchain interface definitions
+                                        / type systems - such as an Ethereum ABI.
+                                        See the documentation for more detail
+                                  type: object
+                                type: array
+                            type: object
+                          interface:
+                            description: A reference to an existing FFI, containing
+                              pre-registered type information for the event
+                            properties:
+                              id:
+                                description: The UUID of the FireFly interface
+                                format: uuid
+                                type: string
+                              name:
+                                description: The name of the FireFly interface
+                                type: string
+                              version:
+                                description: The version of the FireFly interface
+                                type: string
+                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          signature:
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
+                            type: string
+                        type: object
+                      type: array
                     id:
                       description: The UUID of the smart contract listener
                       format: uuid
                       type: string
                     interface:
-                      description: A reference to an existing FFI, containing pre-registered
-                        type information for the event
+                      description: 'Deprecated: Please use ''interface'' in the array
+                        of ''filters'' instead'
                       properties:
                         id:
                           description: The UUID of the FireFly interface
@@ -13427,9 +14219,8 @@ paths:
                           type: string
                       type: object
                     location:
-                      description: A blockchain specific contract identifier. For
-                        example an Ethereum contract address, or a Fabric chaincode
-                        name and channel
+                      description: 'Deprecated: Please use ''location'' in the array
+                        of ''filters'' instead'
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -13449,8 +14240,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -13503,8 +14294,8 @@ paths:
             schema:
               properties:
                 event:
-                  description: The definition of the event, either provided in-line
-                    when creating the listener, or extracted from the referenced FFI
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
                   properties:
                     description:
                       description: A description of the smart contract event
@@ -13540,9 +14331,82 @@ paths:
                         type: object
                       type: array
                   type: object
+                filters:
+                  description: A list of filters for the contract listener. Each filter
+                    is made up of an Event and an optional Location. Events matching
+                    these filters will always be emitted in the order determined by
+                    the blockchain.
+                  items:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    properties:
+                      event:
+                        description: The definition of the event, either provided
+                          in-line when creating the listener, or extracted from the
+                          referenced FFI
+                        properties:
+                          description:
+                            description: A description of the smart contract event
+                            type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
+                          name:
+                            description: The name of the event
+                            type: string
+                          params:
+                            description: An array of event parameter/argument definitions
+                            items:
+                              description: An array of event parameter/argument definitions
+                              properties:
+                                name:
+                                  description: The name of the parameter. Note that
+                                    parameters must be ordered correctly on the FFI,
+                                    according to the order in the blockchain smart
+                                    contract
+                                  type: string
+                                schema:
+                                  description: FireFly uses an extended subset of
+                                    JSON Schema to describe parameters, similar to
+                                    OpenAPI/Swagger. Converters are available for
+                                    native blockchain interface definitions / type
+                                    systems - such as an Ethereum ABI. See the documentation
+                                    for more detail
+                              type: object
+                            type: array
+                        type: object
+                      interface:
+                        description: A reference to an existing FFI, containing pre-registered
+                          type information for the event
+                        properties:
+                          id:
+                            description: The UUID of the FireFly interface
+                            format: uuid
+                            type: string
+                          name:
+                            description: The name of the FireFly interface
+                            type: string
+                          version:
+                            description: The version of the FireFly interface
+                            type: string
+                        type: object
+                      location:
+                        description: A blockchain specific contract identifier. For
+                          example an Ethereum contract address, or a Fabric chaincode
+                          name and channel
+                    type: object
+                  type: array
                 interface:
-                  description: A reference to an existing FFI, containing pre-registered
-                    type information for the event
+                  description: 'Deprecated: Please use ''interface'' in the array
+                    of ''filters'' instead'
                   properties:
                     id:
                       description: The UUID of the FireFly interface
@@ -13556,8 +14420,8 @@ paths:
                       type: string
                   type: object
                 location:
-                  description: A blockchain specific contract identifier. For example
-                    an Ethereum contract address, or a Fabric chaincode name and channel
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -13594,9 +14458,8 @@ paths:
                     format: date-time
                     type: string
                   event:
-                    description: The definition of the event, either provided in-line
-                      when creating the listener, or extracted from the referenced
-                      FFI
+                    description: 'Deprecated: Please use ''event'' in the array of
+                      ''filters'' instead'
                     properties:
                       description:
                         description: A description of the smart contract event
@@ -13632,13 +14495,92 @@ paths:
                           type: object
                         type: array
                     type: object
+                  filters:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    items:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      properties:
+                        event:
+                          description: The definition of the event, either provided
+                            in-line when creating the listener, or extracted from
+                            the referenced FFI
+                          properties:
+                            description:
+                              description: A description of the smart contract event
+                              type: string
+                            details:
+                              additionalProperties:
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                              type: object
+                            name:
+                              description: The name of the event
+                              type: string
+                            params:
+                              description: An array of event parameter/argument definitions
+                              items:
+                                description: An array of event parameter/argument
+                                  definitions
+                                properties:
+                                  name:
+                                    description: The name of the parameter. Note that
+                                      parameters must be ordered correctly on the
+                                      FFI, according to the order in the blockchain
+                                      smart contract
+                                    type: string
+                                  schema:
+                                    description: FireFly uses an extended subset of
+                                      JSON Schema to describe parameters, similar
+                                      to OpenAPI/Swagger. Converters are available
+                                      for native blockchain interface definitions
+                                      / type systems - such as an Ethereum ABI. See
+                                      the documentation for more detail
+                                type: object
+                              type: array
+                          type: object
+                        interface:
+                          description: A reference to an existing FFI, containing
+                            pre-registered type information for the event
+                          properties:
+                            id:
+                              description: The UUID of the FireFly interface
+                              format: uuid
+                              type: string
+                            name:
+                              description: The name of the FireFly interface
+                              type: string
+                            version:
+                              description: The version of the FireFly interface
+                              type: string
+                          type: object
+                        location:
+                          description: A blockchain specific contract identifier.
+                            For example an Ethereum contract address, or a Fabric
+                            chaincode name and channel
+                        signature:
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   id:
                     description: The UUID of the smart contract listener
                     format: uuid
                     type: string
                   interface:
-                    description: A reference to an existing FFI, containing pre-registered
-                      type information for the event
+                    description: 'Deprecated: Please use ''interface'' in the array
+                      of ''filters'' instead'
                     properties:
                       id:
                         description: The UUID of the FireFly interface
@@ -13652,9 +14594,8 @@ paths:
                         type: string
                     type: object
                   location:
-                    description: A blockchain specific contract identifier. For example
-                      an Ethereum contract address, or a Fabric chaincode name and
-                      channel
+                    description: 'Deprecated: Please use ''location'' in the array
+                      of ''filters'' instead'
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -13674,8 +14615,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -17476,7 +18417,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: When true the HTTP request blocks until the message is confirmed
+      - description: When true the HTTP request blocks until the blockchain transaction
+          is confirmed
         in: query
         name: confirm
         schema:
@@ -17955,6 +18897,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: filters
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -18043,9 +18990,8 @@ paths:
                       format: date-time
                       type: string
                     event:
-                      description: The definition of the event, either provided in-line
-                        when creating the listener, or extracted from the referenced
-                        FFI
+                      description: 'Deprecated: Please use ''event'' in the array
+                        of ''filters'' instead'
                       properties:
                         description:
                           description: A description of the smart contract event
@@ -18081,13 +19027,94 @@ paths:
                             type: object
                           type: array
                       type: object
+                    filters:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      items:
+                        description: A list of filters for the contract listener.
+                          Each filter is made up of an Event and an optional Location.
+                          Events matching these filters will always be emitted in
+                          the order determined by the blockchain.
+                        properties:
+                          event:
+                            description: The definition of the event, either provided
+                              in-line when creating the listener, or extracted from
+                              the referenced FFI
+                            properties:
+                              description:
+                                description: A description of the smart contract event
+                                type: string
+                              details:
+                                additionalProperties:
+                                  description: Additional blockchain specific fields
+                                    about this event from the original smart contract.
+                                    Used by the blockchain plugin and for documentation
+                                    generation.
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                                type: object
+                              name:
+                                description: The name of the event
+                                type: string
+                              params:
+                                description: An array of event parameter/argument
+                                  definitions
+                                items:
+                                  description: An array of event parameter/argument
+                                    definitions
+                                  properties:
+                                    name:
+                                      description: The name of the parameter. Note
+                                        that parameters must be ordered correctly
+                                        on the FFI, according to the order in the
+                                        blockchain smart contract
+                                      type: string
+                                    schema:
+                                      description: FireFly uses an extended subset
+                                        of JSON Schema to describe parameters, similar
+                                        to OpenAPI/Swagger. Converters are available
+                                        for native blockchain interface definitions
+                                        / type systems - such as an Ethereum ABI.
+                                        See the documentation for more detail
+                                  type: object
+                                type: array
+                            type: object
+                          interface:
+                            description: A reference to an existing FFI, containing
+                              pre-registered type information for the event
+                            properties:
+                              id:
+                                description: The UUID of the FireFly interface
+                                format: uuid
+                                type: string
+                              name:
+                                description: The name of the FireFly interface
+                                type: string
+                              version:
+                                description: The version of the FireFly interface
+                                type: string
+                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          signature:
+                            description: The stringified signature of the event and
+                              location, as computed by the blockchain plugin
+                            type: string
+                        type: object
+                      type: array
                     id:
                       description: The UUID of the smart contract listener
                       format: uuid
                       type: string
                     interface:
-                      description: A reference to an existing FFI, containing pre-registered
-                        type information for the event
+                      description: 'Deprecated: Please use ''interface'' in the array
+                        of ''filters'' instead'
                       properties:
                         id:
                           description: The UUID of the FireFly interface
@@ -18101,9 +19128,8 @@ paths:
                           type: string
                       type: object
                     location:
-                      description: A blockchain specific contract identifier. For
-                        example an Ethereum contract address, or a Fabric chaincode
-                        name and channel
+                      description: 'Deprecated: Please use ''location'' in the array
+                        of ''filters'' instead'
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -18123,8 +19149,8 @@ paths:
                           type: string
                       type: object
                     signature:
-                      description: The stringified signature of the event, as computed
-                        by the blockchain plugin
+                      description: A concatenation of all the stringified signature
+                        of the event and location, as computed by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -18164,8 +19190,8 @@ paths:
             schema:
               properties:
                 event:
-                  description: The definition of the event, either provided in-line
-                    when creating the listener, or extracted from the referenced FFI
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
                   properties:
                     description:
                       description: A description of the smart contract event
@@ -18202,13 +19228,90 @@ paths:
                       type: array
                   type: object
                 eventPath:
-                  description: When creating a listener from an existing FFI, this
-                    is the pathname of the event on that FFI to be detected by this
-                    listener
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
                   type: string
+                filters:
+                  description: A list of filters for the contract listener. Each filter
+                    is made up of an Event and an optional Location. Events matching
+                    these filters will always be emitted in the order determined by
+                    the blockchain.
+                  items:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    properties:
+                      event:
+                        description: The definition of the event, either provided
+                          in-line when creating the listener, or extracted from the
+                          referenced FFI
+                        properties:
+                          description:
+                            description: A description of the smart contract event
+                            type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
+                          name:
+                            description: The name of the event
+                            type: string
+                          params:
+                            description: An array of event parameter/argument definitions
+                            items:
+                              description: An array of event parameter/argument definitions
+                              properties:
+                                name:
+                                  description: The name of the parameter. Note that
+                                    parameters must be ordered correctly on the FFI,
+                                    according to the order in the blockchain smart
+                                    contract
+                                  type: string
+                                schema:
+                                  description: FireFly uses an extended subset of
+                                    JSON Schema to describe parameters, similar to
+                                    OpenAPI/Swagger. Converters are available for
+                                    native blockchain interface definitions / type
+                                    systems - such as an Ethereum ABI. See the documentation
+                                    for more detail
+                              type: object
+                            type: array
+                        type: object
+                      eventPath:
+                        description: When creating a listener from an existing FFI,
+                          this is the pathname of the event on that FFI to be detected
+                          by this listener
+                        type: string
+                      interface:
+                        description: A reference to an existing FFI, containing pre-registered
+                          type information for the event
+                        properties:
+                          id:
+                            description: The UUID of the FireFly interface
+                            format: uuid
+                            type: string
+                          name:
+                            description: The name of the FireFly interface
+                            type: string
+                          version:
+                            description: The version of the FireFly interface
+                            type: string
+                        type: object
+                      location:
+                        description: A blockchain specific contract identifier. For
+                          example an Ethereum contract address, or a Fabric chaincode
+                          name and channel
+                    type: object
+                  type: array
                 interface:
-                  description: A reference to an existing FFI, containing pre-registered
-                    type information for the event
+                  description: 'Deprecated: Please use ''interface'' in the array
+                    of ''filters'' instead'
                   properties:
                     id:
                       description: The UUID of the FireFly interface
@@ -18222,8 +19325,8 @@ paths:
                       type: string
                   type: object
                 location:
-                  description: A blockchain specific contract identifier. For example
-                    an Ethereum contract address, or a Fabric chaincode name and channel
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -18260,9 +19363,8 @@ paths:
                     format: date-time
                     type: string
                   event:
-                    description: The definition of the event, either provided in-line
-                      when creating the listener, or extracted from the referenced
-                      FFI
+                    description: 'Deprecated: Please use ''event'' in the array of
+                      ''filters'' instead'
                     properties:
                       description:
                         description: A description of the smart contract event
@@ -18298,13 +19400,92 @@ paths:
                           type: object
                         type: array
                     type: object
+                  filters:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    items:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      properties:
+                        event:
+                          description: The definition of the event, either provided
+                            in-line when creating the listener, or extracted from
+                            the referenced FFI
+                          properties:
+                            description:
+                              description: A description of the smart contract event
+                              type: string
+                            details:
+                              additionalProperties:
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                              type: object
+                            name:
+                              description: The name of the event
+                              type: string
+                            params:
+                              description: An array of event parameter/argument definitions
+                              items:
+                                description: An array of event parameter/argument
+                                  definitions
+                                properties:
+                                  name:
+                                    description: The name of the parameter. Note that
+                                      parameters must be ordered correctly on the
+                                      FFI, according to the order in the blockchain
+                                      smart contract
+                                    type: string
+                                  schema:
+                                    description: FireFly uses an extended subset of
+                                      JSON Schema to describe parameters, similar
+                                      to OpenAPI/Swagger. Converters are available
+                                      for native blockchain interface definitions
+                                      / type systems - such as an Ethereum ABI. See
+                                      the documentation for more detail
+                                type: object
+                              type: array
+                          type: object
+                        interface:
+                          description: A reference to an existing FFI, containing
+                            pre-registered type information for the event
+                          properties:
+                            id:
+                              description: The UUID of the FireFly interface
+                              format: uuid
+                              type: string
+                            name:
+                              description: The name of the FireFly interface
+                              type: string
+                            version:
+                              description: The version of the FireFly interface
+                              type: string
+                          type: object
+                        location:
+                          description: A blockchain specific contract identifier.
+                            For example an Ethereum contract address, or a Fabric
+                            chaincode name and channel
+                        signature:
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   id:
                     description: The UUID of the smart contract listener
                     format: uuid
                     type: string
                   interface:
-                    description: A reference to an existing FFI, containing pre-registered
-                      type information for the event
+                    description: 'Deprecated: Please use ''interface'' in the array
+                      of ''filters'' instead'
                     properties:
                       id:
                         description: The UUID of the FireFly interface
@@ -18318,9 +19499,8 @@ paths:
                         type: string
                     type: object
                   location:
-                    description: A blockchain specific contract identifier. For example
-                      an Ethereum contract address, or a Fabric chaincode name and
-                      channel
+                    description: 'Deprecated: Please use ''location'' in the array
+                      of ''filters'' instead'
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -18340,8 +19520,8 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
@@ -18435,9 +19615,8 @@ paths:
                     format: date-time
                     type: string
                   event:
-                    description: The definition of the event, either provided in-line
-                      when creating the listener, or extracted from the referenced
-                      FFI
+                    description: 'Deprecated: Please use ''event'' in the array of
+                      ''filters'' instead'
                     properties:
                       description:
                         description: A description of the smart contract event
@@ -18473,13 +19652,92 @@ paths:
                           type: object
                         type: array
                     type: object
+                  filters:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    items:
+                      description: A list of filters for the contract listener. Each
+                        filter is made up of an Event and an optional Location. Events
+                        matching these filters will always be emitted in the order
+                        determined by the blockchain.
+                      properties:
+                        event:
+                          description: The definition of the event, either provided
+                            in-line when creating the listener, or extracted from
+                            the referenced FFI
+                          properties:
+                            description:
+                              description: A description of the smart contract event
+                              type: string
+                            details:
+                              additionalProperties:
+                                description: Additional blockchain specific fields
+                                  about this event from the original smart contract.
+                                  Used by the blockchain plugin and for documentation
+                                  generation.
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                              type: object
+                            name:
+                              description: The name of the event
+                              type: string
+                            params:
+                              description: An array of event parameter/argument definitions
+                              items:
+                                description: An array of event parameter/argument
+                                  definitions
+                                properties:
+                                  name:
+                                    description: The name of the parameter. Note that
+                                      parameters must be ordered correctly on the
+                                      FFI, according to the order in the blockchain
+                                      smart contract
+                                    type: string
+                                  schema:
+                                    description: FireFly uses an extended subset of
+                                      JSON Schema to describe parameters, similar
+                                      to OpenAPI/Swagger. Converters are available
+                                      for native blockchain interface definitions
+                                      / type systems - such as an Ethereum ABI. See
+                                      the documentation for more detail
+                                type: object
+                              type: array
+                          type: object
+                        interface:
+                          description: A reference to an existing FFI, containing
+                            pre-registered type information for the event
+                          properties:
+                            id:
+                              description: The UUID of the FireFly interface
+                              format: uuid
+                              type: string
+                            name:
+                              description: The name of the FireFly interface
+                              type: string
+                            version:
+                              description: The version of the FireFly interface
+                              type: string
+                          type: object
+                        location:
+                          description: A blockchain specific contract identifier.
+                            For example an Ethereum contract address, or a Fabric
+                            chaincode name and channel
+                        signature:
+                          description: The stringified signature of the event and
+                            location, as computed by the blockchain plugin
+                          type: string
+                      type: object
+                    type: array
                   id:
                     description: The UUID of the smart contract listener
                     format: uuid
                     type: string
                   interface:
-                    description: A reference to an existing FFI, containing pre-registered
-                      type information for the event
+                    description: 'Deprecated: Please use ''interface'' in the array
+                      of ''filters'' instead'
                     properties:
                       id:
                         description: The UUID of the FireFly interface
@@ -18493,9 +19751,8 @@ paths:
                         type: string
                     type: object
                   location:
-                    description: A blockchain specific contract identifier. For example
-                      an Ethereum contract address, or a Fabric chaincode name and
-                      channel
+                    description: 'Deprecated: Please use ''location'' in the array
+                      of ''filters'' instead'
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -18515,14 +19772,213 @@ paths:
                         type: string
                     type: object
                   signature:
-                    description: The stringified signature of the event, as computed
-                      by the blockchain plugin
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
                       Setting this topic on a number of listeners allows applications
                       to easily subscribe to all events they need
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/contracts/listeners/signature:
+    post:
+      description: Calculates the hash of a blockchain listener filters and events
+      operationId: postContractListenerSignatureNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                event:
+                  description: 'Deprecated: Please use ''event'' in the array of ''filters''
+                    instead'
+                  properties:
+                    description:
+                      description: A description of the smart contract event
+                      type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
+                    name:
+                      description: The name of the event
+                      type: string
+                    params:
+                      description: An array of event parameter/argument definitions
+                      items:
+                        description: An array of event parameter/argument definitions
+                        properties:
+                          name:
+                            description: The name of the parameter. Note that parameters
+                              must be ordered correctly on the FFI, according to the
+                              order in the blockchain smart contract
+                            type: string
+                          schema:
+                            description: FireFly uses an extended subset of JSON Schema
+                              to describe parameters, similar to OpenAPI/Swagger.
+                              Converters are available for native blockchain interface
+                              definitions / type systems - such as an Ethereum ABI.
+                              See the documentation for more detail
+                        type: object
+                      type: array
+                  type: object
+                eventPath:
+                  description: 'Deprecated: Please use ''eventPath'' in the array
+                    of ''filters'' instead'
+                  type: string
+                filters:
+                  description: A list of filters for the contract listener. Each filter
+                    is made up of an Event and an optional Location. Events matching
+                    these filters will always be emitted in the order determined by
+                    the blockchain.
+                  items:
+                    description: A list of filters for the contract listener. Each
+                      filter is made up of an Event and an optional Location. Events
+                      matching these filters will always be emitted in the order determined
+                      by the blockchain.
+                    properties:
+                      event:
+                        description: The definition of the event, either provided
+                          in-line when creating the listener, or extracted from the
+                          referenced FFI
+                        properties:
+                          description:
+                            description: A description of the smart contract event
+                            type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
+                          name:
+                            description: The name of the event
+                            type: string
+                          params:
+                            description: An array of event parameter/argument definitions
+                            items:
+                              description: An array of event parameter/argument definitions
+                              properties:
+                                name:
+                                  description: The name of the parameter. Note that
+                                    parameters must be ordered correctly on the FFI,
+                                    according to the order in the blockchain smart
+                                    contract
+                                  type: string
+                                schema:
+                                  description: FireFly uses an extended subset of
+                                    JSON Schema to describe parameters, similar to
+                                    OpenAPI/Swagger. Converters are available for
+                                    native blockchain interface definitions / type
+                                    systems - such as an Ethereum ABI. See the documentation
+                                    for more detail
+                              type: object
+                            type: array
+                        type: object
+                      eventPath:
+                        description: When creating a listener from an existing FFI,
+                          this is the pathname of the event on that FFI to be detected
+                          by this listener
+                        type: string
+                      interface:
+                        description: A reference to an existing FFI, containing pre-registered
+                          type information for the event
+                        properties:
+                          id:
+                            description: The UUID of the FireFly interface
+                            format: uuid
+                            type: string
+                          name:
+                            description: The name of the FireFly interface
+                            type: string
+                          version:
+                            description: The version of the FireFly interface
+                            type: string
+                        type: object
+                      location:
+                        description: A blockchain specific contract identifier. For
+                          example an Ethereum contract address, or a Fabric chaincode
+                          name and channel
+                    type: object
+                  type: array
+                interface:
+                  description: 'Deprecated: Please use ''interface'' in the array
+                    of ''filters'' instead'
+                  properties:
+                    id:
+                      description: The UUID of the FireFly interface
+                      format: uuid
+                      type: string
+                    name:
+                      description: The name of the FireFly interface
+                      type: string
+                    version:
+                      description: The version of the FireFly interface
+                      type: string
+                  type: object
+                location:
+                  description: 'Deprecated: Please use ''location'' in the array of
+                    ''filters'' instead'
+                name:
+                  description: A descriptive name for the listener
+                  type: string
+                options:
+                  description: Options that control how the listener subscribes to
+                    events from the underlying blockchain
+                  properties:
+                    firstEvent:
+                      description: A blockchain specific string, such as a block number,
+                        to start listening from. The special strings 'oldest' and
+                        'newest' are supported by all blockchain connectors. Default
+                        is 'newest'
+                      type: string
+                  type: object
+                topic:
+                  description: A topic to set on the FireFly event that is emitted
+                    each time a blockchain event is detected from the blockchain.
+                    Setting this topic on a number of listeners allows applications
+                    to easily subscribe to all events they need
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  signature:
+                    description: A concatenation of all the stringified signature
+                      of the event and location, as computed by the blockchain plugin
                     type: string
                 type: object
           description: Success

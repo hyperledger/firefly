@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash"
+	"sort"
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -71,6 +72,7 @@ type Manager interface {
 	ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) error
 	DeleteContractAPI(ctx context.Context, apiName string) error
 
+	ConstructContractListenerSignature(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerSignatureOutput, err error)
 	AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error)
 	AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (*core.ContractListener, error)
@@ -158,7 +160,12 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 	// cause recreation of all the listeners (noting that listeners that were specified to start
 	// from latest, will start from the new latest rather than replaying from the block they
 	// started from before they were deleted).
-	return cm, cm.verifyListeners(ctx)
+	err = cm.verifyListeners(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
 }
 
 func (cm *contractManager) Name() string {
@@ -206,7 +213,10 @@ func (cm *contractManager) GetFFIEvents(ctx context.Context, id *fftypes.UUID) (
 	events, _, err := cm.database.GetFFIEvents(ctx, cm.namespace, fb.Eq("interface", id))
 	if err == nil {
 		for _, event := range events {
-			event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+			event.Signature, err = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return events, err
@@ -221,10 +231,6 @@ func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI)
 	ffi.Events, err = cm.GetFFIEvents(ctx, ffi.ID)
 	if err != nil {
 		return err
-	}
-
-	for _, event := range ffi.Events {
-		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
 	}
 
 	fb := database.FFIErrorQueryFactory.NewFilter(ctx)
@@ -269,12 +275,41 @@ func (cm *contractManager) verifyListeners(ctx context.Context) error {
 			log.L(ctx).Infof("Listener restore complete. Verified=%d", verifyCount)
 			return nil
 		}
+
+		// Migrate and check if listener exists in blockchain plugin
+		migratedListeners := []*core.ContractListener{}
 		for _, l := range listeners {
+			migrated, l, err := cm.MigrateToFiltersIfNeeded(ctx, l)
+			if err != nil {
+				return err
+			}
+			if migrated {
+				migratedListeners = append(migratedListeners, l)
+			}
+
 			if err := cm.checkContractListenerExists(ctx, l); err != nil {
 				return err
 			}
 			verifyCount++
 		}
+
+		// Write back the migrations
+		if len(migratedListeners) > 0 {
+			err := cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+				for _, listener := range migratedListeners {
+					err := cm.database.UpsertContractListener(ctx, listener, true)
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+
 		page++
 	}
 
@@ -748,6 +783,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 			return nil, i18n.NewError(ctx, coremsgs.MsgCannotSetParameterWithMessage, lastParam.Name)
 		}
 	}
+
 	for _, param := range req.Method.Params[:lastIndex] {
 		schema, schemaOk := paramSchemas[param.Name]
 		value, valueOk := req.Input[param.Name]
@@ -804,14 +840,159 @@ func (cm *contractManager) checkContractListenerExists(ctx context.Context, list
 		log.L(ctx).Debugf("Validated listener %s:%s (BackendID=%s)", listener.Signature, listener.ID, listener.BackendID)
 		return nil
 	}
-	if err = cm.blockchain.AddContractListener(ctx, listener); err != nil {
+
+	// For the case that we're establishing a listener from "latest" we obtain the protocol ID
+	// of the latest event confirmed from the blockchain for a given subscription.
+	// This protocolID should be parsed and used by the blockchain plugin if SubOptsFirstEventNewest
+	// is passed through, and the listener does not exist.
+	fb := database.BlockchainEventQueryFactory.NewFilter(ctx).Sort("-protocolid").Limit(1)
+	latestEvents, _, err := cm.database.GetBlockchainEvents(ctx, cm.namespace, fb.Eq(
+		"listener", listener.ID,
+	))
+	if err != nil {
+		return err
+	}
+	lastProtocolID := ""
+	if len(latestEvents) > 0 {
+		lastProtocolID = latestEvents[0].ProtocolID
+	}
+
+	if err = cm.blockchain.AddContractListener(ctx, listener, lastProtocolID); err != nil {
 		return err
 	}
 	return cm.database.UpdateContractListener(ctx, cm.namespace, listener.ID,
 		database.ContractListenerQueryFactory.NewUpdate(ctx).Set("backendid", listener.BackendID))
 }
 
-func (cm *contractManager) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error) {
+func (cm *contractManager) parseContractListenerFilters(ctx context.Context, listener *core.ContractListenerInput) (err error) {
+	// Handle deprecated root event
+	if len(listener.Filters) == 0 {
+		// Copy the deprecated interface into the first element in the filters array
+		listener.Filters = append(listener.Filters, &core.ListenerFilterInput{
+			ListenerFilter: core.ListenerFilter{
+				Event:     listener.Event,
+				Location:  listener.Location,
+				Interface: listener.Interface,
+			},
+			EventPath: listener.EventPath,
+		})
+	}
+
+	// This map check the whole signature + location
+	duplicateSignatureChecker := map[string]bool{}
+	// This will check the event signature + overlapping locations
+	duplicateEventSignatureChecker := map[string]*fftypes.JSONAny{}
+
+	for _, filter := range listener.Filters {
+		if filter.Event == nil {
+			if filter.EventPath == "" || filter.Interface == nil {
+				return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
+			}
+			// Copy the event definition into the filter
+			if filter.Event, err = cm.resolveEvent(ctx, filter.Interface, filter.EventPath); err != nil {
+				return err
+			}
+		} else {
+			filter.Interface = nil
+		}
+
+		if err := cm.validateFFIEvent(ctx, &filter.Event.FFIEventDefinition); err != nil {
+			return err
+		}
+
+		if filter.Location != nil {
+			if filter.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, filter.Location); err != nil {
+				return err
+			}
+		}
+
+		filter.Signature, err = cm.blockchain.GenerateEventSignatureWithLocation(ctx, &filter.Event.FFIEventDefinition, filter.Location)
+		if err != nil {
+			return err
+		}
+
+		// Check if we have parsed a filter with the same signature including location
+		if duplicateSignatureChecker[filter.Signature] {
+			return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilterLocation)
+		}
+
+		eventSignature, err := cm.blockchain.GenerateEventSignature(ctx, &filter.Event.FFIEventDefinition)
+		if err != nil {
+			return err
+		}
+
+		// Check if we have parsed a filter with the same signature but not location
+		if location, ok := duplicateEventSignatureChecker[eventSignature]; ok {
+			// If this duplicate filter is looking at all locations it's a superset of the previous one
+			// or the previous filter was also looking at all locations then we are trying to add a subset
+			if filter.Location == nil || location == nil {
+				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilterLocation)
+			}
+
+			// Have to call the specific blockchain plugin to compare locations
+			isOverLapping, err := cm.blockchain.CheckOverlappingLocations(ctx, location, filter.Location)
+			if err != nil {
+				return err
+			}
+
+			if isOverLapping {
+				return i18n.NewError(ctx, coremsgs.MsgDuplicateContractListenerFilterLocation)
+			}
+		}
+
+		listener.ContractListener.Filters = append(listener.ContractListener.Filters, &core.ListenerFilter{
+			Event:     filter.Event,
+			Location:  filter.Location,
+			Interface: filter.Interface,
+			Signature: filter.Signature,
+		})
+
+		duplicateSignatureChecker[filter.Signature] = true
+		duplicateEventSignatureChecker[eventSignature] = filter.Location
+	}
+
+	// Sort to keep consistent and generate the same order of signatures
+	sort.Slice(listener.ContractListener.Filters, func(i, j int) bool {
+		return listener.ContractListener.Filters[i].Signature < listener.ContractListener.Filters[j].Signature
+	})
+
+	// Don't need to initialize it.
+	var sb strings.Builder
+	for i, filter := range listener.ContractListener.Filters {
+		sb.WriteString(filter.Signature)
+		if i+1 < len(listener.Filters) {
+			// Separator between filter signatures if more after this one
+			sb.WriteString(";")
+		}
+	}
+
+	listener.Signature = sb.String()
+
+	// To preserve compatibility copy the first element in the
+	// filters arary to the top if not present already
+	if listener.Event == nil && len(listener.Filters) > 0 {
+		listener.Event = listener.Filters[0].Event
+		listener.Location = listener.Filters[0].Location
+		listener.Interface = listener.Filters[0].Interface
+	}
+
+	return nil
+}
+
+func (cm *contractManager) ConstructContractListenerSignature(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListenerSignatureOutput, err error) {
+	output = &core.ContractListenerSignatureOutput{}
+
+	err = cm.parseContractListenerFilters(ctx, listener)
+	if err != nil {
+		return nil, err
+	}
+
+	output.Signature = listener.Signature
+
+	return output, nil
+}
+
+func (cm *contractManager) verifyContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error) {
 	listener.ID = fftypes.NewUUID()
 	listener.Namespace = cm.namespace
 
@@ -824,6 +1005,12 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		return nil, err
 	}
 
+	// Check that both the new filters and deprecated fields are not specified
+	if len(listener.Filters) > 0 && (listener.Event != nil || listener.EventPath != "") {
+		return nil, i18n.NewError(ctx, coremsgs.MsgFiltersAndRootEventError, cm.namespace, listener.Name)
+	}
+
+	// This location only applies to the root event and will be ignore as part of filters
 	if listener.Location != nil {
 		if listener.Location, err = cm.blockchain.NormalizeContractLocation(ctx, blockchain.NormalizeListener, listener.Location); err != nil {
 			return nil, err
@@ -836,6 +1023,11 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		listener.Options.FirstEvent = cm.getDefaultContractListenerOptions().FirstEvent
 	}
 
+	_, err = cm.ConstructContractListenerSignature(ctx, listener)
+	if err != nil {
+		return nil, err
+	}
+
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		// Namespace + Name must be unique
 		if listener.Name != "" {
@@ -846,26 +1038,18 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 			}
 		}
 
-		if listener.Event == nil {
-			if listener.EventPath == "" || listener.Interface == nil {
-				return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
-			}
-			// Copy the event definition into the listener
-			if listener.Event, err = cm.resolveEvent(ctx, listener.Interface, listener.EventPath); err != nil {
-				return err
-			}
-		} else {
-			listener.Interface = nil
-		}
-
-		// Namespace + Topic + Location + Signature must be unique
-		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
 		// Above we only call NormalizeContractLocation if the listener is non-nil, and that means
 		// for an unset location we will have a nil value. Using an fftypes.JSONAny in a query
 		// of nil does not yield the right result, so we need to do an explicit nil query.
 		var locationLookup driver.Value = nil
 		if !listener.Location.IsNil() {
 			locationLookup = listener.Location.String()
+		}
+		if len(listener.Filters) == 1 && listener.Filters[0].Location != nil {
+			// For backwards compatibility with existing contract listeners with one filter
+			// We need to set the location to not find clashes
+			listener.Location = listener.Filters[0].Location
+			locationLookup = listener.Filters[0].Location.String()
 		}
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, fb.And(
@@ -877,26 +1061,62 @@ func (cm *contractManager) AddContractListener(ctx context.Context, listener *co
 		} else if len(existing) > 0 {
 			return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
 		}
+
+		// Check for existense of an older listener with the old signature
+		// Only valid for one filter
+		if listener.Event != nil && len(listener.Filters) == 1 {
+			// Note the event signature has been extended with more information in some blockchain plugins
+			// That is why we do not add the signature in the query but instead iterate over the listeners
+			// and compare the signatures
+			signature, err := cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
+			if err != nil {
+				return err
+			}
+			filter := database.ContractListenerQueryFactory.NewFilter(ctx)
+			if existing, _, err := cm.database.GetContractListeners(ctx, cm.namespace, filter.And(
+				filter.Eq("topic", listener.Topic),
+				filter.Eq("location", locationLookup),
+			)); err != nil {
+				return err
+			} else if len(existing) > 0 {
+				for _, listener := range existing {
+					// We have extended the event signature to add more information
+					// So we compare the start with is not guaranteed to be the same
+					// but it's the best comparison
+					if strings.HasPrefix(signature, listener.Signature) {
+						return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
+					}
+
+				}
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if err := cm.validateFFIEvent(ctx, &listener.Event.FFIEventDefinition); err != nil {
+	return &listener.ContractListener, nil
+}
+
+func (cm *contractManager) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error) {
+	verifiedContractListener, err := cm.verifyContractListener(ctx, listener)
+	if err != nil {
 		return nil, err
 	}
-	if err = cm.blockchain.AddContractListener(ctx, &listener.ContractListener); err != nil {
+
+	if err = cm.blockchain.AddContractListener(ctx, &listener.ContractListener, ""); err != nil {
 		return nil, err
 	}
 	if listener.Name == "" {
 		listener.Name = listener.BackendID
 	}
-	if err = cm.database.InsertContractListener(ctx, &listener.ContractListener); err != nil {
+	if err = cm.database.InsertContractListener(ctx, verifiedContractListener); err != nil {
 		return nil, err
 	}
 
-	return &listener.ContractListener, err
+	return verifiedContractListener, err
 }
 
 func (cm *contractManager) AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error) {
@@ -917,6 +1137,29 @@ func (cm *contractManager) AddContractAPIListener(ctx context.Context, apiName, 
 	return cm.AddContractListener(ctx, input)
 }
 
+func (cm *contractManager) MigrateToFiltersIfNeeded(ctx context.Context, listener *core.ContractListener) (bool, *core.ContractListener, error) {
+	migrated := false
+	if len(listener.Filters) == 0 && listener.Event != nil {
+		// Blockchain plugin has changed the signature
+		newSignature, err := cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
+		if err != nil {
+			// This is safe to do because all listeners previously inserted
+			// verified that the event was valid before creating the signature
+			return false, nil, err
+		}
+		listener.Filters = append(listener.Filters, &core.ListenerFilter{
+			Event:     listener.Event,
+			Location:  listener.Location,
+			Interface: listener.Interface,
+			Signature: newSignature,
+		})
+		// Note not migrating the root signature as that would not allow rolling back
+		migrated = true
+	}
+
+	return migrated, listener, nil
+}
+
 func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, nameOrID string) (listener *core.ContractListener, err error) {
 	id, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
@@ -932,6 +1175,7 @@ func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, na
 	if listener == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
+
 	return listener, nil
 }
 
@@ -968,17 +1212,22 @@ func (cm *contractManager) GetContractAPIListeners(ctx context.Context, apiName,
 	if err != nil {
 		return nil, nil, err
 	}
-	signature := cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+	signature, err := cm.blockchain.GenerateEventSignatureWithLocation(ctx, &event.FFIEventDefinition, api.Location)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	oldSignature, err := cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 	f := fb.And(
 		fb.Eq("interface", api.Interface.ID),
-		fb.Eq("signature", signature),
+		fb.Or(fb.Contains("signature", signature), fb.Eq("signature", oldSignature)),
 		filter,
 	)
-	if !api.Location.IsNil() {
-		f = fb.And(f, fb.Eq("location", api.Location.Bytes()))
-	}
 	return cm.database.GetContractListeners(ctx, cm.namespace, f)
 }
 
