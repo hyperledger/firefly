@@ -591,7 +591,7 @@ func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operat
 				TxHash:     statusResponse.GetString("transactionHash"),
 				Message:    statusResponse.GetString("errorMessage"),
 				ProtocolID: receiptInfo.GetString("protocolId")}
-			err := common.HandleReceipt(ctx, t, receipt, t.callbacks)
+			err := common.HandleReceipt(ctx, operation.Namespace, t, receipt, t.callbacks)
 			if err != nil {
 				log.L(ctx).Warnf("Failed to handle receipt")
 			}
@@ -822,7 +822,7 @@ func (t *Tezos) eventLoop() {
 				var receipt common.BlockchainReceiptNotification
 				_ = json.Unmarshal(msgBytes, &receipt)
 
-				err := common.HandleReceipt(ctx, t, &receipt, t.callbacks)
+				err := common.HandleReceipt(ctx, "", t, &receipt, t.callbacks) // TODO: should be specific to a namespace
 				if err != nil {
 					l.Errorf("Failed to process receipt: %+v", msgTyped)
 				}

@@ -576,16 +576,20 @@ The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `
 
 ```json
 {
-  "interface": {
-    "id": "f1e5522c-59a5-4787-bbfd-89975e5b0954"
-  },
-  "location": {
-    "channel": "firefly",
-    "chaincode": "asset_transfer"
-  },
-  "event": {
-    "name": "AssetCreated"
-  },
+  "filters": [
+    {
+      "interface": {
+        "id": "f1e5522c-59a5-4787-bbfd-89975e5b0954"
+      },
+      "location": {
+        "channel": "firefly",
+        "chaincode": "asset_transfer"
+      },
+      "event": {
+        "name": "AssetCreated"
+      }
+    }
+  ],
   "options": {
     "firstEvent": "oldest"
   },
@@ -597,25 +601,39 @@ The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `
 
 ```json
 {
-  "id": "6e7f5dd8-5a57-4163-a1d2-5654e784dc31",
+  "id": "d6b5e774-c9e5-474c-9495-ec07fa47a907",
   "namespace": "default",
-  "name": "sb-2cac2bfa-38af-4408-4ff3-973421410e5d",
-  "backendId": "sb-2cac2bfa-38af-4408-4ff3-973421410e5d",
+  "name": "sb-44aa348a-bafb-4243-594e-dcad689f1032",
+  "backendId": "sb-44aa348a-bafb-4243-594e-dcad689f1032",
   "location": {
     "channel": "firefly",
     "chaincode": "asset_transfer"
   },
-  "created": "2022-05-02T17:19:13.144561086Z",
+  "created": "2024-07-22T15:36:58.514085959Z",
   "event": {
     "name": "AssetCreated",
     "description": "",
     "params": null
   },
-  "signature": "AssetCreated",
+  "signature": "firefly-asset_transfer:AssetCreated",
   "topic": "assets",
   "options": {
     "firstEvent": "oldest"
-  }
+  },
+  "filters": [
+    {
+      "event": {
+        "name": "AssetCreated",
+        "description": "",
+        "params": null
+      },
+      "location": {
+        "channel": "firefly",
+        "chaincode": "asset_transfer"
+      },
+      "signature": "firefly-asset_transfer:AssetCreated"
+    }
+  ]
 }
 ```
 

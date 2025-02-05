@@ -695,7 +695,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 
-	common.HandleReceipt(context.Background(), tz, &reply, tz.callbacks)
+	common.HandleReceipt(context.Background(), "", tz, &reply, tz.callbacks)
 
 	tm.AssertExpectations(t)
 }
@@ -780,7 +780,7 @@ func TestHandleReceiptTXUpdateTezosConnect(t *testing.T) {
 	assert.NoError(t, err)
 	expectedReceiptId := "ns1:" + operationID.String()
 	assert.Equal(t, reply.Headers.ReceiptID, expectedReceiptId)
-	common.HandleReceipt(context.Background(), tz, &reply, tz.callbacks)
+	common.HandleReceipt(context.Background(), "", tz, &reply, tz.callbacks)
 
 	tm.AssertExpectations(t)
 }
@@ -797,7 +797,7 @@ func TestHandleMsgBatchBadData(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	common.HandleReceipt(context.Background(), tz, &reply, tz.callbacks)
+	common.HandleReceipt(context.Background(), "", tz, &reply, tz.callbacks)
 }
 
 func TestAddSubscription(t *testing.T) {

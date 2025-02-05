@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -346,9 +346,12 @@ func TestRetryOperationSuccess(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(info.SetOperations))
 		assert.Equal(t, "retry", info.SetOperations[0].Field)
-		val, err := info.SetOperations[0].Value.Value()
+		retryVal, err := info.SetOperations[0].Value.Value()
 		assert.NoError(t, err)
-		assert.Equal(t, op.ID.String(), val)
+		// The retry value of the parent operation should be the new operation ID
+		assert.Equal(t, op.Retry.String(), retryVal.(string))
+		// The parent ID should not change
+		assert.Equal(t, op.ID.String(), opID.String())
 		return true
 	})).Return(true, nil)
 	mdi.On("GetTransactionByID", mock.Anything, "ns1", txID).Return(&core.Transaction{

@@ -396,7 +396,7 @@ func (f *Fabric) buildEventLocationString(chaincode string) string {
 
 func (f *Fabric) processContractEvent(ctx context.Context, events common.EventsToDispatch, msgJSON fftypes.JSONObject) (err error) {
 	subID := msgJSON.GetString("subId")
-	subName, err := f.streams.getSubscriptionName(ctx, subID)
+	subName, err := f.streams.getSubscriptionName(ctx, subID, false)
 	if err != nil {
 		return err // this is a problem - we should be able to find the listener that dispatched this to us
 	}
@@ -540,7 +540,7 @@ func (f *Fabric) eventLoop(namespace string, wsconn wsclient.WSClient, closed ch
 				var receipt common.BlockchainReceiptNotification
 				_ = json.Unmarshal(msgBytes, &receipt)
 
-				err := common.HandleReceipt(ctx, f, &receipt, f.callbacks)
+				err := common.HandleReceipt(ctx, namespace, f, &receipt, f.callbacks)
 				if err != nil {
 					l.Errorf("Failed to process receipt: %+v", msgTyped)
 				}
@@ -998,7 +998,13 @@ func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.
 
 func (f *Fabric) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (bool, interface{}, core.ContractListenerStatus, error) {
 	// Fabconnect does not currently provide any additional status info for listener subscriptions.
-	return true, nil, core.ContractListenerStatusUnknown, nil
+	// But we check for existence of the subscription
+	sub, err := f.streams.getSubscription(ctx, subID, okNotFound)
+	if err != nil || sub == nil {
+		return false, nil, core.ContractListenerStatusUnknown, err
+	}
+
+	return true, nil, core.ContractListenerStatusUnknown, err
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

@@ -648,7 +648,7 @@ Here is an example of sending 100 wei with a transaction:
 
 Now that we've seen how to submit transactions and preform read-only queries to the blockchain, let's look at how to receive blockchain events so we know when things are happening in realtime.
 
-If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an **Event Listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events, and the topic to assign these events to. Topics are a way for applications to subscribe to events they are interested in.
+If you look at the source code for the smart contract we're working with above, you'll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an **Event Listener**. The `/contracts/listeners` endpoint is RESTful so there are `POST`, `GET`, and `DELETE` methods available on it. To create a new listener, we will make a `POST` request. We are going to tell FireFly to listen to events with name `"Changed"` from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events, and the topic to assign these events to. You can specify multiple filters for a listener, in this case we only specify one for our event. Topics are a way for applications to subscribe to events they are interested in.
 
 ### Request
 
@@ -656,13 +656,17 @@ If you look at the source code for the smart contract we're working with above, 
 
 ```json
 {
-  "interface": {
-    "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
-  },
-  "location": {
-    "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
-  },
-  "eventPath": "Changed",
+  "filters": [
+    {
+      "interface": {
+        "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+      },
+      "location": {
+        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+      },
+      "eventPath": "Changed"
+    }
+  ],
   "options": {
     "firstEvent": "newest"
   },
@@ -674,17 +678,17 @@ If you look at the source code for the smart contract we're working with above, 
 
 ```json
 {
-  "id": "1bfa3b0f-3d90-403e-94a4-af978d8c5b14",
+  "id": "e7c8457f-4ffd-42eb-ac11-4ad8aed30de1",
   "interface": {
-    "id": "8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"
+    "id": "55fdb62a-fefc-4313-99e4-e3f95fcca5f0"
   },
   "namespace": "default",
-  "name": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
-  "protocolId": "sb-66209ffc-d355-4ac0-7151-bc82490ca9df",
+  "name": "019104d7-bb0a-c008-76a9-8cb923d91b37",
+  "backendId": "019104d7-bb0a-c008-76a9-8cb923d91b37",
   "location": {
     "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
   },
-  "created": "2022-02-17T22:02:36.34549538Z",
+  "created": "2024-07-30T18:12:12.704964Z",
   "event": {
     "name": "Changed",
     "description": "",
@@ -712,9 +716,49 @@ If you look at the source code for the smart contract we're working with above, 
       }
     ]
   },
+  "signature": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1:Changed(address,uint256) [i=0]",
+  "topic": "simple-storage",
   "options": {
-    "firstEvent": "oldest"
-  }
+    "firstEvent": "newest"
+  },
+  "filters": [
+    {
+      "event": {
+        "name": "Changed",
+        "description": "",
+        "params": [
+          {
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "details": {
+                "type": "address",
+                "internalType": "address",
+                "indexed": true
+              }
+            }
+          },
+          {
+            "name": "value",
+            "schema": {
+              "type": "integer",
+              "details": {
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            }
+          }
+        ]
+      },
+      "location": {
+        "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
+      },
+      "interface": {
+        "id": "55fdb62a-fefc-4313-99e4-e3f95fcca5f0"
+      },
+      "signature": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1:Changed(address,uint256) [i=0]"
+    }
+  ]
 }
 ```
 
