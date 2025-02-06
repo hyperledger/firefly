@@ -388,7 +388,7 @@ func (c *Cardano) GetTransactionStatus(ctx context.Context, operation *core.Oper
 				TxHash:     statusResponse.GetString("transactionHash"),
 				Message:    statusResponse.GetString("errorMessage"),
 				ProtocolID: receiptInfo.GetString("protocolId")}
-			err := common.HandleReceipt(ctx, c, receipt, c.callbacks)
+			err := common.HandleReceipt(ctx, operation.Namespace, c, receipt, c.callbacks)
 			if err != nil {
 				log.L(ctx).Warnf("Failed to handle receipt")
 			}
@@ -459,7 +459,7 @@ func (c *Cardano) eventLoop() {
 				var receipt common.BlockchainReceiptNotification
 				_ = json.Unmarshal(msgBytes, &receipt)
 
-				err := common.HandleReceipt(ctx, c, &receipt, c.callbacks)
+				err := common.HandleReceipt(ctx, "", c, &receipt, c.callbacks)
 				if err != nil {
 					l.Errorf("Failed to process receipt: %+v", msgTyped)
 				}
