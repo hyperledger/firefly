@@ -20,7 +20,7 @@ title: Broadcast data
 ## Additional info
 
 - Key Concepts: [Broadcast / shared data](../overview/multiparty/broadcast.md)
-- Swagger Reference: <a href="/swagger/#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/broadcast</a>
+- Swagger Reference: <a href="../../swagger/#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/broadcast</a>
 
 ## Example 1: Inline string data
 
