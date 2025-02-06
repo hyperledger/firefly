@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,6 +17,7 @@
 package txcommon
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 
@@ -39,7 +40,9 @@ type BlockchainInvokeData struct {
 func RetrieveBlockchainInvokeInputs(ctx context.Context, op *core.Operation) (*core.ContractCallRequest, error) {
 	var req core.ContractCallRequest
 	s := op.Input.String()
-	if err := json.Unmarshal([]byte(s), &req); err != nil {
+	d := json.NewDecoder(bytes.NewReader([]byte(s)))
+	d.UseNumber()
+	if err := d.Decode(&req); err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
 	}
 	return &req, nil

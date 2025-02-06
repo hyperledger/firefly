@@ -34,11 +34,35 @@ title: ContractListener
             }
         ]
     },
-    "signature": "Changed(uint256)",
+    "signature": "0x596003a91a97757ef1916c8d6c0d42592630d2cf:Changed(uint256)",
     "topic": "app1_topic",
     "options": {
         "firstEvent": "newest"
-    }
+    },
+    "filters": [
+        {
+            "event": {
+                "name": "Changed",
+                "description": "",
+                "params": [
+                    {
+                        "name": "x",
+                        "schema": {
+                            "type": "integer",
+                            "details": {
+                                "type": "uint256",
+                                "internalType": "uint256"
+                            }
+                        }
+                    }
+                ]
+            },
+            "location": {
+                "address": "0x596003a91a97757ef1916c8d6c0d42592630d2cf"
+            },
+            "signature": "0x596003a91a97757ef1916c8d6c0d42592630d2cf:Changed(uint256)"
+        }
+    ]
 }
 ```
 

@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -72,6 +72,79 @@ func (op *Operation) IsBlockchainOperation() bool {
 
 func (op *Operation) IsTokenOperation() bool {
 	return op.Type == OpTypeTokenActivatePool || op.Type == OpTypeTokenApproval || op.Type == OpTypeTokenCreatePool || op.Type == OpTypeTokenTransfer
+}
+
+func (op *Operation) DeepCopy() *Operation {
+	cop := &Operation{
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Status:    op.Status,
+		Plugin:    op.Plugin,
+		Error:     op.Error,
+	}
+	if op.ID != nil {
+		idCopy := *op.ID
+		cop.ID = &idCopy
+	}
+	if op.Transaction != nil {
+		txCopy := *op.Transaction
+		cop.Transaction = &txCopy
+	}
+	if op.Created != nil {
+		createdCopy := *op.Created
+		cop.Created = &createdCopy
+	}
+	if op.Updated != nil {
+		updatedCopy := *op.Updated
+		cop.Updated = &updatedCopy
+	}
+	if op.Retry != nil {
+		retryCopy := *op.Retry
+		cop.Retry = &retryCopy
+	}
+	if op.Input != nil {
+		cop.Input = deepCopyMap(op.Input)
+	}
+	if op.Output != nil {
+		cop.Output = deepCopyMap(op.Output)
+	}
+	return cop
+}
+
+func deepCopyMap(original map[string]interface{}) map[string]interface{} {
+	if original == nil {
+		return nil
+	}
+	copy := make(map[string]interface{}, len(original))
+	for key, value := range original {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			copy[key] = deepCopyMap(v)
+		case []interface{}:
+			copy[key] = deepCopySlice(v)
+		default:
+			copy[key] = v
+		}
+	}
+	return copy
+}
+
+func deepCopySlice(original []interface{}) []interface{} {
+	if original == nil {
+		return nil
+	}
+	copy := make([]interface{}, len(original))
+	for i, value := range original {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			copy[i] = deepCopyMap(v)
+		case []interface{}:
+			copy[i] = deepCopySlice(v)
+		default:
+			copy[i] = v
+		}
+	}
+	return copy
 }
 
 // OpStatus is the current status of an operation

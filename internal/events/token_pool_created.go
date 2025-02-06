@@ -62,10 +62,13 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 			Type:         pool.TX.Type,
 			BlockchainID: blockchainID,
 		})
-		if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
+		created, err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil)
+		if err != nil {
 			return err
 		}
-		em.emitBlockchainEventMetric(ev)
+		if created {
+			em.emitBlockchainEventMetric(ev)
+		}
 	}
 	if _, err := em.txHelper.PersistTransaction(ctx, pool.TX.ID, pool.TX.Type, blockchainID); err != nil {
 		return err

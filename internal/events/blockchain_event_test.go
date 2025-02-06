@@ -151,6 +151,7 @@ func TestContractEventWrongNS(t *testing.T) {
 
 }
 
+// TODO: Add test case for event not existing
 func TestPersistBlockchainEventDuplicate(t *testing.T) {
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
@@ -173,9 +174,10 @@ func TestPersistBlockchainEventDuplicate(t *testing.T) {
 	em.mth.On("InsertOrGetBlockchainEvent", mock.Anything, ev).
 		Return(&core.BlockchainEvent{ID: existingID}, nil)
 
-	err := em.maybePersistBlockchainEvent(em.ctx, ev, nil)
+	created, err := em.maybePersistBlockchainEvent(em.ctx, ev, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, existingID, ev.ID)
+	assert.False(t, created)
 
 }
 

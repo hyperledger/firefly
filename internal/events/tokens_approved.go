@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -97,10 +97,13 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		Type:         approval.TX.Type,
 		BlockchainID: approval.Event.BlockchainTXID,
 	})
-	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
+	created, err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil)
+	if err != nil {
 		return false, err
 	}
-	em.emitBlockchainEventMetric(approval.Event)
+	if created {
+		em.emitBlockchainEventMetric(approval.Event)
+	}
 	approval.BlockchainEvent = chainEvent.ID
 
 	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)

@@ -12,6 +12,9 @@ Hyperledger FireFly is the first open source Supernode: a complete stack for ent
 
 The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.
 
+
+[ENGLISH](./README.md) | [简体中文](./README_zh_CN.md)
+
 ## Start using Hyperledger FireFly
 
 The best place to learn about FireFly is in the [documentation](https://hyperledger.github.io/firefly).
@@ -40,7 +43,7 @@ all the plumbing for your blockchain application from scratch.
 
 [![Hyperledger FireFly Architecture Overview](./doc-site/docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/doc-site/docs/images/firefly_architecture_overview.jpg)
 
-## Start contributing to Hyperledger FireFy
+## Start contributing to Hyperledger FireFly
 
 There are lots of places you can contribute, regardless of whether your skills are front-end, backend-end, or full-stack.
 

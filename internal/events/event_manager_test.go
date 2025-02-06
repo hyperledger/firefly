@@ -681,7 +681,7 @@ func TestEventFilterOnSubscriptionMatchesEventType(t *testing.T) {
 	filteredEvents, _ = em.FilterHistoricalEventsOnSubscription(context.Background(), events, subscription)
 	assert.NotNil(t, filteredEvents)
 	assert.Equal(t, 1, len(filteredEvents))
-	
+
 	listenerUuid := fftypes.NewUUID()
 
 	events[0].Event.Topic = ""

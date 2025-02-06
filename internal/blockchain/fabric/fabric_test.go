@@ -1815,7 +1815,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	err := json.Unmarshal(data, &reply)
 	assert.NoError(t, err)
-	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
+	common.HandleReceipt(context.Background(), "ns1", e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }
@@ -1836,7 +1836,7 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	data := []byte(`{}`)
 	err := json.Unmarshal(data, &reply)
 	assert.NoError(t, err)
-	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
+	common.HandleReceipt(context.Background(), "", e, &reply, e.callbacks)
 }
 
 func TestHandleReceiptFailedTx(t *testing.T) {
@@ -1876,7 +1876,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 
 	err := json.Unmarshal(data, &reply)
 	assert.NoError(t, err)
-	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
+	common.HandleReceipt(context.Background(), "", e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }

@@ -1835,7 +1835,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 
-	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
+	common.HandleReceipt(context.Background(), "ns1", e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }
@@ -1922,7 +1922,7 @@ func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
 	assert.NoError(t, err)
 	expectedReceiptId := "ns1:" + operationID.String()
 	assert.Equal(t, reply.Headers.ReceiptID, expectedReceiptId)
-	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
+	common.HandleReceipt(context.Background(), "", e, &reply, e.callbacks)
 
 	em.AssertExpectations(t)
 }
@@ -1987,7 +1987,7 @@ func TestHandleMsgBatchBadData(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	common.HandleReceipt(context.Background(), e, &reply, e.callbacks)
+	common.HandleReceipt(context.Background(), "", e, &reply, e.callbacks)
 }
 
 func TestFormatNil(t *testing.T) {

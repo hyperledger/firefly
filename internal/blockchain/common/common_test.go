@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2024 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -342,15 +342,15 @@ func TestGoodSuccessReceipt(t *testing.T) {
 	cb.SetHandler("ns1", mcb)
 	mcb.On("OperationUpdate", "ns1", mock.Anything).Return()
 
-	err := HandleReceipt(context.Background(), nil, &reply, cb)
+	err := HandleReceipt(context.Background(), "", nil, &reply, cb)
 	assert.NoError(t, err)
 
 	reply.Headers.ReplyType = "TransactionUpdate"
-	err = HandleReceipt(context.Background(), nil, &reply, cb)
+	err = HandleReceipt(context.Background(), "", nil, &reply, cb)
 	assert.NoError(t, err)
 
 	reply.Headers.ReplyType = "TransactionFailed"
-	err = HandleReceipt(context.Background(), nil, &reply, cb)
+	err = HandleReceipt(context.Background(), "", nil, &reply, cb)
 	assert.NoError(t, err)
 }
 
@@ -365,7 +365,7 @@ func TestReceiptMarshallingError(t *testing.T) {
 	cb.SetHandler("ns1", mcb)
 	mcb.On("OperationUpdate", "ns1", mock.Anything).Return()
 
-	err := HandleReceipt(context.Background(), nil, &reply, cb)
+	err := HandleReceipt(context.Background(), "", nil, &reply, cb)
 	assert.Error(t, err)
 	assert.Regexp(t, ".*[^n]marshalling error.*", err)
 }
@@ -384,8 +384,17 @@ func TestBadReceipt(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	err = HandleReceipt(context.Background(), nil, &reply, nil)
+	err = HandleReceipt(context.Background(), "", nil, &reply, nil)
 	assert.Error(t, err)
+}
+
+func TestWrongNamespaceReceipt(t *testing.T) {
+	var reply BlockchainReceiptNotification
+	data := fftypes.JSONAnyPtr(`{}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
+	assert.NoError(t, err)
+	err = HandleReceipt(context.Background(), "wrong", nil, &reply, nil)
+	assert.NoError(t, err)
 }
 
 func TestErrorWrappingConflict(t *testing.T) {
