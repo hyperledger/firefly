@@ -18,10 +18,12 @@ package cardano
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type streamManager struct {
@@ -38,6 +40,20 @@ type eventStream struct {
 	BatchTimeoutMS uint   `json:"batchTimeoutMS"`
 	Type           string `json:"type"`
 	Timestamps     bool   `json:"timestamps"`
+}
+
+type listener struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+}
+
+type filter struct {
+	Event eventfilter `json:"event"`
+}
+
+type eventfilter struct {
+	Contract  string `json:"contract"`
+	EventPath string `json:"eventPath"`
 }
 
 func newStreamManager(client *resty.Client, batchSize, batchTimeout uint) *streamManager {
@@ -111,4 +127,58 @@ func (s *streamManager) ensureEventStream(ctx context.Context, topic string) (*e
 		}
 	}
 	return s.createEventStream(ctx, topic)
+}
+
+func (s *streamManager) getListener(ctx context.Context, streamID string, listenerID string) (listener *listener, err error) {
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetResult(&listener).
+		Get(fmt.Sprintf("/eventstreams/%s/listeners/%s", streamID, listenerID))
+	if err != nil || !res.IsSuccess() {
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgCardanoconnectRESTErr)
+	}
+	return listener, nil
+}
+
+func (s *streamManager) createListener(ctx context.Context, streamID, name, lastEvent string, filters *core.ListenerFilters) (listener *listener, err error) {
+	cardanoFilters := []filter{}
+	for _, f := range *filters {
+		address := f.Location.JSONObject().GetString("address")
+		cardanoFilters = append(cardanoFilters, filter{
+			Event: eventfilter{
+				Contract:  address,
+				EventPath: f.Event.Name,
+			},
+		})
+	}
+
+	body := map[string]interface{}{
+		"name":      name,
+		"type":      "events",
+		"fromBlock": lastEvent,
+		"filters":   cardanoFilters,
+	}
+
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetResult(&listener).
+		Post(fmt.Sprintf("/eventstreams/%s/listeners", streamID))
+
+	if err != nil || !res.IsSuccess() {
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgCardanoconnectRESTErr)
+	}
+
+	return listener, nil
+}
+
+func (s *streamManager) deleteListener(ctx context.Context, streamID, listenerID string) error {
+	res, err := s.client.R().
+		SetContext(ctx).
+		Delete(fmt.Sprintf("/eventstreams/%s/listeners/%s", streamID, listenerID))
+
+	if err != nil || !res.IsSuccess() {
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgCardanoconnectRESTErr)
+	}
+	return nil
 }
