@@ -78,14 +78,6 @@ type Location struct {
 	Address string `json:"address"`
 }
 
-type cardanoInvokeContractPayload struct {
-	ID      string             `json:"id"`
-	From    string             `json:"from"`
-	Address string             `json:"address"`
-	Method  *fftypes.FFIMethod `json:"method"`
-	Params  []interface{}      `json:"params"`
-}
-
 func (c *Cardano) Name() string {
 	return "cardano"
 }
