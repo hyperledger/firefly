@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -194,6 +194,11 @@ var (
 	ConfigPluginBlockchainTezosAddressResolverRetainOriginal = ffc("config.plugins.blockchain[].tezos.addressResolver.retainOriginal", "When true the original pre-resolved string is retained after the lookup, and passed down to Tezosconnect as the from address", i18n.BooleanType)
 	ConfigPluginBlockchainTezosAddressResolverURL            = ffc("config.plugins.blockchain[].tezos.addressResolver.url", "The URL of the Address Resolver", i18n.StringType)
 	ConfigPluginBlockchainTezosAddressResolverURLTemplate    = ffc("config.plugins.blockchain[].tezos.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver. The template input contains '.Key' and '.Intent' string variables.", i18n.GoTemplateType)
+
+	ConfigPluginBlockchainCardanoCardanoconnectBatchSize    = ffc("config.plugins.blockchain[].cardano.cardanoconnect.batchSize", "The number of events Cardanoconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
+	ConfigPluginBlockchainCardanoCardanoconnectBatchTimeout = ffc("config.plugins.blockchain[].cardano.cardanoconnect.batchTimeout", "How long Cardanoconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)
+	ConfigPluginBlockchainCardanoCardanoconnectTopic        = ffc("config.plugins.blockchain[].cardano.cardanoconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single cardanoconnect", i18n.StringType)
+	ConfigPluginBlockchainCardanoCardanoconnectURL          = ffc("config.plugins.blockchain[].cardano.cardanoconnect.url", "The URL of the Cardanoconnect instance", urlStringType)
 
 	ConfigPluginBlockchainTezosTezosconnectBackgroundStart             = ffc("config.plugins.blockchain[].tezos.tezosconnect.backgroundStart.enabled", "Start the Tezosconnect plugin in the background and enter retry loop if failed to start", i18n.BooleanType)
 	ConfigPluginBlockchainTezosTezosconnectBackgroundStartInitialDelay = ffc("config.plugins.blockchain[].tezos.tezosconnect.backgroundStart.initialDelay", "Delay between restarts in the case where we retry to restart the tezos plugin", i18n.TimeDurationType)
