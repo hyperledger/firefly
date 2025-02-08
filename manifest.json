@@ -1,10 +1,10 @@
 {
   "cardanoconnect": {
-    "image": "sundaeswap/firefly-cardanoconnect",
+    "image": "hyperledger/firefly-cardanoconnect",
     "tag": "main"
   },
   "cardanosigner": {
-    "image": "sundaeswap/firefly-cardanosigner",
+    "image": "hyperledger/firefly-cardanosigner",
     "tag": "main"
   },
   "ethconnect": {
