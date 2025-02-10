@@ -17,7 +17,7 @@ ARG GIT_REF
 RUN apk add make=4.4.1-r2 \
     gcc=13.2.1_git20231014-r0 \
     build-base=0.5-r3 \
-    curl=8.12.0-r0 \
+    curl=8.11.1-r1 \
     git=2.43.6-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
@@ -64,7 +64,7 @@ RUN mkdir -p build/contracts \
 FROM alpine:3.19 AS sbom
 WORKDIR /
 ADD . /SBOM
-RUN apk add --no-cache curl=8.12.0-r0
+RUN apk add --no-cache curl=8.11.1-r1
 RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.48.3
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
@@ -76,7 +76,7 @@ ARG UI_RELEASE
 RUN apk add --update --no-cache \
     sqlite=3.44.2-r0 \
     postgresql16-client=16.6-r0 \
-    curl=8.12.0-r0 \
+    curl=8.11.1-r1 \
     jq=1.7.1-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
