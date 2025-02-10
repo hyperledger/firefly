@@ -742,3 +742,42 @@ func TestErrTernaryHelper(t *testing.T) {
 	assert.Equal(t, core.OpPhasePending, ErrTernary(nil, core.OpPhaseInitializing, core.OpPhasePending))
 	assert.Equal(t, core.OpPhaseInitializing, ErrTernary(fmt.Errorf("pop"), core.OpPhaseInitializing, core.OpPhasePending))
 }
+
+func TestSubmitBulkOperationUpdates(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+	}
+
+	submittedUpdate2 := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+	}
+
+	// Create a channel to receive the onCommit signal
+	onCommit := make(chan bool, 1)
+	go om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate, submittedUpdate2}, onCommit)
+
+	update := <-om.updater.workQueues[0]
+	assert.Equal(t, submittedUpdate.NamespacedOpID, update.NamespacedOpID)
+	assert.Equal(t, core.OpStatusSucceeded, update.Status)
+	update.OnComplete()
+
+	update2 := <-om.updater.workQueues[0]
+	assert.Equal(t, submittedUpdate2.NamespacedOpID, update2.NamespacedOpID)
+	assert.Equal(t, core.OpStatusSucceeded, update2.Status)
+	update2.OnComplete()
+
+	// Wait for oncommit signal
+	<-onCommit
+}

@@ -245,6 +245,7 @@ func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.
 
 type OperationCallbacks interface {
 	OperationUpdate(update *OperationUpdate)
+	BulkOperationUpdates(ctx context.Context, updates []*OperationUpdate, onCommit chan<- bool)
 }
 
 // OperationUpdate notifies FireFly of an update to an operation.

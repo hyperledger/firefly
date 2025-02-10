@@ -19,6 +19,7 @@ package operations
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -91,6 +92,66 @@ func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, up
 	worker := id.HashBucket(ou.conf.workerCount)
 	log.L(ctx).Debugf("Submitting operation update id=%s status=%s blockchainTX=%s worker=opu_%.3d", id, update.Status, update.BlockchainTXID, worker)
 	return ou.workQueues[worker]
+}
+
+// SubmitBulkOperationUpdates will wait for the commit to DB before calling the onCommit
+// It has a wait group to wait for all updates to complete
+func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- bool) {
+	wg := sync.WaitGroup{}
+
+	for _, update := range updates {
+		ns, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+		if err != nil {
+			log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
+			return
+		}
+		if ns != ou.manager.namespace {
+			log.L(ou.ctx).Debugf("Ignoring operation update from different namespace '%s'", ns)
+			continue
+		}
+
+		if ou.conf.workerCount > 0 {
+			if update.Status == core.OpStatusFailed {
+				// We do a cache update pre-emptively, as for idempotency checking on an error status we want to
+				// see the update immediately - even though it's being asynchronously flushed to the storage
+				ou.manager.updateCachedOperation(id, update.Status, &update.ErrorMessage, update.Output, nil)
+			}
+
+			update.OnComplete = func() {
+				wg.Done()
+			}
+
+			wg.Add(1)
+
+			select {
+			case ou.pickWorker(ctx, id, update) <- update:
+			case <-ou.ctx.Done():
+				log.L(ctx).Debugf("Not submitting operation update due to cancelled context")
+				wg.Done()
+			}
+		}
+	}
+
+	if ou.conf.workerCount < 0 {
+		// Otherwise do it in-line on this context
+		err := ou.doBatchUpdateWithRetry(ctx, updates)
+		if err != nil {
+			log.L(ctx).Warnf("Exiting while updating operation: %s", err)
+		}
+		// This is blocking but the code consuming will still expected a value in the onCommit channel
+		if onCommit != nil {
+			onCommit <- true
+		}
+		return
+	}
+
+	// Wait for all updates to complete
+	go func() {
+		wg.Wait()
+		if onCommit != nil {
+			onCommit <- true
+		}
+	}()
 }
 
 func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *core.OperationUpdate) {
