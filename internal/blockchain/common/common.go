@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,7 +43,7 @@ type BlockchainCallbacks interface {
 	SetHandler(namespace string, handler blockchain.Callbacks)
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
-	// BulkOperationUpdates is a way to update multiple operations in a single transaction and commit them all at once
+	// BulkOperationUpdates is a way to update multiple operations and get notified when the updates have been committed to the database
 	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- bool)
 
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)

@@ -19,7 +19,6 @@ package operations
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -97,57 +96,33 @@ func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, up
 // SubmitBulkOperationUpdates will wait for the commit to DB before calling the onCommit
 // It has a wait group to wait for all updates to complete
 func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- bool) {
-	wg := sync.WaitGroup{}
-
+	validUpdates := []*core.OperationUpdate{}
 	for _, update := range updates {
-		ns, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+		ns, _, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 		if err != nil {
 			log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
-			return
+			continue
 		}
+
 		if ns != ou.manager.namespace {
 			log.L(ou.ctx).Debugf("Ignoring operation update from different namespace '%s'", ns)
 			continue
 		}
 
-		if ou.conf.workerCount > 0 {
-			if update.Status == core.OpStatusFailed {
-				// We do a cache update pre-emptively, as for idempotency checking on an error status we want to
-				// see the update immediately - even though it's being asynchronously flushed to the storage
-				ou.manager.updateCachedOperation(id, update.Status, &update.ErrorMessage, update.Output, nil)
-			}
-
-			update.OnComplete = func() {
-				wg.Done()
-			}
-
-			wg.Add(1)
-
-			select {
-			case ou.pickWorker(ctx, id, update) <- update:
-			case <-ou.ctx.Done():
-				log.L(ctx).Debugf("Not submitting operation update due to cancelled context")
-				wg.Done()
-			}
-		}
+		validUpdates = append(validUpdates, update)
 	}
 
-	if ou.conf.workerCount < 0 {
-		// Otherwise do it in-line on this context
-		err := ou.doBatchUpdateWithRetry(ctx, updates)
+	// Notice how this is not using the workers
+	// The reason is because we want for all updates to be stored at once in this order
+	// If offloaded into worker the updates would be processed in parallel, in different DB TX and in a different order
+	go func() {
+		// This retries forever until there is no error
+		// and only returns on cancelled context
+		err := ou.doBatchUpdateWithRetry(ctx, validUpdates)
 		if err != nil {
 			log.L(ctx).Warnf("Exiting while updating operation: %s", err)
 		}
-		// This is blocking but the code consuming will still expected a value in the onCommit channel
-		if onCommit != nil {
-			onCommit <- true
-		}
-		return
-	}
-
-	// Wait for all updates to complete
-	go func() {
-		wg.Wait()
+		// Batch has been updated correctly
 		if onCommit != nil {
 			onCommit <- true
 		}
