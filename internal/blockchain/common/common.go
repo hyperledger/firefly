@@ -43,6 +43,9 @@ type BlockchainCallbacks interface {
 	SetHandler(namespace string, handler blockchain.Callbacks)
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
+	// BulkOperationUpdates is a way to update multiple operations in a single transaction and commit them all at once
+	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- bool)
+
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 	// Common logic for parsing a BatchPinOrNetworkAction event, and if not discarded to add it to the by-namespace map
 	PrepareBatchPinOrNetworkAction(ctx context.Context, events EventsToDispatch, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams)
@@ -62,6 +65,16 @@ type callbacks struct {
 	lock       sync.RWMutex
 	handlers   map[string]blockchain.Callbacks
 	opHandlers map[string]core.OperationCallbacks
+}
+
+// BulkOperationUpdates implements BlockchainCallbacks.
+func (cb *callbacks) BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- bool) {
+	if handler, ok := cb.opHandlers[namespace]; ok {
+		handler.BulkOperationUpdates(ctx, updates, onCommit)
+		return
+	}
+	// Need to clean this up
+	log.L(ctx).Errorf("No handler found for namespace '%s'", namespace)
 }
 
 type subscriptions struct {
