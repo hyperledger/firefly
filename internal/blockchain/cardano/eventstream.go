@@ -22,8 +22,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type streamManager struct {
@@ -129,34 +129,37 @@ func (s *streamManager) ensureEventStream(ctx context.Context, topic string) (*e
 	return s.createEventStream(ctx, topic)
 }
 
-func (s *streamManager) getListener(ctx context.Context, streamID string, listenerID string) (listener *listener, err error) {
+func (s *streamManager) getListener(ctx context.Context, streamID string, listenerID string, okNotFound bool) (listener *listener, err error) {
 	res, err := s.client.R().
 		SetContext(ctx).
 		SetResult(&listener).
 		Get(fmt.Sprintf("/eventstreams/%s/listeners/%s", streamID, listenerID))
 	if err != nil || !res.IsSuccess() {
+		if okNotFound && res.StatusCode() == 404 {
+			return nil, nil
+		}
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgCardanoconnectRESTErr)
 	}
 	return listener, nil
 }
 
-func (s *streamManager) createListener(ctx context.Context, streamID, name, lastEvent string, filters *core.ListenerFilters) (listener *listener, err error) {
-	cardanoFilters := []filter{}
-	for _, f := range *filters {
-		address := f.Location.JSONObject().GetString("address")
-		cardanoFilters = append(cardanoFilters, filter{
-			Event: eventfilter{
-				Contract:  address,
-				EventPath: f.Event.Name,
-			},
-		})
+func (s *streamManager) getListeners(ctx context.Context, streamID string) (listeners *[]listener, err error) {
+	res, err := s.client.R().
+		SetContext(ctx).
+		SetResult(&listeners).
+		Get(fmt.Sprintf("/eventstreams/%s/listeners", streamID))
+	if err != nil || !res.IsSuccess() {
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgCardanoconnectRESTErr)
 	}
+	return listeners, nil
+}
 
+func (s *streamManager) createListener(ctx context.Context, streamID, name, lastEvent string, filters []filter) (listener *listener, err error) {
 	body := map[string]interface{}{
 		"name":      name,
 		"type":      "events",
 		"fromBlock": lastEvent,
-		"filters":   cardanoFilters,
+		"filters":   filters,
 	}
 
 	res, err := s.client.R().
@@ -181,4 +184,30 @@ func (s *streamManager) deleteListener(ctx context.Context, streamID, listenerID
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgCardanoconnectRESTErr)
 	}
 	return nil
+}
+
+func (s *streamManager) ensureFireFlyListener(ctx context.Context, namespace string, version int, address, firstEvent, streamID string) (l *listener, err error) {
+	existingListeners, err := s.getListeners(ctx, streamID)
+	if err != nil {
+		return nil, err
+	}
+
+	name := fmt.Sprintf("%s_%d_BatchPin", namespace, version)
+	for _, l := range *existingListeners {
+		if l.Name == name {
+			return &l, nil
+		}
+	}
+
+	filters := []filter{{
+		eventfilter{
+			Contract:  address,
+			EventPath: "BatchPin",
+		},
+	}}
+	if l, err = s.createListener(ctx, streamID, name, firstEvent, filters); err != nil {
+		return nil, err
+	}
+	log.L(ctx).Infof("BatchPin subscription: %s", l.ID)
+	return l, nil
 }

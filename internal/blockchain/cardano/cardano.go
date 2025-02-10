@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -57,6 +58,7 @@ type Cardano struct {
 	client             *resty.Client
 	streams            *streamManager
 	streamID           string
+	closed             chan struct{}
 	wsconn             wsclient.WSClient
 	cardanoconnectConf config.Section
 	subs               common.FireflySubscriptions
@@ -77,6 +79,8 @@ type cardanoWSCommandPayload struct {
 type Location struct {
 	Address string `json:"address"`
 }
+
+var addressVerify = regexp.MustCompile("^addr1|^addr_test1|^stake1|^stake_test1")
 
 func (c *Cardano) Name() string {
 	return "cardano"
@@ -133,6 +137,7 @@ func (c *Cardano) Init(ctx context.Context, cancelCtx context.CancelFunc, conf c
 	log.L(c.ctx).Infof("Event stream: %s (topic=%s)", stream.ID, c.pluginTopic)
 	c.streamID = stream.ID
 
+	c.closed = make(chan struct{})
 	go c.eventLoop()
 
 	return c.wsconn.Connect()
@@ -161,7 +166,20 @@ func (c *Cardano) Capabilities() *blockchain.Capabilities {
 }
 
 func (c *Cardano) AddFireflySubscription(ctx context.Context, namespace *core.Namespace, contract *blockchain.MultipartyContract, lastProtocolID string) (string, error) {
-	return "", errors.New("AddFireflySubscription not supported")
+	location, err := c.parseContractLocation(ctx, contract.Location)
+	if err != nil {
+		return "", err
+	}
+
+	version, _ := c.GetNetworkVersion(ctx, contract.Location)
+
+	l, err := c.streams.ensureFireFlyListener(ctx, namespace.Name, version, location.Address, contract.FirstEvent, c.streamID)
+	if err != nil {
+		return "", err
+	}
+
+	c.subs.AddSubscription(ctx, namespace, version, l.ID, nil)
+	return l.ID, nil
 }
 
 func (c *Cardano) RemoveFireflySubscription(ctx context.Context, subID string) {
@@ -215,7 +233,7 @@ func (c *Cardano) InvokeContract(ctx context.Context, nsOpID string, signingKey 
 	}
 
 	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
-	if !ok || methodInfo.method == nil {
+	if !ok || methodInfo.method == nil || methodInfo.method.Name == "" {
 		return true, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
 	}
 	method := methodInfo.method
@@ -296,11 +314,7 @@ func (c *Cardano) parseContractLocation(ctx context.Context, location *fftypes.J
 	return &cardanoLocation, nil
 }
 
-func (c *Cardano) encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
-	location.Address, err = formatCardanoAddress(ctx, location.Address)
-	if err != nil {
-		return nil, err
-	}
+func (c *Cardano) encodeContractLocation(_ context.Context, location *Location) (result *fftypes.JSONAny, err error) {
 	normalized, err := json.Marshal(location)
 	if err == nil {
 		result = fftypes.JSONAnyPtrBytes(normalized)
@@ -315,7 +329,21 @@ func (c *Cardano) AddContractListener(ctx context.Context, listener *core.Contra
 		firstEvent = listener.Options.FirstEvent
 	}
 
-	result, err := c.streams.createListener(ctx, c.streamID, subName, firstEvent, &listener.Filters)
+	filters := make([]filter, len(listener.Filters))
+	for _, f := range listener.Filters {
+		location, err := c.parseContractLocation(ctx, f.Location)
+		if err != nil {
+			return err
+		}
+		filters = append(filters, filter{
+			eventfilter{
+				Contract:  location.Address,
+				EventPath: f.Event.Name,
+			},
+		})
+	}
+
+	result, err := c.streams.createListener(ctx, c.streamID, subName, firstEvent, filters)
 	listener.BackendID = result.ID
 	return err
 }
@@ -325,7 +353,7 @@ func (c *Cardano) DeleteContractListener(ctx context.Context, subscription *core
 }
 
 func (c *Cardano) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, detail interface{}, status core.ContractListenerStatus, err error) {
-	l, err := c.streams.getListener(ctx, c.streamID, subID)
+	l, err := c.streams.getListener(ctx, c.streamID, subID, okNotFound)
 	if err != nil || l == nil {
 		return false, nil, core.ContractListenerStatusUnknown, err
 	}
@@ -449,7 +477,7 @@ func (c *Cardano) afterConnect(ctx context.Context, w wsclient.WSClient) error {
 
 func (c *Cardano) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
 	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
-	if !ok || methodInfo.method == nil {
+	if !ok || methodInfo.method == nil || methodInfo.method.Name == "" {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
 	}
 	return methodInfo.method, methodInfo.errors, nil
@@ -457,6 +485,7 @@ func (c *Cardano) recoverFFI(ctx context.Context, parsedMethod interface{}) (*ff
 
 func (c *Cardano) eventLoop() {
 	defer c.wsconn.Close()
+	defer close(c.closed)
 	l := log.L(c.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(c.ctx, l)
 	for {
@@ -561,7 +590,7 @@ func (c *Cardano) handleMessageBatch(ctx context.Context, batchID int64, message
 
 func (c *Cardano) processContractEvent(ctx context.Context, events common.EventsToDispatch, msgJSON fftypes.JSONObject) error {
 	listenerID := msgJSON.GetString("listenerId")
-	listener, err := c.streams.getListener(ctx, c.streamID, listenerID)
+	listener, err := c.streams.getListener(ctx, c.streamID, listenerID, false)
 	if err != nil {
 		return err
 	}
@@ -616,8 +645,8 @@ func (c *Cardano) buildEventLocationString(msgJSON fftypes.JSONObject) string {
 }
 
 func formatCardanoAddress(ctx context.Context, key string) (string, error) {
-	// TODO: this could be much stricter validation
-	if key != "" {
+	// TODO: could check for valid bech32, instead of just a conventional HRP
+	if addressVerify.MatchString(key) {
 		return key, nil
 	}
 	return "", i18n.NewError(ctx, coremsgs.MsgInvalidCardanoAddress)
