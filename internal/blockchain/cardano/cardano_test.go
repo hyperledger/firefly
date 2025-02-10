@@ -831,6 +831,32 @@ func TestGetTransactionStatusEmptyObject(t *testing.T) {
 	assert.NotNil(t, status)
 }
 
+func TestGetTransactionStatusInvalidTx(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+
+	httpmock.ActivateNonDefault(c.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	op := &core.Operation{
+		Namespace: "",
+		ID:        fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		Status:    "Pending",
+	}
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/transactions/:9ffc50ff-6bfe-4502-adc7-93aea54cc059",
+		func(req *http.Request) (*http.Response, error) {
+			transactionStatus := make(map[string]interface{})
+			transactionStatus["status"] = "Failed"
+			transactionStatus["errorMessage"] = "Something went wrong"
+			return httpmock.NewJsonResponderOrPanic(200, transactionStatus)(req)
+		})
+
+	status, err := c.GetTransactionStatus(context.Background(), op)
+	assert.NoError(t, err)
+	assert.NotNil(t, status)
+}
+
 func TestGetTransactionStatusNotFound(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
