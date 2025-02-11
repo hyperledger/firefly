@@ -432,8 +432,11 @@ func (c *Cardano) GenerateEventSignatureWithLocation(ctx context.Context, event 
 }
 
 func (c *Cardano) GenerateErrorSignature(ctx context.Context, event *fftypes.FFIErrorDefinition) string {
-	// TODO: impl
-	return ""
+	params := []string{}
+	for _, param := range event.Params {
+		params = append(params, param.Schema.JSONObject().GetString("type"))
+	}
+	return fmt.Sprintf("%s(%s)", event.Name, strings.Join(params, ","))
 }
 
 func (c *Cardano) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {

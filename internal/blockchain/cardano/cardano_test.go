@@ -1586,9 +1586,17 @@ func TestGenerateEventSignatureWithInvalidLocation(t *testing.T) {
 func TestGenerateErrorSignature(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
-
-	signature := c.GenerateErrorSignature(context.Background(), nil)
-	assert.Equal(t, "", signature)
+	event := &fftypes.FFIErrorDefinition{
+		Name: "TransactionFailed",
+		Params: fftypes.FFIParams{
+			&fftypes.FFIParam{
+				Name:   "transactionId",
+				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
+			},
+		},
+	}
+	signature := c.GenerateErrorSignature(context.Background(), event)
+	assert.Equal(t, "TransactionFailed(string)", signature)
 }
 
 func TestCheckOverlappingLocationsEmpty(t *testing.T) {
