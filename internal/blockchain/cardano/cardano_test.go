@@ -666,7 +666,7 @@ func TestSubmitBatchPinNotSupported(t *testing.T) {
 	defer cancel()
 
 	err := c.SubmitBatchPin(c.ctx, "", "", "", nil, nil)
-	assert.Regexp(t, "SubmitBatchPin not supported", err)
+	assert.Regexp(t, "FF10429", err)
 }
 
 func TestAddContractListener(t *testing.T) {
@@ -1040,7 +1040,7 @@ func TestSubmitNetworkActionNotSupported(t *testing.T) {
 	defer cancel()
 
 	err := c.SubmitNetworkAction(c.ctx, "", "", core.NetworkActionTerminate, nil)
-	assert.Regexp(t, "SubmitNetworkAction not supported", err)
+	assert.Regexp(t, "FF10429", err)
 }
 
 func TestAddFireflySubscriptionBadLocation(t *testing.T) {
@@ -1409,7 +1409,7 @@ func TestQueryContractNotSupported(t *testing.T) {
 	defer cancel()
 
 	_, err := c.QueryContract(context.Background(), "", nil, nil, nil, nil)
-	assert.Regexp(t, "QueryContract not supported", err)
+	assert.Regexp(t, "FF10429", err)
 }
 
 func TestDeployContractOK(t *testing.T) {

@@ -19,7 +19,6 @@ package cardano
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -233,11 +232,13 @@ func (c *Cardano) ResolveSigningKey(ctx context.Context, key string, intent bloc
 }
 
 func (c *Cardano) SubmitBatchPin(ctx context.Context, nsOpID, networkNamespace, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
-	return errors.New("SubmitBatchPin not supported")
+	log.L(ctx).Warn("SubmitBatchPin is not supported")
+	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
 func (c *Cardano) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
-	return errors.New("SubmitNetworkAction not supported")
+	log.L(ctx).Warn("SubmitNetworkAction is not supported")
+	return i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
 func (c *Cardano) DeployContract(ctx context.Context, nsOpID, signingKey string, definition, contract *fftypes.JSONAny, input []interface{}, options map[string]interface{}) (submissionRejected bool, err error) {
@@ -303,7 +304,8 @@ func (c *Cardano) InvokeContract(ctx context.Context, nsOpID string, signingKey 
 }
 
 func (c *Cardano) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
-	return nil, errors.New("QueryContract not supported")
+	log.L(ctx).Warn("QueryContract is not supported")
+	return nil, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
 }
 
 func (c *Cardano) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
