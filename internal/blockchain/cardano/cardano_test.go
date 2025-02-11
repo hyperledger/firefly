@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -66,19 +66,27 @@ func resetConf(c *Cardano) {
 
 func newTestCardano() (*Cardano, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
+	r := resty.New().SetBaseURL("http://localhost:12345")
 	c := &Cardano{
 		ctx:         ctx,
 		cancelCtx:   cancel,
 		callbacks:   common.NewBlockchainCallbacks(),
-		client:      resty.New().SetBaseURL("http://localhost:12345"),
+		client:      r,
 		pluginTopic: "topic1",
-		wsconn:      &wsmocks.WSClient{},
+		streamIDs:   make(map[string]string),
+		closed:      make(map[string]chan struct{}),
+		wsconns:     make(map[string]wsclient.WSClient),
+		streams: &streamManager{
+			client: r,
+		},
 	}
 	return c, func() {
 		cancel()
 		if c.closed != nil {
 			// We've init'd, wait to close
-			<-c.closed
+			for _, cls := range c.closed {
+				<-cls
+			}
 		}
 	}
 }
@@ -119,7 +127,7 @@ func TestInitMissingTopic(t *testing.T) {
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
-func TestInitWithCardanoConnect(t *testing.T) {
+func TestInitAndStartWithCardanoConnect(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
 
@@ -150,18 +158,21 @@ func TestInitWithCardanoConnect(t *testing.T) {
 	assert.Equal(t, "cardano", c.Name())
 	assert.Equal(t, core.VerifierTypeCardanoAddress, c.VerifierType())
 
+	err = c.StartNamespace(c.ctx, "ns1")
+	assert.NoError(t, err)
+
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", c.streamID)
+	assert.Equal(t, "es12345", c.streamIDs["ns1"])
 	assert.NotNil(t, c.Capabilities())
 
 	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	assert.Equal(t, `{"type":"listen","topic":"topic1/ns1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
 	fromServer <- `{"bad":"receipt"}` // will be ignored - no ack
 	fromServer <- `[]`                // empty batch, will be ignored, but acked
 	reply := <-toServer
-	assert.Equal(t, `{"type":"ack","topic":"topic1"}`, reply)
+	assert.Equal(t, `{"type":"ack","topic":"topic1/ns1"}`, reply)
 	fromServer <- `["different kind of bad batch"]`
 	fromServer <- `[{}]` // bad batch
 
@@ -171,7 +182,7 @@ func TestInitWithCardanoConnect(t *testing.T) {
 	fromServer <- `42`
 }
 
-func TestInitWSFail(t *testing.T) {
+func TestStartNamespaceWSFail(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
 
@@ -180,10 +191,13 @@ func TestInitWSFail(t *testing.T) {
 	utCardanoconnectConf.Set(CardanoconnectConfigTopic, "topic1")
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
+	assert.NoError(t, err)
+
+	err = c.StartNamespace(c.ctx, "ns1")
 	assert.Regexp(t, "FF00149", err)
 }
 
-func TestStreamQueryError(t *testing.T) {
+func TestStartNamespaceStreamQueryError(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
 
@@ -201,10 +215,13 @@ func TestStreamQueryError(t *testing.T) {
 	utCardanoconnectConf.Set(CardanoconnectConfigTopic, "topic1")
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
+	assert.NoError(t, err)
+
+	err = c.StartNamespace(c.ctx, "ns1")
 	assert.Regexp(t, "FF10282.*pop", err)
 }
 
-func TestStreamCreateError(t *testing.T) {
+func TestStartNamespaceStreamCreateError(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
 
@@ -224,10 +241,13 @@ func TestStreamCreateError(t *testing.T) {
 	utCardanoconnectConf.Set(CardanoconnectConfigTopic, "topic1")
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
+	assert.NoError(t, err)
+
+	err = c.StartNamespace(c.ctx, "ns1")
 	assert.Regexp(t, "FF10282.*pop", err)
 }
 
-func TestStreamUpdateError(t *testing.T) {
+func TestStartNamespaceStreamUpdateError(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
 
@@ -236,7 +256,7 @@ func TestStreamUpdateError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1"}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
 	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
 		httpmock.NewStringResponder(500, "pop"))
 
@@ -247,13 +267,76 @@ func TestStreamUpdateError(t *testing.T) {
 	utCardanoconnectConf.Set(CardanoconnectConfigTopic, "topic1")
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
+	assert.NoError(t, err)
+
+	err = c.StartNamespace(c.ctx, "ns1")
 	assert.Regexp(t, "FF10282.*pop", err)
 }
 
-func TestStartNamespace(t *testing.T) {
+func TestStartNamespaceWSConnectFail(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
-	err := c.StartNamespace(context.Background(), "ns1")
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpURL := "http://localhost:12345"
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/ws", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, "{}"))
+
+	resetConf(c)
+	utCardanoconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utCardanoconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utCardanoconnectConf.Set(CardanoconnectConfigTopic, "topic1")
+	utCardanoconnectConf.Set(wsclient.WSConfigKeyInitialConnectAttempts, 1)
+
+	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
+	assert.NoError(t, err)
+
+	err = c.StartNamespace(c.ctx, "ns1")
+	assert.Regexp(t, "FF00148", err)
+}
+
+func TestStartStopNamespace(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+
+	toServer, _, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+
+	resetConf(c)
+	utCardanoconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utCardanoconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utCardanoconnectConf.Set(CardanoconnectConfigTopic, "topic1")
+
+	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
+	assert.NoError(t, err)
+
+	err = c.StartNamespace(c.ctx, "ns1")
+	assert.NoError(t, err)
+
+	<-toServer
+
+	err = c.StopNamespace(c.ctx, "ns1")
 	assert.NoError(t, err)
 }
 
@@ -287,11 +370,12 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	c, cancel := newTestCardano()
 	cancel()
 	r := make(<-chan []byte)
-	wsm := c.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
 	wsm.On("Receive").Return(r)
 	wsm.On("Close").Return()
-	c.closed = make(chan struct{})
-	c.eventLoop()
+	c.closed["ns1"] = make(chan struct{})
+	c.eventLoop("ns1")
 	wsm.AssertExpectations(t)
 }
 
@@ -300,12 +384,13 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	defer cancel()
 
 	r := make(chan []byte)
-	wsm := c.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
 	close(r)
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
-	c.closed = make(chan struct{})
-	c.eventLoop()
+	c.closed["ns1"] = make(chan struct{})
+	c.eventLoop("ns1")
 	wsm.AssertExpectations(t)
 }
 
@@ -314,15 +399,16 @@ func TestEventLoopSendFailed(t *testing.T) {
 	defer cancel()
 
 	r := make(chan []byte)
-	wsm := c.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
 	wsm.On("Send", mock.Anything, mock.Anything).Return(errors.New("Send error"))
-	c.closed = make(chan struct{})
+	c.closed["ns1"] = make(chan struct{})
 
-	go c.eventLoop()
+	go c.eventLoop("ns1")
 	r <- []byte(`{"batchNumber":9001,"events":["none"]}`)
-	<-c.closed
+	<-c.closed["ns1"]
 }
 
 func TestEventLoopBadMessage(t *testing.T) {
@@ -330,12 +416,13 @@ func TestEventLoopBadMessage(t *testing.T) {
 	defer cancel()
 
 	r := make(chan []byte)
-	wsm := c.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Close").Return()
-	c.closed = make(chan struct{})
+	c.closed["ns1"] = make(chan struct{})
 
-	go c.eventLoop()
+	go c.eventLoop("ns1")
 	r <- []byte(`!badjson`)        // ignored bad json
 	r <- []byte(`"not an object"`) // ignored wrong type
 }
@@ -353,15 +440,16 @@ func TestEventLoopReceiveBatch(t *testing.T) {
 
 	r := make(chan []byte)
 	s := make(chan []byte)
-	wsm := c.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		bytes, _ := args.Get(1).([]byte)
 		s <- bytes
 	}).Return(nil)
 	wsm.On("Close").Return()
-	c.streamID = "es12345"
-	c.closed = make(chan struct{})
+	c.streamIDs["ns1"] = "es12345"
+	c.closed["ns1"] = make(chan struct{})
 
 	client := resty.NewWithClient(mockedClient)
 	client.SetBaseURL("http://localhost:12345")
@@ -391,21 +479,21 @@ func TestEventLoopReceiveBatch(t *testing.T) {
 	}`)
 
 	em := &blockchainmocks.Callbacks{}
-	c.SetHandler("default", em)
+	c.SetHandler("ns1", em)
 	em.On("BlockchainEventBatch", mock.MatchedBy(func(events []*blockchain.EventToDispatch) bool {
 		return len(events) == 1 &&
 			events[0].Type == blockchain.EventTypeForListener &&
 			events[0].ForListener.ListenerID == "lst12345"
 	})).Return(nil)
 
-	go c.eventLoop()
+	go c.eventLoop("ns1")
 
 	r <- data
 	response := <-s
 	var parsed cardanoWSCommandPayload
 	err := json.Unmarshal(response, &parsed)
 	assert.NoError(t, err)
-	assert.Equal(t, c.pluginTopic, parsed.Topic)
+	assert.Equal(t, "topic1/ns1", parsed.Topic)
 	assert.Equal(t, int64(1337), parsed.BatchNumber)
 	assert.Equal(t, "ack", parsed.Type)
 }
@@ -430,15 +518,16 @@ func TestEventLoopReceiveBadBatch(t *testing.T) {
 
 	r := make(chan []byte)
 	s := make(chan []byte)
-	wsm := c.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		bytes, _ := args.Get(1).([]byte)
 		s <- bytes
 	}).Return(nil)
 	wsm.On("Close").Return()
-	c.streamID = "es12345"
-	c.closed = make(chan struct{})
+	c.streamIDs["ns1"] = "es12345"
+	c.closed["ns1"] = make(chan struct{})
 
 	data := []byte(`{
 		"batchNumber": 1337,
@@ -460,21 +549,21 @@ func TestEventLoopReceiveBadBatch(t *testing.T) {
 	}`)
 
 	em := &blockchainmocks.Callbacks{}
-	c.SetHandler("default", em)
+	c.SetHandler("ns1", em)
 	em.On("BlockchainEventBatch", mock.MatchedBy(func(events []*blockchain.EventToDispatch) bool {
 		return len(events) == 1 &&
 			events[0].Type == blockchain.EventTypeForListener &&
 			events[0].ForListener.ListenerID == "lst12345"
 	})).Return(errors.New("My Error Message"))
 
-	go c.eventLoop()
+	go c.eventLoop("ns1")
 
 	r <- data
 	response := <-s
 	var parsed cardanoWSCommandPayload
 	err := json.Unmarshal(response, &parsed)
 	assert.NoError(t, err)
-	assert.Equal(t, c.pluginTopic, parsed.Topic)
+	assert.Equal(t, "topic1/ns1", parsed.Topic)
 	assert.Equal(t, int64(1337), parsed.BatchNumber)
 	assert.Equal(t, "error", parsed.Type)
 	assert.Equal(t, "My Error Message", parsed.Message)
@@ -484,48 +573,20 @@ func TestEventLoopReceiveMalformedBatch(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
 
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams/es12345/listeners/lst12345",
-		httpmock.NewJsonResponderOrPanic(200, listener{ID: "lst12345", Name: "ff-sub-default-12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams/es12345/listeners/",
-		httpmock.NewStringResponder(404, "Not Found"))
-	client := resty.NewWithClient(mockedClient)
-	client.SetBaseURL("http://localhost:12345")
-	c.streams = &streamManager{
-		client:       client,
-		batchSize:    500,
-		batchTimeout: 10000,
-	}
-
 	r := make(chan []byte)
 	s := make(chan []byte)
-	wsm := c.wsconn.(*wsmocks.WSClient)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		bytes, _ := args.Get(1).([]byte)
 		s <- bytes
 	}).Return(nil)
 	wsm.On("Close").Return()
-	c.streamID = "es12345"
-	c.closed = make(chan struct{})
+	c.streamIDs["ns1"] = "es12345"
+	c.closed["ns1"] = make(chan struct{})
 
-	go c.eventLoop()
-
-	r <- []byte(`{
-		"batchNumber": 1337,
-		"events": [{}]
-	}`)
-	response := <-s
-	var parsed cardanoWSCommandPayload
-	err := json.Unmarshal(response, &parsed)
-	assert.NoError(t, err)
-	assert.Equal(t, c.pluginTopic, parsed.Topic)
-	assert.Equal(t, int64(1337), parsed.BatchNumber)
-	assert.Equal(t, "error", parsed.Type)
-	assert.Regexp(t, "FF10282.*Not Found", parsed.Message)
+	go c.eventLoop("ns1")
 
 	r <- []byte(`{
 		"batchNumber": 1338,
@@ -547,13 +608,59 @@ func TestEventLoopReceiveMalformedBatch(t *testing.T) {
 			}
 		]
 	}`)
-	response = <-s
-	err = json.Unmarshal(response, &parsed)
+	response := <-s
+	var parsed cardanoWSCommandPayload
+	err := json.Unmarshal(response, &parsed)
 	assert.NoError(t, err)
-	assert.Equal(t, c.pluginTopic, parsed.Topic)
+	assert.Equal(t, "topic1/ns1", parsed.Topic)
 	assert.Equal(t, int64(1338), parsed.BatchNumber)
 	assert.Equal(t, "ack", parsed.Type)
 }
+
+func TestEventLoopReceiveReceipt(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+
+	r := make(chan []byte)
+	s := make(chan []byte)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
+	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		bytes, _ := args.Get(1).([]byte)
+		s <- bytes
+	}).Return(nil)
+	wsm.On("Close").Return()
+	c.streamIDs["ns1"] = "es12345"
+	c.closed["ns1"] = make(chan struct{})
+
+	tm := &coremocks.OperationCallbacks{}
+	c.SetOperationHandler("ns1", tm)
+	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+		return update.NamespacedOpID == "ns1:5678" &&
+			update.Status == core.OpStatusSucceeded &&
+			update.BlockchainTXID == "txHash" &&
+			update.Plugin == "cardano"
+	})).Return(nil)
+
+	go c.eventLoop("ns1")
+
+	// start by sending an invalid receipt, which it should ignore
+	r <- []byte(`{
+		"headers": {
+		  "requestId": "ns1:1234"
+		}
+	}`)
+	// then sand a valid receipt, which it should acknowledge
+	r <- []byte(`{
+		"headers": {
+		  "requestId": "ns1:5678",
+		  "replyType": "TransactionSuccess"
+		},
+		"transactionHash": "txHash"
+	}`)
+}
+
 func TestSubmitBatchPinNotSupported(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
@@ -567,12 +674,11 @@ func TestAddContractListener(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(c.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	c.streamID = "es-1"
-	c.streams = &streamManager{
-		client: c.client,
-	}
+	c.streamIDs["ns1"] = "es-1"
 
 	sub := &core.ContractListener{
+		Name:      "sample",
+		Namespace: "ns1",
 		Filters: []*core.ListenerFilter{
 			{
 				Event: &core.FFISerializedEvent{
@@ -598,17 +704,36 @@ func TestAddContractListener(t *testing.T) {
 	assert.Equal(t, "new-id", sub.BackendID)
 }
 
+func TestAddContractListenerNoFilter(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+	httpmock.ActivateNonDefault(c.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	c.streamIDs["ns1"] = "es-1"
+
+	sub := &core.ContractListener{
+		Name:      "sample",
+		Namespace: "ns1",
+		Filters:   []*core.ListenerFilter{},
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
+		},
+	}
+
+	err := c.AddContractListener(context.Background(), sub, "")
+	assert.Regexp(t, "FF10475", err)
+}
+
 func TestAddContractListenerBadLocation(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
 	httpmock.ActivateNonDefault(c.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	c.streamID = "es-1"
-	c.streams = &streamManager{
-		client: c.client,
-	}
+	c.streamIDs["ns1"] = "es-1"
 
 	sub := &core.ContractListener{
+		Name:      "Sample",
+		Namespace: "ns1",
 		Filters: []*core.ListenerFilter{
 			{
 				Event: &core.FFISerializedEvent{
@@ -637,12 +762,10 @@ func TestDeleteContractListener(t *testing.T) {
 	httpmock.ActivateNonDefault(c.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	c.streamID = "es-1"
-	c.streams = &streamManager{
-		client: c.client,
-	}
+	c.streamIDs["ns1"] = "es-1"
 
 	sub := &core.ContractListener{
+		Namespace: "ns1",
 		BackendID: "sb-1",
 	}
 
@@ -659,12 +782,10 @@ func TestDeleteContractListenerFail(t *testing.T) {
 	httpmock.ActivateNonDefault(c.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	c.streamID = "es-1"
-	c.streams = &streamManager{
-		client: c.client,
-	}
+	c.streamIDs["ns1"] = "es-1"
 
 	sub := &core.ContractListener{
+		Namespace: "ns1",
 		BackendID: "sb-1",
 	}
 
@@ -681,10 +802,7 @@ func TestGetContractListenerStatus(t *testing.T) {
 	httpmock.ActivateNonDefault(c.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	c.streamID = "es-1"
-	c.streams = &streamManager{
-		client: c.client,
-	}
+	c.streamIDs["ns1"] = "es-1"
 
 	httpmock.RegisterResponder("GET", `http://localhost:12345/eventstreams/es-1/listeners/sb-1`,
 		httpmock.NewJsonResponderOrPanic(200, &listener{ID: "sb-1", Name: "something"}))
@@ -701,10 +819,7 @@ func TestGetContractListenerStatusNotFound(t *testing.T) {
 	httpmock.ActivateNonDefault(c.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	c.streamID = "es-1"
-	c.streams = &streamManager{
-		client: c.client,
-	}
+	c.streamIDs["ns1"] = "es-1"
 
 	httpmock.RegisterResponder("GET", `http://localhost:12345/eventstreams/es-1/listeners/sb-1`,
 		httpmock.NewStringResponder(404, "no"))
@@ -721,10 +836,7 @@ func TestGetContractListenerErrorNotFound(t *testing.T) {
 	httpmock.ActivateNonDefault(c.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	c.streamID = "es-1"
-	c.streams = &streamManager{
-		client: c.client,
-	}
+	c.streamIDs["ns1"] = "es-1"
 
 	httpmock.RegisterResponder("GET", `http://localhost:12345/eventstreams/es-1/listeners/sb-1`,
 		httpmock.NewStringResponder(404, "no"))
@@ -943,12 +1055,7 @@ func TestAddFireflySubscriptionBadLocation(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, &[]listener{}))
 	client := resty.NewWithClient(mockedClient)
 	client.SetBaseURL("http://localhost:12345")
-	c.streamID = "es12345"
-	c.streams = &streamManager{
-		client:       client,
-		batchSize:    500,
-		batchTimeout: 10000,
-	}
+	c.streamIDs["ns1"] = "es12345"
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"bad": "bad",
@@ -979,9 +1086,9 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 	httpURL := u.String()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: c.pluginTopic}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: c.pluginTopic}))
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: "topic1/ns1"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams/es12345/listeners", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []listener{}))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams/es12345/listeners", httpURL),
@@ -994,8 +1101,10 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
 	assert.NoError(t, err)
+	err = c.StartNamespace(c.ctx, "ns1")
+	assert.NoError(t, err)
 	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	assert.Equal(t, `{"type":"listen","topic":"topic1/ns1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
 
@@ -1032,9 +1141,9 @@ func TestAddFireflySubscriptionListError(t *testing.T) {
 	httpURL := u.String()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: c.pluginTopic}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: c.pluginTopic}))
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: "topic1/ns1"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams/es12345/listeners", httpURL),
 		httpmock.NewStringResponder(500, "whoopsies"))
 
@@ -1045,8 +1154,10 @@ func TestAddFireflySubscriptionListError(t *testing.T) {
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
 	assert.NoError(t, err)
+	err = c.StartNamespace(c.ctx, "ns1")
+	assert.NoError(t, err)
 	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	assert.Equal(t, `{"type":"listen","topic":"topic1/ns1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
 
@@ -1079,9 +1190,9 @@ func TestAddFireflySubscriptionAlreadyExists(t *testing.T) {
 	httpURL := u.String()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: c.pluginTopic}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: c.pluginTopic}))
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: "topic1/ns1"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams/es12345/listeners", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []listener{{ID: "lst12345", Name: "ns1_2_BatchPin"}}))
 
@@ -1092,8 +1203,9 @@ func TestAddFireflySubscriptionAlreadyExists(t *testing.T) {
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
 	assert.NoError(t, err)
+	err = c.StartNamespace(c.ctx, "ns1")
 	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	assert.Equal(t, `{"type":"listen","topic":"topic1/ns1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
 
@@ -1127,9 +1239,9 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	httpURL := u.String()
 
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: c.pluginTopic}}))
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", Name: "topic1/ns1"}}))
 	httpmock.RegisterResponder("PATCH", fmt.Sprintf("%s/eventstreams/es12345", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: c.pluginTopic}))
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345", Name: "topic1/ns1"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams/es12345/listeners", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []listener{}))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams/es12345/listeners", httpURL),
@@ -1142,8 +1254,10 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 
 	err := c.Init(c.ctx, c.cancelCtx, utConfig, c.metrics, &cachemocks.Manager{})
 	assert.NoError(t, err)
+	err = c.StartNamespace(c.ctx, "ns1")
+	assert.NoError(t, err)
 	startupMessage := <-toServer
-	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	assert.Equal(t, `{"type":"listen","topic":"topic1/ns1"}`, startupMessage)
 	startupMessage = <-toServer
 	assert.Equal(t, `{"type":"listenreplies"}`, startupMessage)
 

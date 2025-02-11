@@ -57,9 +57,10 @@ type Cardano struct {
 	callbacks          common.BlockchainCallbacks
 	client             *resty.Client
 	streams            *streamManager
-	streamID           string
-	closed             chan struct{}
-	wsconn             wsclient.WSClient
+	streamIDs          map[string]string
+	closed             map[string]chan struct{}
+	wsconns            map[string]wsclient.WSClient
+	wsConfig           *wsclient.WSConfig
 	cardanoconnectConf config.Section
 	subs               common.FireflySubscriptions
 }
@@ -105,7 +106,7 @@ func (c *Cardano) Init(ctx context.Context, cancelCtx context.CancelFunc, conf c
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", cardanoconnectConf)
 	}
 
-	wsConfig, err := wsclient.GenerateConfig(ctx, cardanoconnectConf)
+	c.wsConfig, err = wsclient.GenerateConfig(ctx, cardanoconnectConf)
 	if err == nil {
 		c.client, err = ffresty.New(c.ctx, cardanoconnectConf)
 	}
@@ -119,37 +120,74 @@ func (c *Cardano) Init(ctx context.Context, cancelCtx context.CancelFunc, conf c
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.cardano.cardanoconnect")
 	}
 
-	if wsConfig.WSKeyPath == "" {
-		wsConfig.WSKeyPath = "/ws"
-	}
-	c.wsconn, err = wsclient.New(ctx, wsConfig, nil, c.afterConnect)
-	if err != nil {
-		return err
+	if c.wsConfig.WSKeyPath == "" {
+		c.wsConfig.WSKeyPath = "/ws"
 	}
 
+	c.streamIDs = make(map[string]string)
+	c.closed = make(map[string]chan struct{})
+	c.wsconns = make(map[string]wsclient.WSClient)
 	c.streams = newStreamManager(c.client, c.cardanoconnectConf.GetUint(CardanoconnectConfigBatchSize), uint(c.cardanoconnectConf.GetDuration(CardanoconnectConfigBatchTimeout).Milliseconds()))
 
-	stream, err := c.streams.ensureEventStream(c.ctx, c.pluginTopic)
-	if err != nil {
-		return err
-	}
+	return nil
+}
 
-	log.L(c.ctx).Infof("Event stream: %s (topic=%s)", stream.ID, c.pluginTopic)
-	c.streamID = stream.ID
-
-	c.closed = make(chan struct{})
-	go c.eventLoop()
-
-	return c.wsconn.Connect()
+func (c *Cardano) getTopic(namespace string) string {
+	return fmt.Sprintf("%s/%s", c.pluginTopic, namespace)
 }
 
 func (c *Cardano) StartNamespace(ctx context.Context, namespace string) (err error) {
-	// TODO: Implement
+	logger := log.L(c.ctx)
+	logger.Debugf("Starting namespace: %s", namespace)
+	topic := c.getTopic(namespace)
+
+	c.wsconns[namespace], err = wsclient.New(ctx, c.wsConfig, nil, func(ctx context.Context, w wsclient.WSClient) error {
+		b, _ := json.Marshal(&cardanoWSCommandPayload{
+			Type:  "listen",
+			Topic: topic,
+		})
+		err := w.Send(ctx, b)
+		if err == nil {
+			b, _ = json.Marshal(&cardanoWSCommandPayload{
+				Type: "listenreplies",
+			})
+			err = w.Send(ctx, b)
+		}
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	// Ensure that our event stream is in place
+	stream, err := c.streams.ensureEventStream(ctx, topic)
+	if err != nil {
+		return err
+	}
+	logger.Infof("Event stream: %s (topic=%s)", stream.ID, topic)
+	c.streamIDs[namespace] = stream.ID
+
+	err = c.wsconns[namespace].Connect()
+	if err != nil {
+		return err
+	}
+
+	c.closed[namespace] = make(chan struct{})
+
+	go c.eventLoop(namespace)
+
 	return nil
 }
 
 func (c *Cardano) StopNamespace(ctx context.Context, namespace string) (err error) {
-	// TODO: Implement
+	wsconn, ok := c.wsconns[namespace]
+	if ok {
+		wsconn.Close()
+	}
+	delete(c.wsconns, namespace)
+	delete(c.streamIDs, namespace)
+	delete(c.closed, namespace)
+
 	return nil
 }
 
@@ -173,7 +211,7 @@ func (c *Cardano) AddFireflySubscription(ctx context.Context, namespace *core.Na
 
 	version, _ := c.GetNetworkVersion(ctx, contract.Location)
 
-	l, err := c.streams.ensureFireFlyListener(ctx, namespace.Name, version, location.Address, contract.FirstEvent, c.streamID)
+	l, err := c.streams.ensureFireFlyListener(ctx, namespace.Name, version, location.Address, contract.FirstEvent, c.streamIDs[namespace.Name])
 	if err != nil {
 		return "", err
 	}
@@ -323,7 +361,13 @@ func (c *Cardano) encodeContractLocation(_ context.Context, location *Location) 
 }
 
 func (c *Cardano) AddContractListener(ctx context.Context, listener *core.ContractListener, lastProtocolID string) (err error) {
-	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
+	namespace := listener.Namespace
+
+	if len(listener.Filters) == 0 {
+		return i18n.NewError(ctx, coremsgs.MsgFiltersEmpty, listener.Name)
+	}
+
+	subName := fmt.Sprintf("ff-sub-%s-%s", namespace, listener.ID)
 	firstEvent := string(core.SubOptsFirstEventNewest)
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent
@@ -343,17 +387,17 @@ func (c *Cardano) AddContractListener(ctx context.Context, listener *core.Contra
 		})
 	}
 
-	result, err := c.streams.createListener(ctx, c.streamID, subName, firstEvent, filters)
+	result, err := c.streams.createListener(ctx, c.streamIDs[namespace], subName, firstEvent, filters)
 	listener.BackendID = result.ID
 	return err
 }
 
 func (c *Cardano) DeleteContractListener(ctx context.Context, subscription *core.ContractListener, okNotFound bool) error {
-	return c.streams.deleteListener(ctx, c.streamID, subscription.BackendID)
+	return c.streams.deleteListener(ctx, c.streamIDs[subscription.Namespace], subscription.BackendID)
 }
 
 func (c *Cardano) GetContractListenerStatus(ctx context.Context, namespace, subID string, okNotFound bool) (found bool, detail interface{}, status core.ContractListenerStatus, err error) {
-	l, err := c.streams.getListener(ctx, c.streamID, subID, okNotFound)
+	l, err := c.streams.getListener(ctx, c.streamIDs[namespace], subID, okNotFound)
 	if err != nil || l == nil {
 		return false, nil, core.ContractListenerStatusUnknown, err
 	}
@@ -459,22 +503,6 @@ func (c *Cardano) GetTransactionStatus(ctx context.Context, operation *core.Oper
 	return statusResponse, nil
 }
 
-func (c *Cardano) afterConnect(ctx context.Context, w wsclient.WSClient) error {
-	// Send a subscribe to our topic after each connect/reconnect
-	b, _ := json.Marshal(&cardanoWSCommandPayload{
-		Type:  "listen",
-		Topic: c.pluginTopic,
-	})
-	err := w.Send(ctx, b)
-	if err == nil {
-		b, _ = json.Marshal(&cardanoWSCommandPayload{
-			Type: "listenreplies",
-		})
-		err = w.Send(ctx, b)
-	}
-	return err
-}
-
 func (c *Cardano) recoverFFI(ctx context.Context, parsedMethod interface{}) (*fftypes.FFIMethod, []*fftypes.FFIError, error) {
 	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
 	if !ok || methodInfo.method == nil || methodInfo.method.Name == "" {
@@ -483,9 +511,13 @@ func (c *Cardano) recoverFFI(ctx context.Context, parsedMethod interface{}) (*ff
 	return methodInfo.method, methodInfo.errors, nil
 }
 
-func (c *Cardano) eventLoop() {
-	defer c.wsconn.Close()
-	defer close(c.closed)
+func (c *Cardano) eventLoop(namespace string) {
+	topic := c.getTopic(namespace)
+	wsconn := c.wsconns[namespace]
+	closed := c.closed[namespace]
+
+	defer wsconn.Close()
+	defer close(closed)
 	l := log.L(c.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(c.ctx, l)
 	for {
@@ -493,7 +525,7 @@ func (c *Cardano) eventLoop() {
 		case <-ctx.Done():
 			l.Debugf("Event loop exiting (context cancelled)")
 			return
-		case msgBytes, ok := <-c.wsconn.Receive():
+		case msgBytes, ok := <-wsconn.Receive():
 			if !ok {
 				l.Debugf("Event loop exiting (receive channel closed). Terminating server!")
 				c.cancelCtx()
@@ -508,13 +540,13 @@ func (c *Cardano) eventLoop() {
 			}
 			switch msgTyped := msgParsed.(type) {
 			case []interface{}:
-				err = c.handleMessageBatch(ctx, 0, msgTyped)
+				err = c.handleMessageBatch(ctx, namespace, 0, msgTyped)
 				if err == nil {
 					ack, _ := json.Marshal(&cardanoWSCommandPayload{
 						Type:  "ack",
-						Topic: c.pluginTopic,
+						Topic: topic,
 					})
-					err = c.wsconn.Send(ctx, ack)
+					err = wsconn.Send(ctx, ack)
 				}
 			case map[string]interface{}:
 				isBatch := false
@@ -522,10 +554,10 @@ func (c *Cardano) eventLoop() {
 					if events, ok := msgTyped["events"].([]interface{}); ok {
 						// FFTM delivery with a batch number to use in the ack
 						isBatch = true
-						err = c.handleMessageBatch(ctx, (int64)(batchNumber), events)
+						err = c.handleMessageBatch(ctx, namespace, (int64)(batchNumber), events)
 						// Errors processing messages are converted into nacks
 						ackOrNack := &cardanoWSCommandPayload{
-							Topic:       c.pluginTopic,
+							Topic:       topic,
 							BatchNumber: int64(batchNumber),
 						}
 						if err == nil {
@@ -536,14 +568,14 @@ func (c *Cardano) eventLoop() {
 							ackOrNack.Message = err.Error()
 						}
 						b, _ := json.Marshal(&ackOrNack)
-						err = c.wsconn.Send(ctx, b)
+						err = wsconn.Send(ctx, b)
 					}
 				}
 				if !isBatch {
 					var receipt common.BlockchainReceiptNotification
 					_ = json.Unmarshal(msgBytes, &receipt)
 
-					err := common.HandleReceipt(ctx, "", c, &receipt, c.callbacks)
+					err := common.HandleReceipt(ctx, namespace, c, &receipt, c.callbacks)
 					if err != nil {
 						l.Errorf("Failed to process receipt: %+v", msgTyped)
 					}
@@ -562,7 +594,7 @@ func (c *Cardano) eventLoop() {
 	}
 }
 
-func (c *Cardano) handleMessageBatch(ctx context.Context, batchID int64, messages []interface{}) error {
+func (c *Cardano) handleMessageBatch(ctx context.Context, namespace string, batchID int64, messages []interface{}) error {
 	events := make(common.EventsToDispatch)
 	count := len(messages)
 	for i, msgI := range messages {
@@ -578,9 +610,7 @@ func (c *Cardano) handleMessageBatch(ctx context.Context, batchID int64, message
 		logger := log.L(ctx)
 		logger.Infof("[Cardano:%d:%d/%d]: '%s'", batchID, i+1, count, signature)
 		logger.Tracef("Message: %+v", msgJSON)
-		if err := c.processContractEvent(ctx, events, msgJSON); err != nil {
-			return err
-		}
+		c.processContractEvent(ctx, namespace, events, msgJSON)
 	}
 
 	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
@@ -588,13 +618,8 @@ func (c *Cardano) handleMessageBatch(ctx context.Context, batchID int64, message
 	return c.callbacks.DispatchBlockchainEvents(ctx, events)
 }
 
-func (c *Cardano) processContractEvent(ctx context.Context, events common.EventsToDispatch, msgJSON fftypes.JSONObject) error {
+func (c *Cardano) processContractEvent(ctx context.Context, namespace string, events common.EventsToDispatch, msgJSON fftypes.JSONObject) {
 	listenerID := msgJSON.GetString("listenerId")
-	listener, err := c.streams.getListener(ctx, c.streamID, listenerID, false)
-	if err != nil {
-		return err
-	}
-	namespace := common.GetNamespaceFromSubName(listener.Name)
 	event := c.parseBlockchainEvent(ctx, msgJSON)
 	if event != nil {
 		c.callbacks.PrepareBlockchainEvent(ctx, events, namespace, &blockchain.EventForListener{
@@ -602,7 +627,6 @@ func (c *Cardano) processContractEvent(ctx context.Context, events common.Events
 			ListenerID: listenerID,
 		})
 	}
-	return nil
 }
 
 func (c *Cardano) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONObject) *blockchain.Event {
