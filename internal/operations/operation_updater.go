@@ -120,6 +120,7 @@ func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, upda
 		updates := validUpdates
 		// This retries forever until there is no error
 		// but returns on cancelled context
+		// TODO limit to 200 writes per batch as today for the workers??
 		err := ou.doBatchUpdateWithRetry(ctx, updates)
 		if err != nil {
 			log.L(ctx).Warnf("Exiting while updating operation: %s", err)
