@@ -15,7 +15,7 @@ type OperationCallbacks struct {
 }
 
 // BulkOperationUpdates provides a mock function with given fields: ctx, updates, onCommit
-func (_m *OperationCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- bool) {
+func (_m *OperationCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error) {
 	_m.Called(ctx, updates, onCommit)
 }
 

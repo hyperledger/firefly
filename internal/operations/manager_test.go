@@ -765,7 +765,7 @@ func TestSubmitBulkOperationUpdates(t *testing.T) {
 	}
 
 	// Create a channel to receive the onCommit signal
-	onCommit := make(chan bool, 1)
+	onCommit := make(chan error, 1)
 	go om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate, submittedUpdate2}, onCommit)
 
 	update := <-om.updater.workQueues[0]
@@ -779,5 +779,6 @@ func TestSubmitBulkOperationUpdates(t *testing.T) {
 	update2.OnComplete()
 
 	// Wait for oncommit signal
-	<-onCommit
+	err := <-onCommit
+	assert.NoError(t, err)
 }

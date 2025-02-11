@@ -269,7 +269,7 @@ func (_m *Manager) Start() error {
 }
 
 // SubmitBulkOperationUpdates provides a mock function with given fields: ctx, updates, onCommit
-func (_m *Manager) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- bool) {
+func (_m *Manager) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error) {
 	_m.Called(ctx, updates, onCommit)
 }
 

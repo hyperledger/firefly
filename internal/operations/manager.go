@@ -47,7 +47,7 @@ type Manager interface {
 	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (total int, resubmit []*core.Operation, err error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error
-	SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- bool)
+	SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error)
 	SubmitOperationUpdate(update *core.OperationUpdate)
 	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
@@ -79,7 +79,7 @@ type operationsManager struct {
 }
 
 // SubmitBulkOperationUpdate implements Manager.
-func (om *operationsManager) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- bool) {
+func (om *operationsManager) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error) {
 	for _, update := range updates {
 		errString := ""
 		if update.ErrorMessage != "" {

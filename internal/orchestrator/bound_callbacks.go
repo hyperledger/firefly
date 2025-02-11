@@ -41,7 +41,7 @@ func (bc *boundCallbacks) checkStopped() error {
 	return nil
 }
 
-func (bc *boundCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- bool) {
+func (bc *boundCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error) {
 	bc.o.operations.SubmitBulkOperationUpdates(ctx, updates, onCommit)
 }
 

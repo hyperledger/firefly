@@ -44,7 +44,7 @@ type BlockchainCallbacks interface {
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
 	// BulkOperationUpdates is a way to update multiple operations and get notified when the updates have been committed to the database
-	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- bool)
+	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- error)
 
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 	// Common logic for parsing a BatchPinOrNetworkAction event, and if not discarded to add it to the by-namespace map
@@ -68,7 +68,7 @@ type callbacks struct {
 }
 
 // BulkOperationUpdates implements BlockchainCallbacks.
-func (cb *callbacks) BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- bool) {
+func (cb *callbacks) BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- error) {
 	if handler, ok := cb.opHandlers[namespace]; ok {
 		handler.BulkOperationUpdates(ctx, updates, onCommit)
 		return
