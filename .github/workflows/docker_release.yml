@@ -4,13 +4,14 @@ on:
   release:
     types: [released, prereleased]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
    
   docker:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
