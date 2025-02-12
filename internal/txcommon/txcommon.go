@@ -146,7 +146,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, txType cor
 	return tx.ID, nil
 }
 
-// SubmitTransactionBatch is called to do a batch insertion of a set of transactions, and returns an array of the transaction
+// SubmitNewTransactionBatch is called to do a batch insertion of a set of transactions, and returns an array of the transaction
 // result. Each is either a transaction, or an idempotency failure. The overall action fails for DB errors other than idempotency.
 func (t *transactionHelper) SubmitNewTransactionBatch(ctx context.Context, namespace string, batch []*BatchedTransactionInsert) error {
 
