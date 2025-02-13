@@ -76,7 +76,7 @@ ARG UI_RELEASE
 RUN apk add --update --no-cache \
     sqlite=3.44.2-r0 \
     postgresql16-client=16.6-r0 \
-    curl=8.11.1-r0 \
+    curl=8.11.1-r1 \
     jq=1.7.1-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
