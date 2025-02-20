@@ -2,7 +2,7 @@ name: Go
 
 on:
   push:
-    branches: [main]
+    branches: [main] 
     paths:
       - '**'  # include all files
       - '!.github/**' # exclude .github directory
@@ -17,6 +17,9 @@ on:
       - 'doc-site/docs/reference/**.md' # include markdown files that are auto generated and need to be tested
 
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
