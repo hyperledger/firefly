@@ -182,20 +182,6 @@ func TestStartMetricsFail(t *testing.T) {
 	assert.Regexp(t, "FF00151", err)
 }
 
-func TestMonitoringServerRoutes(t *testing.T) {
-	_, _, as := newTestServer()
-	s := httptest.NewServer(as.createMonitoringMuxRouter())
-	defer s.Close()
-
-	res, err := http.Get(fmt.Sprintf("http://%s/livez", s.Listener.Addr()))
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode)
-
-	res, err = http.Get(fmt.Sprintf("http://%s/metrics", s.Listener.Addr()))
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode)
-}
-
 func TestNotFound(t *testing.T) {
 	_, _, as := newTestServer()
 	handler := as.handlerFactory().APIWrapper(as.notFoundHandler)
@@ -588,4 +574,18 @@ func TestContractAPIDefaultNS(t *testing.T) {
 		Get(fmt.Sprintf("http://%s/api/v1/apis", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode())
+}
+
+func TestMonitoringServerRoutes(t *testing.T) {
+	_, _, as := newTestServer()
+	s := httptest.NewServer(as.createMonitoringMuxRouter())
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/livez", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get(fmt.Sprintf("http://%s/metrics", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
 }
