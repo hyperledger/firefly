@@ -221,18 +221,10 @@ func (p *Paladin) batchEventLoop(namespace string, sub rpcclient.Subscription) {
 
 			if len(updates) > 0 {
 				// We have a batch of operation updates
-				onCommit := make(chan error, 1)
-				p.callbacks.BulkOperationUpdates(ctx, namespace, updates, onCommit)
-				// Wait for the operations to be commit to the DB before acknowledging the batch
-				// Add timeout!
-				select {
-				case <-ctx.Done():
-					return
-				case err := <-onCommit:
-					if err != nil {
-						l.Errorf("Failed to commit batch updates: %s", err.Error())
-						continue
-					}
+				err := p.callbacks.BulkOperationUpdates(ctx, namespace, updates)
+				if err != nil {
+					l.Errorf("Failed to commit batch updates: %s", err.Error())
+					continue
 				}
 			}
 
