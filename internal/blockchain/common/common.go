@@ -43,8 +43,10 @@ type BlockchainCallbacks interface {
 	SetHandler(namespace string, handler blockchain.Callbacks)
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
-	// BulkOperationUpdates is a way to update multiple operations and get notified when the updates have been committed to the database
-	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- error)
+	// BulkOperationUpdates is a synchronous way to update multiple operations and will return when the updates have been committed to the database or there has been an error
+	// An insertion ordering guarantee is only provided when this code is called on a single goroutine inside of the connector.
+	// It is the responsibility of the connector code to allocate that routine, and ensure that there is only one.
+	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate) error
 
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 	// Common logic for parsing a BatchPinOrNetworkAction event, and if not discarded to add it to the by-namespace map
@@ -68,13 +70,14 @@ type callbacks struct {
 }
 
 // BulkOperationUpdates implements BlockchainCallbacks.
-func (cb *callbacks) BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate, onCommit chan<- error) {
+func (cb *callbacks) BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate) error {
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.BulkOperationUpdates(ctx, updates, onCommit)
-		return
+		return handler.BulkOperationUpdates(ctx, updates)
 	}
-	// Need to clean this up
-	log.L(ctx).Errorf("No handler found for namespace '%s'", namespace)
+	// We don't want to error as it just means this update was not for this namespace
+	// This is unlikely to happen in practice, as the namespace is always passed in the operation handler
+	log.L(ctx).Errorf("No operation handler found for namespace '%s'", namespace)
+	return nil
 }
 
 type subscriptions struct {

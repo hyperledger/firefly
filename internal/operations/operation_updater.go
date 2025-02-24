@@ -94,7 +94,7 @@ func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, up
 }
 
 // SubmitBulkOperationUpdates will wait for the commit to DB before calling the onCommit
-func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error) {
+func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error {
 	validUpdates := []*core.OperationUpdate{}
 	for _, update := range updates {
 		ns, _, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
@@ -114,45 +114,15 @@ func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, upda
 	// Notice how this is not using the workers
 	// The reason is because we want for all updates to be stored at once in this order
 	// If offloaded into workers the updates would be processed in parallel, in different DB TX and in a different order
-	go func() {
-		// Copy of the array
-		// TODO make this a deep copy
-		updates := validUpdates
 
-		// This retries forever until there is no error
-		// but returns on cancelled context
-		if len(updates) > ou.conf.maxInserts {
-			// Split the batch into smaller chunks
-			for i := 0; i < len(updates); i += ou.conf.maxInserts {
-				end := i + ou.conf.maxInserts
-				if end > len(updates) {
-					end = len(updates)
-				}
-				err := ou.doBatchUpdateWithRetry(ctx, updates[i:end])
-				if err != nil {
-					log.L(ctx).Warnf("Exiting while updating operations: %s", err)
-					if onCommit != nil {
-						onCommit <- err
-					}
-					return
-				}
-			}
-		} else {
-			// Less than the max inserts, just do it in one go
-			err := ou.doBatchUpdateWithRetry(ctx, updates)
-			if err != nil {
-				log.L(ctx).Warnf("Exiting while updating operation: %s", err)
-				if onCommit != nil {
-					onCommit <- err
-				}
-				return
-			}
-		}
-		// Batch has been updated correctly
-		if onCommit != nil {
-			onCommit <- nil
-		}
-	}()
+	// This retries forever until there is no error
+	err := ou.doBatchUpdateWithRetry(ctx, updates)
+	if err != nil {
+		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
+		return err
+	}
+
+	return nil
 }
 
 func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *core.OperationUpdate) {

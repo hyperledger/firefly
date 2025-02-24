@@ -47,7 +47,7 @@ type Manager interface {
 	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (total int, resubmit []*core.Operation, err error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error
-	SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error)
+	SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error
 	SubmitOperationUpdate(update *core.OperationUpdate)
 	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
@@ -79,7 +79,7 @@ type operationsManager struct {
 }
 
 // SubmitBulkOperationUpdate implements Manager.
-func (om *operationsManager) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error) {
+func (om *operationsManager) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error {
 	for _, update := range updates {
 		errString := ""
 		if update.ErrorMessage != "" {
@@ -87,7 +87,7 @@ func (om *operationsManager) SubmitBulkOperationUpdates(ctx context.Context, upd
 		}
 		log.L(om.ctx).Debugf("%s updating operation %s status=%s%s", update.Plugin, update.NamespacedOpID, update.Status, errString)
 	}
-	om.updater.SubmitBulkOperationUpdates(ctx, updates, onCommit)
+	return om.updater.SubmitBulkOperationUpdates(ctx, updates)
 }
 
 func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, txHelper txcommon.Helper, cacheManager cache.Manager) (Manager, error) {

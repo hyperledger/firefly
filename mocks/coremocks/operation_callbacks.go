@@ -14,9 +14,22 @@ type OperationCallbacks struct {
 	mock.Mock
 }
 
-// BulkOperationUpdates provides a mock function with given fields: ctx, updates, onCommit
-func (_m *OperationCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate, onCommit chan<- error) {
-	_m.Called(ctx, updates, onCommit)
+// BulkOperationUpdates provides a mock function with given fields: ctx, updates
+func (_m *OperationCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error {
+	ret := _m.Called(ctx, updates)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkOperationUpdates")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.OperationUpdate) error); ok {
+		r0 = rf(ctx, updates)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // OperationUpdate provides a mock function with given fields: update
