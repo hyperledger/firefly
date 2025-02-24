@@ -118,16 +118,35 @@ func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, upda
 		// Copy of the array
 		// TODO make this a deep copy
 		updates := validUpdates
+
 		// This retries forever until there is no error
 		// but returns on cancelled context
-		// TODO limit to 200 writes per batch as today for the workers??
-		err := ou.doBatchUpdateWithRetry(ctx, updates)
-		if err != nil {
-			log.L(ctx).Warnf("Exiting while updating operation: %s", err)
-			if onCommit != nil {
-				onCommit <- err
+		if len(updates) > ou.conf.maxInserts {
+			// Split the batch into smaller chunks
+			for i := 0; i < len(updates); i += ou.conf.maxInserts {
+				end := i + ou.conf.maxInserts
+				if end > len(updates) {
+					end = len(updates)
+				}
+				err := ou.doBatchUpdateWithRetry(ctx, updates[i:end])
+				if err != nil {
+					log.L(ctx).Warnf("Exiting while updating operations: %s", err)
+					if onCommit != nil {
+						onCommit <- err
+					}
+					return
+				}
 			}
-			return
+		} else {
+			// Less than the max inserts, just do it in one go
+			err := ou.doBatchUpdateWithRetry(ctx, updates)
+			if err != nil {
+				log.L(ctx).Warnf("Exiting while updating operation: %s", err)
+				if onCommit != nil {
+					onCommit <- err
+				}
+				return
+			}
 		}
 		// Batch has been updated correctly
 		if onCommit != nil {
