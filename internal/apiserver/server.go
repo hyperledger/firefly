@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -42,10 +42,11 @@ import (
 )
 
 var (
-	spiConfig     = config.RootSection("spi")
-	apiConfig     = config.RootSection("http")
-	metricsConfig = config.RootSection("metrics")
-	corsConfig    = config.RootSection("cors")
+	spiConfig               = config.RootSection("spi")
+	apiConfig               = config.RootSection("http")
+	deprecatedMetricsConfig = config.RootSection("metrics")
+	monitoringConfig        = config.RootSection("monitoring")
+	corsConfig              = config.RootSection("cors")
 )
 
 // Server is the external interface for the API Server
@@ -55,31 +56,35 @@ type Server interface {
 
 type apiServer struct {
 	// Defaults set with config
-	apiTimeout             time.Duration
-	apiMaxTimeout          time.Duration
-	metricsEnabled         bool
-	ffiSwaggerGen          FFISwaggerGen
-	apiPublicURL           string
-	dynamicPublicURLHeader string
-	defaultNamespace       string
+	apiTimeout               time.Duration
+	apiMaxTimeout            time.Duration
+	deprecatedMetricsEnabled bool
+	monitoringEnabled        bool
+	ffiSwaggerGen            FFISwaggerGen
+	apiPublicURL             string
+	dynamicPublicURLHeader   string
+	defaultNamespace         string
 }
 
 func InitConfig() {
 	httpserver.InitHTTPConfig(apiConfig, 5000)
 	httpserver.InitHTTPConfig(spiConfig, 5001)
-	httpserver.InitHTTPConfig(metricsConfig, 6000)
+	httpserver.InitHTTPConfig(deprecatedMetricsConfig, 6000)
+	httpserver.InitHTTPConfig(monitoringConfig, 6000)
 	httpserver.InitCORSConfig(corsConfig)
-	initMetricsConfig(metricsConfig)
+	initDeprecatedMetricsConfig(deprecatedMetricsConfig)
+	initMonitoringConfig(monitoringConfig)
 }
 
 func NewAPIServer() Server {
 	as := &apiServer{
-		apiTimeout:             config.GetDuration(coreconfig.APIRequestTimeout),
-		apiMaxTimeout:          config.GetDuration(coreconfig.APIRequestMaxTimeout),
-		dynamicPublicURLHeader: config.GetString(coreconfig.APIDynamicPublicURLHeader),
-		defaultNamespace:       config.GetString(coreconfig.NamespacesDefault),
-		metricsEnabled:         config.GetBool(coreconfig.MetricsEnabled),
-		ffiSwaggerGen:          &ffiSwaggerGen{},
+		apiTimeout:               config.GetDuration(coreconfig.APIRequestTimeout),
+		apiMaxTimeout:            config.GetDuration(coreconfig.APIRequestMaxTimeout),
+		dynamicPublicURLHeader:   config.GetString(coreconfig.APIDynamicPublicURLHeader),
+		defaultNamespace:         config.GetString(coreconfig.NamespacesDefault),
+		deprecatedMetricsEnabled: config.GetBool(coreconfig.DeprecatedMetricsEnabled),
+		monitoringEnabled:        config.GetBool(coreconfig.MonitoringEnabled),
+		ffiSwaggerGen:            &ffiSwaggerGen{},
 	}
 	as.apiPublicURL = as.getPublicURL(apiConfig, "")
 	return as
@@ -110,15 +115,21 @@ func (as *apiServer) Serve(ctx context.Context, mgr namespace.Manager) (err erro
 	} else if config.GetBool(coreconfig.LegacyAdminEnabled) {
 		log.L(ctx).Warnf("Your config includes an 'admin' section, which should be renamed to 'spi' - SPI server will not be enabled until this is corrected")
 	}
+	serverName := "metrics"
+	mConfig := deprecatedMetricsConfig
+	if as.monitoringEnabled {
+		serverName = "monitoring"
+		mConfig = monitoringConfig
+	}
 
-	if as.metricsEnabled {
-		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfig, corsConfig, &httpserver.ServerOptions{
+	if as.deprecatedMetricsEnabled || as.monitoringEnabled {
+		monitoringServer, err := httpserver.NewHTTPServer(ctx, serverName, as.createMonitoringMuxRouter(), metricsErrChan, mConfig, corsConfig, &httpserver.ServerOptions{
 			MaximumRequestTimeout: as.apiMaxTimeout,
 		})
 		if err != nil {
 			return err
 		}
-		go metricsHTTPServer.ServeHTTP(ctx)
+		go monitoringServer.ServeHTTP(ctx)
 	}
 
 	return as.waitForServerStop(httpErrChan, spiErrChan, metricsErrChan)
@@ -345,7 +356,7 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	r := mux.NewRouter()
 	hf := as.handlerFactory()
 
-	if as.metricsEnabled {
+	if as.deprecatedMetricsEnabled || as.monitoringEnabled {
 		r.Use(metrics.GetRestServerInstrumentation().Middleware)
 	}
 
@@ -433,7 +444,7 @@ func (as *apiServer) spiWSHandler(mgr namespace.Manager) http.HandlerFunc {
 
 func (as *apiServer) createAdminMuxRouter(mgr namespace.Manager) *mux.Router {
 	r := mux.NewRouter()
-	if as.metricsEnabled {
+	if as.deprecatedMetricsEnabled || as.monitoringEnabled {
 		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
 	}
 	hf := as.handlerFactory()
@@ -468,12 +479,20 @@ func (as *apiServer) createAdminMuxRouter(mgr namespace.Manager) *mux.Router {
 	return r
 }
 
-func (as *apiServer) createMetricsMuxRouter() *mux.Router {
+func (as *apiServer) createMonitoringMuxRouter() *mux.Router {
 	r := mux.NewRouter()
-
-	r.Path(config.GetString(coreconfig.MetricsPath)).Handler(promhttp.InstrumentMetricHandler(metrics.Registry(),
+	metricsPath := config.GetString(coreconfig.DeprecatedMetricsPath)
+	if as.monitoringEnabled {
+		metricsPath = config.GetString(coreconfig.MonitoringMetricsPath)
+	}
+	r.Path(metricsPath).Handler(promhttp.InstrumentMetricHandler(metrics.Registry(),
 		promhttp.HandlerFor(metrics.Registry(), promhttp.HandlerOpts{})))
-
+	hf := ffapi.HandlerFactory{}
+	r.HandleFunc("/livez", hf.APIWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+		// a simple liveness check
+		return http.StatusOK, nil
+	}))
+	r.NotFoundHandler = hf.APIWrapper(as.notFoundHandler)
 	return r
 }
 

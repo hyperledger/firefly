@@ -481,7 +481,23 @@ func TestRequestWithBodyReplyEndToEndWithTLS(t *testing.T) {
 	}()
 
 	server.Handler = r
-	go server.ListenAndServeTLS(publicKeyFile.Name(), privateKeyFile.Name())
+	go func() {
+		if err := server.ListenAndServeTLS(publicKeyFile.Name(), privateKeyFile.Name()); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("ListenAndServeTLS(): %v", err)
+		}
+	}()
+
+	// Wait for the server to be ready
+	for {
+		conn, err := tls.Dial("tcp", server.Addr, &tls.Config{
+			InsecureSkipVerify: true,
+		})
+		if err == nil {
+			conn.Close()
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	// Build a TLS config for the client and set on the subscription object
 	cert, err := tls.LoadX509KeyPair(publicKeyFile.Name(), privateKeyFile.Name())
