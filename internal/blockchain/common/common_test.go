@@ -501,5 +501,8 @@ func TestCallbackBulkOperationUpdate(t *testing.T) {
 		},
 	})
 
+	// No Handler
+	cb.BulkOperationUpdates(context.Background(), "ns2", []*core.OperationUpdate{})
+
 	mcb.AssertExpectations(t)
 }

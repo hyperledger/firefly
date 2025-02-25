@@ -78,6 +78,11 @@ func TestBoundCallbacks(t *testing.T) {
 	mom.On("SubmitOperationUpdate", update).Return().Once()
 	bc.OperationUpdate(update)
 
+	ctx := context.Background()
+	updates := []*core.OperationUpdate{update}
+	mom.On("SubmitBulkOperationUpdates", ctx, updates).Return(nil).Once()
+	bc.BulkOperationUpdates(ctx, updates)
+
 	mei.On("SharedStorageBatchDownloaded", mss, "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
 	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
 	assert.EqualError(t, err, "pop")
