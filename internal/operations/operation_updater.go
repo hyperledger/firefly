@@ -111,14 +111,13 @@ func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, upda
 		validUpdates = append(validUpdates, update)
 	}
 
-	// Notice how this is not using the workers
+	// Notice how this is not using the workers and is synchronous
 	// The reason is because we want for all updates to be stored at once in this order
 	// If offloaded into workers the updates would be processed in parallel, in different DB TX and in a different order
-
-	// This retries forever until there is no error
-	err := ou.doBatchUpdateWithRetry(ctx, updates)
+	// Up to the caller to retry if this fails
+	err := ou.doBatchUpdateAsGroup(ctx, validUpdates)
 	if err != nil {
-		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
+		log.L(ctx).Warnf("Exiting while updating operations: %s", err)
 		return err
 	}
 
@@ -213,18 +212,26 @@ func (ou *operationUpdater) updaterLoop(index int) {
 	}
 }
 
+func (ou *operationUpdater) doBatchUpdateAsGroup(ctx context.Context, updates []*core.OperationUpdate) error {
+	err := ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		return ou.doBatchUpdate(ctx, updates)
+	})
+	if err != nil {
+		return err
+	}
+	for _, update := range updates {
+		if update.OnComplete != nil {
+			update.OnComplete()
+		}
+	}
+	return nil
+}
+
 func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates []*core.OperationUpdate) error {
 	return ou.retry.Do(ctx, "operation update", func(attempt int) (retry bool, err error) {
-		err = ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
-			return ou.doBatchUpdate(ctx, updates)
-		})
+		err = ou.doBatchUpdateAsGroup(ctx, updates)
 		if err != nil {
 			return true, err
-		}
-		for _, update := range updates {
-			if update.OnComplete != nil {
-				update.OnComplete()
-			}
 		}
 		return false, nil
 	})
