@@ -813,6 +813,7 @@ func TestSubmitBulkOperationUpdatesIgnoredUpdate(t *testing.T) {
 		NamespacedOpID: "different-namespace:" + opID.String(),
 		Status:         core.OpStatusSucceeded,
 		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
 	}
 
 	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
@@ -833,6 +834,7 @@ func TestSubmitBulkOperationUpdatesIgnoredBadID(t *testing.T) {
 		NamespacedOpID: "ns1:BAD-UUID",
 		Status:         core.OpStatusSucceeded,
 		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
 	}
 
 	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
@@ -863,6 +865,7 @@ func TestSubmitBulkOperationUpdatesError(t *testing.T) {
 		NamespacedOpID: "ns1:" + opID.String(),
 		Status:         core.OpStatusSucceeded,
 		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)

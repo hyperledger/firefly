@@ -466,21 +466,21 @@ func TestCallbackBulkOperationUpdate(t *testing.T) {
 	cb.SetOperationalHandler("ns1", mcb)
 
 	mbi.On("Name").Return("utblockchain")
-	mcb.On("BulkOperationUpdates", mock.MatchedBy(func(updates []*core.OperationUpdate) bool {
+	mcb.On("BulkOperationUpdates", mock.Anything, mock.MatchedBy(func(updates []*core.OperationUpdate) bool {
 		assert.True(t, updates[0].NamespacedOpID == nsOpID &&
 			updates[0].Status == core.OpStatusSucceeded &&
 			updates[0].BlockchainTXID == "tx1" &&
 			updates[0].ErrorMessage == "err" &&
 			updates[0].Plugin == "utblockchain")
 
-		assert.True(t, updates[1].NamespacedOpID == nsOpID &&
+		assert.True(t, updates[1].NamespacedOpID == nsOpID2 &&
 			updates[1].Status == core.OpStatusSucceeded &&
-			updates[1].BlockchainTXID == "tx1" &&
+			updates[1].BlockchainTXID == "tx2" &&
 			updates[1].ErrorMessage == "err" &&
 			updates[1].Plugin == "utblockchain")
 
 		return true
-	})).Return().Once()
+	})).Return(nil).Once()
 
 	cb.BulkOperationUpdates(context.Background(), "ns1", []*core.OperationUpdate{
 		{
@@ -489,6 +489,7 @@ func TestCallbackBulkOperationUpdate(t *testing.T) {
 			BlockchainTXID: "tx1",
 			ErrorMessage:   "err",
 			Output:         fftypes.JSONObject{},
+			Plugin:         "utblockchain",
 		},
 		{
 			NamespacedOpID: nsOpID2,
@@ -496,6 +497,7 @@ func TestCallbackBulkOperationUpdate(t *testing.T) {
 			BlockchainTXID: "tx2",
 			ErrorMessage:   "err",
 			Output:         fftypes.JSONObject{},
+			Plugin:         "utblockchain",
 		},
 	})
 
