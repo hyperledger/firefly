@@ -49,7 +49,6 @@ import (
 )
 
 func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
-	coreconfig.Reset()
 
 	cbs := &eventsmocks.Callbacks{}
 	rc := cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
@@ -68,7 +67,6 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 }
 
 func TestInitBadTLS(t *testing.T) {
-	coreconfig.Reset()
 
 	wh := &WebHooks{}
 	ctx := context.Background()

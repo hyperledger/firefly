@@ -46,7 +46,6 @@ import (
 )
 
 func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManager, func()) {
-	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}

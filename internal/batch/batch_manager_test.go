@@ -40,7 +40,6 @@ import (
 )
 
 func testConfigReset() {
-	coreconfig.Reset()
 	config.Set(coreconfig.BatchManagerMinimumPollDelay, "0")
 	log.SetLevel("debug")
 }

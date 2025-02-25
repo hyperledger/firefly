@@ -45,7 +45,6 @@ import (
 )
 
 func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateMessaging, func()) {
-	coreconfig.Reset()
 	config.Set(coreconfig.CacheGroupLimit, "1m")
 	config.Set(coreconfig.CacheGroupTTL, 10)
 
@@ -101,7 +100,6 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 }
 
 func TestCacheInitFail(t *testing.T) {
-	coreconfig.Reset()
 	config.Set(coreconfig.CacheGroupLimit, "1m")
 	config.Set(coreconfig.CacheGroupTTL, 10)
 
