@@ -46,6 +46,7 @@ type BlockchainCallbacks interface {
 	// BulkOperationUpdates is a synchronous way to update multiple operations and will return when the updates have been committed to the database or there has been an error
 	// An insertion ordering guarantee is only provided when this code is called on a single goroutine inside of the connector.
 	// It is the responsibility of the connector code to allocate that routine, and ensure that there is only one.
+	// Note: onComplete at each update level is not called, as this is a bulk operation and should be reponsibility of the caller to manage.
 	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate) error
 
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
