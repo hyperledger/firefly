@@ -44,7 +44,7 @@ func TestCallbackOperationUpdate(t *testing.T) {
 	cb.SetOperationalHandler("ns1", mcb)
 
 	mbi.On("Name").Return("utblockchain")
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == nsOpID &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "tx1" &&

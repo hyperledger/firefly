@@ -287,7 +287,7 @@ func (_m *Manager) SubmitBulkOperationUpdates(ctx context.Context, updates []*co
 }
 
 // SubmitOperationUpdate provides a mock function with given fields: update
-func (_m *Manager) SubmitOperationUpdate(update *core.OperationUpdate) {
+func (_m *Manager) SubmitOperationUpdate(update *core.OperationUpdateAsync) {
 	_m.Called(update)
 }
 

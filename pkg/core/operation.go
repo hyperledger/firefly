@@ -244,7 +244,8 @@ func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.
 }
 
 type OperationCallbacks interface {
-	OperationUpdate(update *OperationUpdate)
+	// This is an asynchronous update and you can use onComplete to signal the update has been committed to the DB through a function call
+	OperationUpdate(update *OperationUpdateAsync)
 	BulkOperationUpdates(ctx context.Context, updates []*OperationUpdate) error
 }
 
@@ -263,7 +264,11 @@ type OperationUpdate struct {
 	VerifyManifest bool
 	DXManifest     string
 	DXHash         string
-	OnComplete     func()
+}
+
+type OperationUpdateAsync struct {
+	OperationUpdate
+	OnComplete func()
 }
 
 type OperationDetailError struct {

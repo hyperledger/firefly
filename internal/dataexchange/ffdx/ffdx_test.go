@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -142,7 +142,7 @@ func TestInitMissingURL(t *testing.T) {
 
 func opAcker() func(args mock.Arguments) {
 	return func(args mock.Arguments) {
-		args[0].(*core.OperationUpdate).OnComplete()
+		args[0].(*core.OperationUpdateAsync).OnComplete()
 	}
 }
 
@@ -492,7 +492,7 @@ func TestMessageEventsBackgroundStart(t *testing.T) {
 	assert.NoError(t, err)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID1 &&
 			ev.Status == core.OpStatusFailed &&
 			ev.ErrorMessage == "pop" &&
@@ -503,7 +503,7 @@ func TestMessageEventsBackgroundStart(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID2 &&
 			ev.Status == core.OpStatusSucceeded &&
 			ev.Plugin == "ffdx"
@@ -513,7 +513,7 @@ func TestMessageEventsBackgroundStart(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	namespacedID3 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID3 &&
 			ev.Status == core.OpStatusSucceeded &&
 			ev.DXManifest == `{"manifest":true}` &&
@@ -552,7 +552,7 @@ func TestMessageEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID1 &&
 			ev.Status == core.OpStatusFailed &&
 			ev.ErrorMessage == "pop" &&
@@ -563,7 +563,7 @@ func TestMessageEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID2 &&
 			ev.Status == core.OpStatusSucceeded &&
 			ev.Plugin == "ffdx"
@@ -573,7 +573,7 @@ func TestMessageEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	namespacedID3 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID3 &&
 			ev.Status == core.OpStatusSucceeded &&
 			ev.DXManifest == `{"manifest":true}` &&
@@ -617,7 +617,7 @@ func TestBlobEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	namespacedID5 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID5 &&
 			ev.Status == core.OpStatusFailed &&
 			ev.ErrorMessage == "pop" &&
@@ -628,7 +628,7 @@ func TestBlobEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
 	namespacedID6 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID6 &&
 			ev.Status == core.OpStatusSucceeded &&
 			ev.Output.String() == `{"some":"details"}` &&
@@ -650,7 +650,7 @@ func TestBlobEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
 	namespacedID10 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID10 &&
 			ev.Status == core.OpStatusSucceeded &&
 			ev.Output.String() == `{"signatures":"and stuff"}` &&
@@ -683,7 +683,7 @@ func TestEventsWithManifest(t *testing.T) {
 	h.SetOperationHandler("ns1", ocb)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID1 &&
 			ev.Status == core.OpStatusPending &&
 			ev.Plugin == "ffdx"
@@ -693,7 +693,7 @@ func TestEventsWithManifest(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
-	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdate) bool {
+	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
 		return ev.NamespacedOpID == namespacedID2 &&
 			ev.Status == core.OpStatusPending &&
 			ev.Plugin == "ffdx"

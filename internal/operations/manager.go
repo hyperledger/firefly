@@ -48,7 +48,7 @@ type Manager interface {
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error
 	SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error
-	SubmitOperationUpdate(update *core.OperationUpdate)
+	SubmitOperationUpdate(update *core.OperationUpdateAsync)
 	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
@@ -206,12 +206,14 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 			// Ok, we're failed
 			failState = core.OpStatusFailed
 		}
-		om.SubmitOperationUpdate(&core.OperationUpdate{
-			NamespacedOpID: op.NamespacedIDString(),
-			Plugin:         op.Plugin,
-			Status:         failState,
-			ErrorMessage:   err.Error(),
-			Output:         outputs,
+		om.SubmitOperationUpdate(&core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				NamespacedOpID: op.NamespacedIDString(),
+				Plugin:         op.Plugin,
+				Status:         failState,
+				ErrorMessage:   err.Error(),
+				Output:         outputs,
+			},
 		})
 	} else {
 		// No error so move us from "Initialized" to "Pending"
@@ -222,11 +224,13 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 			newState = core.OpStatusSucceeded
 		}
 
-		om.SubmitOperationUpdate(&core.OperationUpdate{
-			NamespacedOpID: op.NamespacedIDString(),
-			Plugin:         op.Plugin,
-			Status:         newState,
-			Output:         outputs,
+		om.SubmitOperationUpdate(&core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				NamespacedOpID: op.NamespacedIDString(),
+				Plugin:         op.Plugin,
+				Status:         newState,
+				Output:         outputs,
+			},
 		})
 	}
 	return outputs, err
@@ -297,7 +301,7 @@ func (om *operationsManager) ResolveOperationByID(ctx context.Context, opID *fft
 	return om.updater.resolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
 }
 
-func (om *operationsManager) SubmitOperationUpdate(update *core.OperationUpdate) {
+func (om *operationsManager) SubmitOperationUpdate(update *core.OperationUpdateAsync) {
 	errString := ""
 	if update.ErrorMessage != "" {
 		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)

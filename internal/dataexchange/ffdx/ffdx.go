@@ -68,7 +68,7 @@ type callbacks struct {
 	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdate) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdateAsync) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
 		handler.OperationUpdate(update)

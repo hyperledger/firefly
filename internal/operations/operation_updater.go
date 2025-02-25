@@ -35,7 +35,7 @@ import (
 )
 
 type operationUpdaterBatch struct {
-	updates        []*core.OperationUpdate
+	updates        []*core.OperationUpdateAsync
 	timeoutContext context.Context
 	timeoutCancel  func()
 }
@@ -47,7 +47,7 @@ type operationUpdater struct {
 	manager     *operationsManager
 	database    database.Plugin
 	txHelper    txcommon.Helper
-	workQueues  []chan *core.OperationUpdate
+	workQueues  []chan *core.OperationUpdateAsync
 	workersDone []chan struct{}
 	conf        operationUpdaterConf
 	closed      bool
@@ -87,13 +87,13 @@ func newOperationUpdater(ctx context.Context, om *operationsManager, di database
 }
 
 // pickWorker ensures multiple updates for the same ID go to the same worker
-func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, update *core.OperationUpdate) chan *core.OperationUpdate {
+func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, update *core.OperationUpdateAsync) chan *core.OperationUpdateAsync {
 	worker := id.HashBucket(ou.conf.workerCount)
 	log.L(ctx).Debugf("Submitting operation update id=%s status=%s blockchainTX=%s worker=opu_%.3d", id, update.Status, update.BlockchainTXID, worker)
 	return ou.workQueues[worker]
 }
 
-// SubmitBulkOperationUpdates will wait for the commit to DB before calling the onCommit
+// SubmitBulkOperationUpdates is a synchronous write of batch of operation updates
 func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error {
 	validUpdates := []*core.OperationUpdate{}
 	for _, update := range updates {
@@ -129,7 +129,7 @@ func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, upda
 	return nil
 }
 
-func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *core.OperationUpdate) {
+func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *core.OperationUpdateAsync) {
 	ns, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if err != nil {
 		log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
@@ -155,17 +155,17 @@ func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *c
 		return
 	}
 	// Otherwise do it in-line on this context
-	err = ou.doBatchUpdateWithRetry(ctx, []*core.OperationUpdate{update})
+	err = ou.doBatchUpdateWithRetry(ctx, []*core.OperationUpdateAsync{update})
 	if err != nil {
 		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
 	}
 }
 
 func (ou *operationUpdater) initQueues() {
-	ou.workQueues = make([]chan *core.OperationUpdate, ou.conf.workerCount)
+	ou.workQueues = make([]chan *core.OperationUpdateAsync, ou.conf.workerCount)
 	ou.workersDone = make([]chan struct{}, ou.conf.workerCount)
 	for i := 0; i < ou.conf.workerCount; i++ {
-		ou.workQueues[i] = make(chan *core.OperationUpdate, ou.conf.queueLength)
+		ou.workQueues[i] = make(chan *core.OperationUpdateAsync, ou.conf.queueLength)
 		ou.workersDone[i] = make(chan struct{})
 	}
 }
@@ -223,9 +223,13 @@ func (ou *operationUpdater) doBatchUpdateAsGroup(ctx context.Context, updates []
 	})
 }
 
-func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates []*core.OperationUpdate) error {
+func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates []*core.OperationUpdateAsync) error {
 	return ou.retry.Do(ctx, "operation update", func(attempt int) (retry bool, err error) {
-		err = ou.doBatchUpdateAsGroup(ctx, updates)
+		syncUpdates := []*core.OperationUpdate{}
+		for _, update := range updates {
+			syncUpdates = append(syncUpdates, &update.OperationUpdate)
+		}
+		err = ou.doBatchUpdateAsGroup(ctx, syncUpdates)
 		if err != nil {
 			return true, err
 		}

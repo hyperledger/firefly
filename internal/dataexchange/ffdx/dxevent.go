@@ -90,13 +90,15 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 
 	switch msg.Type {
 	case messageFailed:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
-			Plugin:         h.Name(),
-			NamespacedOpID: msg.RequestID,
-			Status:         core.OpStatusFailed,
-			ErrorMessage:   msg.Error,
-			Output:         msg.Info,
-			OnComplete:     e.Ack,
+		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         h.Name(),
+				NamespacedOpID: msg.RequestID,
+				Status:         core.OpStatusFailed,
+				ErrorMessage:   msg.Error,
+				Output:         msg.Info,
+			},
+			OnComplete: e.Ack,
 		})
 		return
 	case messageDelivered:
@@ -104,33 +106,39 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		if h.capabilities.Manifest {
 			status = core.OpStatusPending
 		}
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
-			Plugin:         h.Name(),
-			NamespacedOpID: msg.RequestID,
-			Status:         status,
-			Output:         msg.Info,
-			OnComplete:     e.Ack,
+		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         h.Name(),
+				NamespacedOpID: msg.RequestID,
+				Status:         status,
+				Output:         msg.Info,
+			},
+			OnComplete: e.Ack,
 		})
 		return
 	case messageAcknowledged:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
-			Plugin:         h.Name(),
-			NamespacedOpID: msg.RequestID,
-			Status:         core.OpStatusSucceeded,
-			VerifyManifest: h.capabilities.Manifest,
-			DXManifest:     msg.Manifest,
-			Output:         msg.Info,
-			OnComplete:     e.Ack,
+		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         h.Name(),
+				NamespacedOpID: msg.RequestID,
+				Status:         core.OpStatusSucceeded,
+				VerifyManifest: h.capabilities.Manifest,
+				DXManifest:     msg.Manifest,
+				Output:         msg.Info,
+			},
+			OnComplete: e.Ack,
 		})
 		return
 	case blobFailed:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
-			Plugin:         h.Name(),
-			NamespacedOpID: msg.RequestID,
-			Status:         core.OpStatusFailed,
-			ErrorMessage:   msg.Error,
-			Output:         msg.Info,
-			OnComplete:     e.Ack,
+		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         h.Name(),
+				NamespacedOpID: msg.RequestID,
+				Status:         core.OpStatusFailed,
+				ErrorMessage:   msg.Error,
+				Output:         msg.Info,
+			},
+			OnComplete: e.Ack,
 		})
 		return
 	case blobDelivered:
@@ -138,23 +146,27 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		if h.capabilities.Manifest {
 			status = core.OpStatusPending
 		}
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
-			Plugin:         h.Name(),
-			NamespacedOpID: msg.RequestID,
-			Status:         status,
-			Output:         msg.Info,
-			OnComplete:     e.Ack,
+		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         h.Name(),
+				NamespacedOpID: msg.RequestID,
+				Status:         status,
+				Output:         msg.Info,
+			},
+			OnComplete: e.Ack,
 		})
 		return
 	case blobAcknowledged:
-		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdate{
-			Plugin:         h.Name(),
-			NamespacedOpID: msg.RequestID,
-			Status:         core.OpStatusSucceeded,
-			Output:         msg.Info,
-			VerifyManifest: h.capabilities.Manifest,
-			DXHash:         msg.Hash,
-			OnComplete:     e.Ack,
+		h.callbacks.OperationUpdate(h.ctx, &core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         h.Name(),
+				NamespacedOpID: msg.RequestID,
+				Status:         core.OpStatusSucceeded,
+				Output:         msg.Info,
+				VerifyManifest: h.capabilities.Manifest,
+				DXHash:         msg.Hash,
+			},
+			OnComplete: e.Ack,
 		})
 		return
 

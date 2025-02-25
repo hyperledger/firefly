@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -1032,7 +1032,7 @@ func TestReceiptEvents(t *testing.T) {
 	mockCalled := make(chan bool)
 
 	// receipt: bad ID - passed through
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:wrong" &&
 			update.Status == core.OpStatusPending &&
 			update.Plugin == "fftokens"
@@ -1050,7 +1050,7 @@ func TestReceiptEvents(t *testing.T) {
 	<-mockCalled
 
 	// receipt: success
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+opID.String() &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "0xffffeeee" &&
@@ -1070,7 +1070,7 @@ func TestReceiptEvents(t *testing.T) {
 	<-mockCalled
 
 	// receipt: update
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+opID.String() &&
 			update.Status == core.OpStatusPending &&
 			update.BlockchainTXID == "0xffffeeee"
@@ -1089,7 +1089,7 @@ func TestReceiptEvents(t *testing.T) {
 	<-mockCalled
 
 	// receipt: failure
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+opID.String() &&
 			update.Status == core.OpStatusFailed &&
 			update.BlockchainTXID == "0xffffeeee" &&

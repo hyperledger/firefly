@@ -33,7 +33,7 @@ func (_m *OperationCallbacks) BulkOperationUpdates(ctx context.Context, updates 
 }
 
 // OperationUpdate provides a mock function with given fields: update
-func (_m *OperationCallbacks) OperationUpdate(update *core.OperationUpdate) {
+func (_m *OperationCallbacks) OperationUpdate(update *core.OperationUpdateAsync) {
 	_m.Called(update)
 }
 

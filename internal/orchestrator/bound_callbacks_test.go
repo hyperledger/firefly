@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -68,18 +68,21 @@ func TestBoundCallbacks(t *testing.T) {
 	nsOpID := "ns1:" + opID.String()
 	dataID := fftypes.NewUUID()
 
-	update := &core.OperationUpdate{
+	operationUpdate := &core.OperationUpdate{
 		NamespacedOpID: nsOpID,
 		Status:         core.OpStatusFailed,
 		BlockchainTXID: "0xffffeeee",
 		ErrorMessage:   "error info",
 		Output:         info,
 	}
-	mom.On("SubmitOperationUpdate", update).Return().Once()
-	bc.OperationUpdate(update)
+	operationUpdateAsync := &core.OperationUpdateAsync{
+		OperationUpdate: *operationUpdate,
+	}
+	mom.On("SubmitOperationUpdate", operationUpdateAsync).Return().Once()
+	bc.OperationUpdate(operationUpdateAsync)
 
 	ctx := context.Background()
-	updates := []*core.OperationUpdate{update}
+	updates := []*core.OperationUpdate{operationUpdate}
 	mom.On("SubmitBulkOperationUpdates", ctx, updates).Return(nil).Once()
 	bc.BulkOperationUpdates(ctx, updates)
 

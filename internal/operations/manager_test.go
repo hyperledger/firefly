@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -186,8 +186,8 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync),
 	}
 	om.updater.cancelFunc()
 
@@ -208,8 +208,8 @@ func TestRunOperationFailIdempotentInit(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync, 1),
 	}
 
 	ctx := context.Background()
@@ -236,8 +236,8 @@ func TestRunOperationFailNonIdempotentInit(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync, 1),
 	}
 
 	ctx := context.Background()
@@ -264,8 +264,8 @@ func TestRunOperationFailConflict(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync, 1),
 	}
 
 	ctx := context.Background()
@@ -289,8 +289,8 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync),
 	}
 	om.updater.cancelFunc()
 
@@ -747,10 +747,6 @@ func TestSubmitBulkOperationUpdates(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
-	}
-
 	ctx := context.Background()
 
 	operations := make([]*core.Operation, 0)
@@ -800,10 +796,6 @@ func TestSubmitBulkOperationUpdatesErrorNoPlugin(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
-	}
-
 	ctx := context.Background()
 
 	operations := make([]*core.Operation, 0)
@@ -835,10 +827,6 @@ func TestSubmitBulkOperationUpdatesErrorWrongNamespace(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
-	}
-
 	ctx := context.Background()
 
 	operations := make([]*core.Operation, 0)
@@ -867,10 +855,6 @@ func TestSubmitBulkOperationUpdatesIgnoredBadID(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
-	}
-
 	ctx := context.Background()
 
 	submittedUpdate := &core.OperationUpdate{
@@ -888,10 +872,6 @@ func TestSubmitBulkOperationUpdatesIgnoredBadID(t *testing.T) {
 func TestSubmitBulkOperationUpdatesError(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
-
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
-	}
 
 	ctx := context.Background()
 

@@ -45,7 +45,7 @@ func (bc *boundCallbacks) BulkOperationUpdates(ctx context.Context, updates []*c
 	return bc.o.operations.SubmitBulkOperationUpdates(ctx, updates)
 }
 
-func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdate) {
+func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdateAsync) {
 	bc.o.operations.SubmitOperationUpdate(update)
 }
 
