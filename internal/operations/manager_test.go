@@ -752,30 +752,122 @@ func TestSubmitBulkOperationUpdates(t *testing.T) {
 	}
 
 	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+	op2ID := fftypes.NewUUID()
+	op2 := &core.Operation{
+		ID:     op2ID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainContractDeploy,
+		Status: core.OpStatusInitialized,
+	}
+	operations = append(operations, op, op2)
+
 	submittedUpdate := &core.OperationUpdate{
-		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		NamespacedOpID: "ns1:" + opID.String(),
 		Status:         core.OpStatusSucceeded,
 		ErrorMessage:   "my-error-message",
 	}
 
 	submittedUpdate2 := &core.OperationUpdate{
-		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		NamespacedOpID: "ns1:" + op2ID.String(),
 		Status:         core.OpStatusSucceeded,
 		ErrorMessage:   "my-error-message",
 	}
 
-	// Create a channel to receive the onCommit signal
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+
 	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate, submittedUpdate2})
 	assert.NoError(t, err)
+}
 
-	// update := <-om.updater.workQueues[0]
-	// assert.Equal(t, submittedUpdate.NamespacedOpID, update.NamespacedOpID)
-	// assert.Equal(t, core.OpStatusSucceeded, update.Status)
-	// update.OnComplete()
+func TestSubmitBulkOperationUpdatesIgnoredUpdate(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
 
-	// update2 := <-om.updater.workQueues[0]
-	// assert.Equal(t, submittedUpdate2.NamespacedOpID, update2.NamespacedOpID)
-	// assert.Equal(t, core.OpStatusSucceeded, update2.Status)
-	// update2.OnComplete()
-	// Wait for oncommit signal
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+	operations = append(operations, op)
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "different-namespace:" + opID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+	}
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.NoError(t, err)
+}
+
+func TestSubmitBulkOperationUpdatesIgnoredBadID(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:BAD-UUID",
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+	}
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.NoError(t, err)
+}
+
+func TestSubmitBulkOperationUpdatesError(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+	operations = append(operations, op)
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + opID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(operations, nil, errors.New("Failed to get operations"))
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.Error(t, err)
 }

@@ -455,3 +455,49 @@ func TestErrorWrappingNonConflict(t *testing.T) {
 	_, conforms := err.(operations.ConflictError)
 	assert.False(t, conforms)
 }
+
+func TestCallbackBulkOperationUpdate(t *testing.T) {
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
+	nsOpID2 := "ns1:" + fftypes.NewUUID().String()
+
+	mbi := &blockchainmocks.Plugin{}
+	mcb := &coremocks.OperationCallbacks{}
+	cb := NewBlockchainCallbacks()
+	cb.SetOperationalHandler("ns1", mcb)
+
+	mbi.On("Name").Return("utblockchain")
+	mcb.On("BulkOperationUpdates", mock.MatchedBy(func(updates []*core.OperationUpdate) bool {
+		assert.True(t, updates[0].NamespacedOpID == nsOpID &&
+			updates[0].Status == core.OpStatusSucceeded &&
+			updates[0].BlockchainTXID == "tx1" &&
+			updates[0].ErrorMessage == "err" &&
+			updates[0].Plugin == "utblockchain")
+
+		assert.True(t, updates[1].NamespacedOpID == nsOpID &&
+			updates[1].Status == core.OpStatusSucceeded &&
+			updates[1].BlockchainTXID == "tx1" &&
+			updates[1].ErrorMessage == "err" &&
+			updates[1].Plugin == "utblockchain")
+
+		return true
+	})).Return().Once()
+
+	cb.BulkOperationUpdates(context.Background(), "ns1", []*core.OperationUpdate{
+		{
+			NamespacedOpID: nsOpID,
+			Status:         core.OpStatusSucceeded,
+			BlockchainTXID: "tx1",
+			ErrorMessage:   "err",
+			Output:         fftypes.JSONObject{},
+		},
+		{
+			NamespacedOpID: nsOpID2,
+			Status:         core.OpStatusSucceeded,
+			BlockchainTXID: "tx2",
+			ErrorMessage:   "err",
+			Output:         fftypes.JSONObject{},
+		},
+	})
+
+	mcb.AssertExpectations(t)
+}
