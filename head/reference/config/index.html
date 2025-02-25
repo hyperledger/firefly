@@ -2398,6 +2398,42 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring.auth
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringauthbasic" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring.auth.basic
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringtls" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring.tls
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#namespaces" class="md-nav__link">
     <span class="md-ellipsis">
       namespaces
@@ -5476,6 +5512,42 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringauth" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring.auth
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringauthbasic" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring.auth.basic
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoringtls" class="md-nav__link">
+    <span class="md-ellipsis">
+      monitoring.tls
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#namespaces" class="md-nav__link">
     <span class="md-ellipsis">
       namespaces
@@ -8105,37 +8177,37 @@
 <tbody>
 <tr>
 <td>address</td>
-<td>The IP address on which the metrics HTTP API should listen</td>
+<td>Deprecated - use monitoring.address instead</td>
 <td><code>int</code></td>
 <td><code>127.0.0.1</code></td>
 </tr>
 <tr>
 <td>enabled</td>
-<td>Enables the metrics API</td>
+<td>Deprecated - use monitoring.enabled instead</td>
 <td><code>boolean</code></td>
 <td><code>true</code></td>
 </tr>
 <tr>
 <td>path</td>
-<td>The path from which to serve the Prometheus metrics</td>
+<td>Deprecated - use monitoring.metricsPath instead</td>
 <td><code>string</code></td>
 <td><code>/metrics</code></td>
 </tr>
 <tr>
 <td>port</td>
-<td>The port on which the metrics HTTP API should listen</td>
+<td>Deprecated - use monitoring.port instead</td>
 <td><code>int</code></td>
 <td><code>6000</code></td>
 </tr>
 <tr>
 <td>publicURL</td>
-<td>The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation</td>
+<td>Deprecated - use monitoring.publicURL instead</td>
 <td>URL <code>string</code></td>
 <td><code>&lt;nil&gt;</code></td>
 </tr>
 <tr>
 <td>readTimeout</td>
-<td>The maximum time to wait when reading from an HTTP connection</td>
+<td>Deprecated - use monitoring.readTimeout instead</td>
 <td><a href="https://pkg.go.dev/time#Duration"><code>time.Duration</code></a></td>
 <td><code>15s</code></td>
 </tr>
@@ -8147,7 +8219,7 @@
 </tr>
 <tr>
 <td>writeTimeout</td>
-<td>The maximum time to wait when writing to an HTTP connection</td>
+<td>Deprecated - use monitoring.writeTimeout instead</td>
 <td><a href="https://pkg.go.dev/time#Duration"><code>time.Duration</code></a></td>
 <td><code>15s</code></td>
 </tr>
@@ -8192,6 +8264,178 @@
 </tbody>
 </table>
 <h2 id="metricstls">metrics.tls<a class="headerlink" href="#metricstls" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+<th>Type</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ca</td>
+<td>The TLS certificate authority in PEM format (this option is ignored if caFile is also set)</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>caFile</td>
+<td>The path to the CA file for TLS on this API</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>cert</td>
+<td>The TLS certificate in PEM format (this option is ignored if certFile is also set)</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>certFile</td>
+<td>The path to the certificate file for TLS on this API</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>clientAuth</td>
+<td>Enables or disables client auth for TLS on this API</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>enabled</td>
+<td>Enables or disables TLS on this API</td>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td>insecureSkipHostVerify</td>
+<td>When to true in unit test development environments to disable TLS verification. Use with extreme caution</td>
+<td><code>boolean</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>key</td>
+<td>The TLS certificate key in PEM format (this option is ignored if keyFile is also set)</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>keyFile</td>
+<td>The path to the private key file for TLS on this API</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>requiredDNAttributes</td>
+<td>A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)</td>
+<td><code>map[string]string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="monitoring">monitoring<a class="headerlink" href="#monitoring" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+<th>Type</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>address</td>
+<td>The IP address on which the metrics HTTP API should listen</td>
+<td><code>int</code></td>
+<td><code>127.0.0.1</code></td>
+</tr>
+<tr>
+<td>enabled</td>
+<td>Enables the metrics API</td>
+<td><code>boolean</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td>metricsPath</td>
+<td>The path from which to serve the Prometheus metrics</td>
+<td><code>string</code></td>
+<td><code>/metrics</code></td>
+</tr>
+<tr>
+<td>port</td>
+<td>The port on which the metrics HTTP API should listen</td>
+<td><code>int</code></td>
+<td><code>6000</code></td>
+</tr>
+<tr>
+<td>publicURL</td>
+<td>The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation</td>
+<td>URL <code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+<tr>
+<td>readTimeout</td>
+<td>The maximum time to wait when reading from an HTTP connection</td>
+<td><a href="https://pkg.go.dev/time#Duration"><code>time.Duration</code></a></td>
+<td><code>15s</code></td>
+</tr>
+<tr>
+<td>shutdownTimeout</td>
+<td>The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server</td>
+<td><a href="https://pkg.go.dev/time#Duration"><code>time.Duration</code></a></td>
+<td><code>10s</code></td>
+</tr>
+<tr>
+<td>writeTimeout</td>
+<td>The maximum time to wait when writing to an HTTP connection</td>
+<td><a href="https://pkg.go.dev/time#Duration"><code>time.Duration</code></a></td>
+<td><code>15s</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="monitoringauth">monitoring.auth<a class="headerlink" href="#monitoringauth" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+<th>Type</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>type</td>
+<td>The auth plugin to use for server side authentication of requests</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="monitoringauthbasic">monitoring.auth.basic<a class="headerlink" href="#monitoringauthbasic" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+<th>Type</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>passwordfile</td>
+<td>The path to a .htpasswd file to use for authenticating requests. Passwords should be hashed with bcrypt.</td>
+<td><code>string</code></td>
+<td><code>&lt;nil&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="monitoringtls">monitoring.tls<a class="headerlink" href="#monitoringtls" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
