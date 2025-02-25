@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -105,24 +105,28 @@ func TestNewOperationUpdaterNoConcurrency(t *testing.T) {
 func TestSubmitUpdateBadIDIgnored(t *testing.T) {
 	ou := newTestOperationUpdater(t)
 	ou.close()
-	ou.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+	ou.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync),
 	}
 	ou.cancelFunc()
-	ou.SubmitOperationUpdate(ou.ctx, &core.OperationUpdate{
-		NamespacedOpID: "!!!" + fftypes.NewUUID().String(),
+	ou.SubmitOperationUpdate(ou.ctx, &core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "!!!" + fftypes.NewUUID().String(),
+		},
 	})
 }
 
 func TestSubmitUpdateClosed(t *testing.T) {
 	ou := newTestOperationUpdater(t)
 	ou.close()
-	ou.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+	ou.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync),
 	}
 	ou.cancelFunc()
-	ou.SubmitOperationUpdate(ou.ctx, &core.OperationUpdate{
-		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+	ou.SubmitOperationUpdate(ou.ctx, &core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		},
 	})
 }
 
@@ -139,9 +143,11 @@ func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
 	mdi.On("GetOperations", customCtx, mock.Anything, mock.Anything).Return(nil, nil, nil)
 
 	complete := false
-	ou.SubmitOperationUpdate(customCtx, &core.OperationUpdate{
-		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
-		OnComplete:     func() { complete = true },
+	ou.SubmitOperationUpdate(customCtx, &core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		},
+		OnComplete: func() { complete = true },
 	})
 	assert.True(t, complete)
 
@@ -158,8 +164,10 @@ func TestSubmitUpdateDatabaseError(t *testing.T) {
 	mdi := ou.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	ou.SubmitOperationUpdate(ctx, &core.OperationUpdate{
-		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+	ou.SubmitOperationUpdate(ctx, &core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		},
 	})
 
 	mdi.AssertExpectations(t)
@@ -170,8 +178,10 @@ func TestSubmitUpdateWrongNS(t *testing.T) {
 	defer ou.close()
 	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
 
-	ou.SubmitOperationUpdate(customCtx, &core.OperationUpdate{
-		NamespacedOpID: "ns2:" + fftypes.NewUUID().String(),
+	ou.SubmitOperationUpdate(customCtx, &core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns2:" + fftypes.NewUUID().String(),
+		},
 	})
 }
 
@@ -218,21 +228,27 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	}).Once()
 
 	om.Start()
-	om.SubmitOperationUpdate(&core.OperationUpdate{
-		NamespacedOpID: "ns1:" + opID1.String(),
-		Status:         core.OpStatusSucceeded,
-		BlockchainTXID: "tx12345",
+	om.SubmitOperationUpdate(&core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns1:" + opID1.String(),
+			Status:         core.OpStatusSucceeded,
+			BlockchainTXID: "tx12345",
+		},
 	})
-	om.SubmitOperationUpdate(&core.OperationUpdate{
-		NamespacedOpID: "ns1:" + opID2.String(),
-		Status:         core.OpStatusFailed,
-		ErrorMessage:   "err1",
-		Output:         fftypes.JSONObject{"test": true},
+	om.SubmitOperationUpdate(&core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns1:" + opID2.String(),
+			Status:         core.OpStatusFailed,
+			ErrorMessage:   "err1",
+			Output:         fftypes.JSONObject{"test": true},
+		},
 	})
-	om.SubmitOperationUpdate(&core.OperationUpdate{
-		NamespacedOpID: "ns1:" + opID3.String(),
-		Status:         core.OpStatusFailed,
-		ErrorMessage:   "err2",
+	om.SubmitOperationUpdate(&core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns1:" + opID3.String(),
+			Status:         core.OpStatusFailed,
+			ErrorMessage:   "err2",
+		},
 	})
 	<-done
 
@@ -250,8 +266,10 @@ func TestUpdateLoopExitRetryCancelledContext(t *testing.T) {
 		ou.cancelFunc()
 	})
 
-	ou.SubmitOperationUpdate(ou.ctx, &core.OperationUpdate{
-		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+	ou.SubmitOperationUpdate(ou.ctx, &core.OperationUpdateAsync{
+		OperationUpdate: core.OperationUpdate{
+			NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
+		},
 	})
 
 	ou.updaterLoop(0)

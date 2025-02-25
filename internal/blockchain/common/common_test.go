@@ -44,7 +44,7 @@ func TestCallbackOperationUpdate(t *testing.T) {
 	cb.SetOperationalHandler("ns1", mcb)
 
 	mbi.On("Name").Return("utblockchain")
-	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	mcb.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == nsOpID &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "tx1" &&
@@ -454,4 +454,55 @@ func TestErrorWrappingNonConflict(t *testing.T) {
 
 	_, conforms := err.(operations.ConflictError)
 	assert.False(t, conforms)
+}
+
+func TestCallbackBulkOperationUpdate(t *testing.T) {
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
+	nsOpID2 := "ns1:" + fftypes.NewUUID().String()
+
+	mbi := &blockchainmocks.Plugin{}
+	mcb := &coremocks.OperationCallbacks{}
+	cb := NewBlockchainCallbacks()
+	cb.SetOperationalHandler("ns1", mcb)
+
+	mbi.On("Name").Return("utblockchain")
+	mcb.On("BulkOperationUpdates", mock.Anything, mock.MatchedBy(func(updates []*core.OperationUpdate) bool {
+		assert.True(t, updates[0].NamespacedOpID == nsOpID &&
+			updates[0].Status == core.OpStatusSucceeded &&
+			updates[0].BlockchainTXID == "tx1" &&
+			updates[0].ErrorMessage == "err" &&
+			updates[0].Plugin == "utblockchain")
+
+		assert.True(t, updates[1].NamespacedOpID == nsOpID2 &&
+			updates[1].Status == core.OpStatusSucceeded &&
+			updates[1].BlockchainTXID == "tx2" &&
+			updates[1].ErrorMessage == "err" &&
+			updates[1].Plugin == "utblockchain")
+
+		return true
+	})).Return(nil).Once()
+
+	cb.BulkOperationUpdates(context.Background(), "ns1", []*core.OperationUpdate{
+		{
+			NamespacedOpID: nsOpID,
+			Status:         core.OpStatusSucceeded,
+			BlockchainTXID: "tx1",
+			ErrorMessage:   "err",
+			Output:         fftypes.JSONObject{},
+			Plugin:         "utblockchain",
+		},
+		{
+			NamespacedOpID: nsOpID2,
+			Status:         core.OpStatusSucceeded,
+			BlockchainTXID: "tx2",
+			ErrorMessage:   "err",
+			Output:         fftypes.JSONObject{},
+			Plugin:         "utblockchain",
+		},
+	})
+
+	// No Handler
+	cb.BulkOperationUpdates(context.Background(), "ns2", []*core.OperationUpdate{})
+
+	mcb.AssertExpectations(t)
 }

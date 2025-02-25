@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -41,7 +41,11 @@ func (bc *boundCallbacks) checkStopped() error {
 	return nil
 }
 
-func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdate) {
+func (bc *boundCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error {
+	return bc.o.operations.SubmitBulkOperationUpdates(ctx, updates)
+}
+
+func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdateAsync) {
 	bc.o.operations.SubmitOperationUpdate(update)
 }
 

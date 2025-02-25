@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -316,4 +316,6 @@ var (
 	MsgFiltersEmpty                            = ffe("FF10475", "No filters specified in contract listener: %s.", 500)
 	MsgContractListenerBlockchainFilterLimit   = ffe("FF10476", "Blockchain plugin only supports one filter for contract listener: %s.", 500)
 	MsgDuplicateContractListenerFilterLocation = ffe("FF10477", "Duplicate filter provided for contract listener for location", 400)
+	MsgInvalidNamespaceForOperationUpdate      = ffe("FF10478", "Received different namespace for operation update '%s' than expected for manager '%s'")
+	MsgEmptyPluginForOperationUpdate           = ffe("FF10479", "Received empty plugin for operation update '%s'")
 )
