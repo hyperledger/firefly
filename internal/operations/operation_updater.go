@@ -100,12 +100,17 @@ func (ou *operationUpdater) SubmitBulkOperationUpdates(ctx context.Context, upda
 		ns, _, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 		if err != nil {
 			log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
-			continue
+			return err
 		}
 
 		if ns != ou.manager.namespace {
-			log.L(ou.ctx).Debugf("Ignoring operation update from different namespace '%s'", ns)
-			continue
+			log.L(ou.ctx).Errorf("Received operation update from different namespace '%s'", ns)
+			return i18n.NewError(ctx, coremsgs.MsgInvalidNamespaceForOperationUpdate, ns, ou.manager.namespace)
+		}
+
+		if update.Plugin == "" {
+			log.L(ou.ctx).Errorf("Cannot supply empty plugin on operation update '%s'", update.NamespacedOpID)
+			return i18n.NewError(ctx, coremsgs.MsgEmptyPluginForOperationUpdate, update.NamespacedOpID)
 		}
 
 		validUpdates = append(validUpdates, update)
@@ -213,18 +218,9 @@ func (ou *operationUpdater) updaterLoop(index int) {
 }
 
 func (ou *operationUpdater) doBatchUpdateAsGroup(ctx context.Context, updates []*core.OperationUpdate) error {
-	err := ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
+	return ou.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		return ou.doBatchUpdate(ctx, updates)
 	})
-	if err != nil {
-		return err
-	}
-	for _, update := range updates {
-		if update.OnComplete != nil {
-			update.OnComplete()
-		}
-	}
-	return nil
 }
 
 func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates []*core.OperationUpdate) error {
@@ -232,6 +228,12 @@ func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates 
 		err = ou.doBatchUpdateAsGroup(ctx, updates)
 		if err != nil {
 			return true, err
+		}
+
+		for _, update := range updates {
+			if update.OnComplete != nil {
+				update.OnComplete()
+			}
 		}
 		return false, nil
 	})

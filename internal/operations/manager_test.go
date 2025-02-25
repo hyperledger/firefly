@@ -756,17 +756,19 @@ func TestSubmitBulkOperationUpdates(t *testing.T) {
 	operations := make([]*core.Operation, 0)
 	opID := fftypes.NewUUID()
 	op := &core.Operation{
-		ID:     opID,
-		Plugin: "blockchain",
-		Type:   core.OpTypeBlockchainPinBatch,
-		Status: core.OpStatusInitialized,
+		Namespace: "ns1",
+		ID:        opID,
+		Plugin:    "blockchain",
+		Type:      core.OpTypeBlockchainPinBatch,
+		Status:    core.OpStatusInitialized,
 	}
 	op2ID := fftypes.NewUUID()
 	op2 := &core.Operation{
-		ID:     op2ID,
-		Plugin: "blockchain",
-		Type:   core.OpTypeBlockchainContractDeploy,
-		Status: core.OpStatusInitialized,
+		Namespace: "ns2",
+		ID:        op2ID,
+		Plugin:    "blockchain",
+		Type:      core.OpTypeBlockchainContractDeploy,
+		Status:    core.OpStatusInitialized,
 	}
 	operations = append(operations, op, op2)
 
@@ -774,10 +776,49 @@ func TestSubmitBulkOperationUpdates(t *testing.T) {
 		NamespacedOpID: "ns1:" + opID.String(),
 		Status:         core.OpStatusSucceeded,
 		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
 	}
 
 	submittedUpdate2 := &core.OperationUpdate{
 		NamespacedOpID: "ns1:" + op2ID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+
+	mdi.On("UpdateOperation", ctx, "ns1", opID, mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("UpdateOperation", ctx, "ns2", op2ID, mock.Anything, mock.Anything).Return(true, nil)
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate, submittedUpdate2})
+	assert.NoError(t, err)
+}
+
+func TestSubmitBulkOperationUpdatesErrorNoPlugin(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	om.updater.workQueues = []chan *core.OperationUpdate{
+		make(chan *core.OperationUpdate, 1),
+	}
+
+	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+
+	operations = append(operations, op)
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + opID.String(),
 		Status:         core.OpStatusSucceeded,
 		ErrorMessage:   "my-error-message",
 	}
@@ -785,11 +826,12 @@ func TestSubmitBulkOperationUpdates(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 
-	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate, submittedUpdate2})
-	assert.NoError(t, err)
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10479", err.Error())
 }
 
-func TestSubmitBulkOperationUpdatesIgnoredUpdate(t *testing.T) {
+func TestSubmitBulkOperationUpdatesErrorWrongNamespace(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
@@ -817,7 +859,8 @@ func TestSubmitBulkOperationUpdatesIgnoredUpdate(t *testing.T) {
 	}
 
 	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10478", err.Error())
 }
 
 func TestSubmitBulkOperationUpdatesIgnoredBadID(t *testing.T) {
@@ -838,7 +881,8 @@ func TestSubmitBulkOperationUpdatesIgnoredBadID(t *testing.T) {
 	}
 
 	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Regexp(t, "FF00138", err.Error())
 }
 
 func TestSubmitBulkOperationUpdatesError(t *testing.T) {
