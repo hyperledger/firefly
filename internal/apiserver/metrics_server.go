@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,11 +21,17 @@ import (
 )
 
 const (
-	MetricsEnabled = "enabled"
-	MetricsPath    = "path"
+	Enabled               = "enabled"
+	DeprecatedMetricsPath = "path"
+	MetricsPath           = "metricsPath"
 )
 
-func initMetricsConfig(config config.Section) {
-	config.AddKnownKey(MetricsEnabled, true)
+func initDeprecatedMetricsConfig(config config.Section) {
+	config.AddKnownKey(Enabled, true)
+	config.AddKnownKey(DeprecatedMetricsPath, "/metrics")
+}
+
+func initMonitoringConfig(config config.Section) {
+	config.AddKnownKey(Enabled, true)
 	config.AddKnownKey(MetricsPath, "/metrics")
 }

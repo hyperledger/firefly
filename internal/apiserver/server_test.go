@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -86,7 +86,7 @@ func TestStartStopServer(t *testing.T) {
 	InitConfig()
 	apiConfig.Set(httpserver.HTTPConfPort, 0)
 	spiConfig.Set(httpserver.HTTPConfPort, 0)
-	metricsConfig.Set(httpserver.HTTPConfPort, 0)
+	monitoringConfig.Set(httpserver.HTTPConfPort, 0)
 	config.Set(coreconfig.UIPath, "test")
 	config.Set(coreconfig.SPIEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -105,7 +105,7 @@ func TestStartLegacyAdminConfig(t *testing.T) {
 	InitConfig()
 	apiConfig.Set(httpserver.HTTPConfPort, 0)
 	spiConfig.Set(httpserver.HTTPConfPort, 0)
-	metricsConfig.Set(httpserver.HTTPConfPort, 0)
+	monitoringConfig.Set(httpserver.HTTPConfPort, 0)
 	config.Set(coreconfig.UIPath, "test")
 	config.Set(coreconfig.LegacyAdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -170,8 +170,8 @@ func TestStartMetricsFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	metricsConfig.Set(httpserver.HTTPConfAddress, "...://")
-	config.Set(coreconfig.MetricsEnabled, true)
+	monitoringConfig.Set(httpserver.HTTPConfAddress, "...://")
+	config.Set(coreconfig.MonitoringEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
@@ -574,4 +574,18 @@ func TestContractAPIDefaultNS(t *testing.T) {
 		Get(fmt.Sprintf("http://%s/api/v1/apis", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode())
+}
+
+func TestMonitoringServerRoutes(t *testing.T) {
+	_, _, as := newTestServer()
+	s := httptest.NewServer(as.createMonitoringMuxRouter())
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/livez", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get(fmt.Sprintf("http://%s/metrics", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
 }
