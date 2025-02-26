@@ -1,4 +1,12 @@
 {
+  "cardanoconnect": {
+    "image": "hyperledger/firefly-cardanoconnect",
+    "tag": "main"
+  },
+  "cardanosigner": {
+    "image": "hyperledger/firefly-cardanosigner",
+    "tag": "main"
+  },
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
     "tag": "v3.3.2",
