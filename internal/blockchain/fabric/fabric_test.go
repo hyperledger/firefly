@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -1778,7 +1778,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"receivedAt": 1630033474675
   }`)
 
-	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2" &&
@@ -1839,7 +1839,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 		"transactionHash": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2"
   }`)
 
-	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusFailed &&
 			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2" &&

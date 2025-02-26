@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -68,7 +68,7 @@ type callbacks struct {
 	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdate) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, update *core.OperationUpdateAsync) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
 		handler.OperationUpdate(update)
