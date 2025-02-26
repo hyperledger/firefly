@@ -636,7 +636,7 @@ func TestEventLoopReceiveReceipt(t *testing.T) {
 
 	tm := &coremocks.OperationCallbacks{}
 	c.SetOperationHandler("ns1", tm)
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:5678" &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "txHash" &&
@@ -869,7 +869,7 @@ func TestGetTransactionStatusSuccess(t *testing.T) {
 
 	tm := &coremocks.OperationCallbacks{}
 	c.SetOperationHandler("ns1", tm)
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059" &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "txHash" &&
@@ -906,7 +906,7 @@ func TestGetTransactionStatusFailure(t *testing.T) {
 
 	tm := &coremocks.OperationCallbacks{}
 	c.SetOperationHandler("ns1", tm)
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059" &&
 			update.Status == core.OpStatusFailed &&
 			update.ErrorMessage == "Something went wrong" &&
