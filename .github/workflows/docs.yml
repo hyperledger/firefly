@@ -7,6 +7,10 @@ on:
   pull_request:
   release:
     types: [released]
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

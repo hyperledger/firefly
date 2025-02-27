@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -63,11 +63,13 @@ func (dw *downloadWorker) attemptWork(work *downloadWork) {
 	if err != nil {
 		log.L(dw.ctx).Errorf("Download operation %s/%s attempt=%d/%d failed: %s", work.preparedOp.Type, work.preparedOp.ID, work.attempts, dw.dm.retryMaxAttempts, err)
 		if isLastAttempt {
-			dw.dm.operations.SubmitOperationUpdate(&core.OperationUpdate{
-				NamespacedOpID: work.preparedOp.NamespacedIDString(),
-				Plugin:         work.preparedOp.Plugin,
-				Status:         core.OpStatusFailed,
-				ErrorMessage:   err.Error(),
+			dw.dm.operations.SubmitOperationUpdate(&core.OperationUpdateAsync{
+				OperationUpdate: core.OperationUpdate{
+					NamespacedOpID: work.preparedOp.NamespacedIDString(),
+					Plugin:         work.preparedOp.Plugin,
+					Status:         core.OpStatusFailed,
+					ErrorMessage:   err.Error(),
+				},
 			})
 		} else {
 			go dw.dm.waitAndRetryDownload(work)

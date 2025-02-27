@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,6 +43,12 @@ type BlockchainCallbacks interface {
 	SetHandler(namespace string, handler blockchain.Callbacks)
 	SetOperationalHandler(namespace string, handler core.OperationCallbacks)
 
+	// BulkOperationUpdates is a synchronous way to update multiple operations and will return when the updates have been committed to the database or there has been an error
+	// An insertion ordering guarantee is only provided when this code is called on a single goroutine inside of the connector.
+	// It is the responsibility of the connector code to allocate that routine, and ensure that there is only one.
+	// Note: onComplete at each update level is not called, as this is a bulk operation and should be reponsibility of the caller to manage if needed.
+	BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate) error
+
 	OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 	// Common logic for parsing a BatchPinOrNetworkAction event, and if not discarded to add it to the by-namespace map
 	PrepareBatchPinOrNetworkAction(ctx context.Context, events EventsToDispatch, subInfo *SubscriptionInfo, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef, params *BatchPinParams)
@@ -62,6 +68,17 @@ type callbacks struct {
 	lock       sync.RWMutex
 	handlers   map[string]blockchain.Callbacks
 	opHandlers map[string]core.OperationCallbacks
+}
+
+// BulkOperationUpdates implements BlockchainCallbacks.
+func (cb *callbacks) BulkOperationUpdates(ctx context.Context, namespace string, updates []*core.OperationUpdate) error {
+	if handler, ok := cb.opHandlers[namespace]; ok {
+		return handler.BulkOperationUpdates(ctx, updates)
+	}
+	// We don't want to error as it just means this update was not for this namespace
+	// This is unlikely to happen in practice, as the namespace is always passed in the operation handler
+	log.L(ctx).Errorf("No operation handler found for namespace '%s'", namespace)
+	return nil
 }
 
 type subscriptions struct {
@@ -153,13 +170,15 @@ func (cb *callbacks) SetOperationalHandler(namespace string, handler core.Operat
 func (cb *callbacks) OperationUpdate(ctx context.Context, plugin core.Named, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(&core.OperationUpdate{
-			Plugin:         plugin.Name(),
-			NamespacedOpID: nsOpID,
-			Status:         status,
-			BlockchainTXID: blockchainTXID,
-			ErrorMessage:   errorMessage,
-			Output:         opOutput,
+		handler.OperationUpdate(&core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         plugin.Name(),
+				NamespacedOpID: nsOpID,
+				Status:         status,
+				BlockchainTXID: blockchainTXID,
+				ErrorMessage:   errorMessage,
+				Output:         opOutput,
+			},
 		})
 		return
 	}

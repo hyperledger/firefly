@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -54,7 +54,7 @@ type metricsManager struct {
 func NewMetricsManager(ctx context.Context) Manager {
 	mm := &metricsManager{
 		ctx:            ctx,
-		metricsEnabled: config.GetBool(coreconfig.MetricsEnabled),
+		metricsEnabled: config.GetBool(coreconfig.DeprecatedMetricsEnabled) || config.GetBool(coreconfig.MonitoringEnabled),
 		timeMap:        make(map[string]time.Time),
 	}
 

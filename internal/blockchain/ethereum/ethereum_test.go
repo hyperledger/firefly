@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -1825,7 +1825,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"transactionIndex": "0"
   }`)
 
-	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8" &&
@@ -1911,7 +1911,7 @@ func TestHandleReceiptTXUpdateEVMConnect(t *testing.T) {
 		"updated": "2022-08-03T18:55:43.781941Z"
 	}`)
 
-	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusPending &&
 			update.BlockchainTXID == "0x929c898a46762d91e9f4b0b8e2800863dcf4a40f694109dc4cd19dbd334fa4cc" &&
@@ -1955,7 +1955,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 
 	em := &coremocks.OperationCallbacks{}
 	e.SetOperationHandler("ns1", em)
-	txsu := em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	txsu := em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusFailed &&
 			update.ErrorMessage == "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument" &&

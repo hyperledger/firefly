@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -244,7 +244,9 @@ func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.
 }
 
 type OperationCallbacks interface {
-	OperationUpdate(update *OperationUpdate)
+	// This is an asynchronous update and you can use onComplete to signal the update has been committed to the DB through a function call
+	OperationUpdate(update *OperationUpdateAsync)
+	BulkOperationUpdates(ctx context.Context, updates []*OperationUpdate) error
 }
 
 // OperationUpdate notifies FireFly of an update to an operation.
@@ -262,7 +264,11 @@ type OperationUpdate struct {
 	VerifyManifest bool
 	DXManifest     string
 	DXHash         string
-	OnComplete     func()
+}
+
+type OperationUpdateAsync struct {
+	OperationUpdate
+	OnComplete func()
 }
 
 type OperationDetailError struct {

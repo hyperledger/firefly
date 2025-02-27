@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -287,10 +287,14 @@ var (
 	MessageWriterBatchTimeout = ffc("message.writer.batchTimeout")
 	// MessageWriterBatchMaxInserts
 	MessageWriterBatchMaxInserts = ffc("message.writer.batchMaxInserts")
-	// MetricsEnabled determines whether metrics will be instrumented and if the metrics server will be enabled or not
-	MetricsEnabled = ffc("metrics.enabled")
+	// MetricsEnabled - deprecated, use monitoring.enabled
+	DeprecatedMetricsEnabled = ffc("metrics.enabled")
+	// MetricsPath - deprecated, use monitoring.metricsPath
+	DeprecatedMetricsPath = ffc("metrics.path")
+	// Monitoring determines whether monitoring routes will be enabled, which contains metrics instruments
+	MonitoringEnabled = ffc("monitoring.enabled")
 	// MetricsPath determines what path to serve the Prometheus metrics from
-	MetricsPath = ffc("metrics.path")
+	MonitoringMetricsPath = ffc("monitoring.metricsPath")
 	// NamespacesDefault is the default namespace - must be in the predefines list
 	NamespacesDefault = ffc("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
