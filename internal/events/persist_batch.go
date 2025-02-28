@@ -335,7 +335,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 				})
 			}
 		}
-		// If we have an error at this point, we're cannot insert (must not be a duplicate)
+		// If we have an error at this point, we cannot insert (must not be a duplicate)
 		if err != nil {
 			log.L(ctx).Errorf("Failed to insert messages: %s", err)
 			return false, err // a persistence failure here is considered retryable (so returned)
