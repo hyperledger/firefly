@@ -196,7 +196,7 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	e.streamID = make(map[string]string)
 	e.closed = make(map[string]chan struct{})
 	e.wsconn = make(map[string]wsclient.WSClient)
-	e.streams = newStreamManager(e.client, e.cache, e.ethconnectConf.GetUint(EthconnectConfigBatchSize), uint(e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()))
+	e.streams = newStreamManager(e.client, e.cache, e.ethconnectConf.GetUint(EthconnectConfigBatchSize), e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 
 	return nil
 }

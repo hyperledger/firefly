@@ -130,7 +130,7 @@ func NewPrivateMessaging(ctx context.Context, ns *core.Namespace, di database.Pl
 
 	bo := batch.DispatcherOptions{
 		BatchType:      core.BatchTypePrivate,
-		BatchMaxSize:   config.GetUint(coreconfig.PrivateMessagingBatchSize),
+		BatchMaxSize:   config.GetInt(coreconfig.PrivateMessagingBatchSize),
 		BatchMaxBytes:  pm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(coreconfig.PrivateMessagingBatchTimeout),
 		DisposeTimeout: config.GetDuration(coreconfig.PrivateMessagingBatchAgentTimeout),
