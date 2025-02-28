@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -179,12 +179,20 @@ func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, payload *
 	return pm.dispatchBatchCommon(ctx, payload)
 }
 
+// prepareBatchForNetworkTransport is mainly for documentation purposes, we need to "normalize" a batch before sending
+// it over the network to other parties, so that all nodes see the same batch, regardless of what they call their local
+// namespace. This is used when we dispatch a batch per the regular messaging flow, and when we retry a private messaging
+// send operation.
+func (pm *privateMessaging) prepareBatchForNetworkTransport(ctx context.Context, tw *core.TransportWrapper) {
+	tw.Batch.Namespace = pm.namespace.NetworkName
+}
+
 func (pm *privateMessaging) dispatchBatchCommon(ctx context.Context, payload *batch.DispatchPayload) error {
 	batch := payload.Batch.GenInflight(payload.Messages, payload.Data)
-	batch.Namespace = pm.namespace.NetworkName
 	tw := &core.TransportWrapper{
 		Batch: batch,
 	}
+	pm.prepareBatchForNetworkTransport(ctx, tw)
 
 	// Retrieve the group
 	group, nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group, false /* fail if not found */)
