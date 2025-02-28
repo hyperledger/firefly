@@ -35,7 +35,6 @@ import (
 
 func TestConfigDocsUpToDate(t *testing.T) {
 	// Initialize config of all plugins
-	coreconfig.Reset()
 	namespace.InitConfig()
 	apiserver.InitConfig()
 	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), configDocHeader, config.GetKnownKeys())

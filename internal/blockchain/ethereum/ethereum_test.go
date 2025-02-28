@@ -113,7 +113,6 @@ func testFFIErrors() []*fftypes.FFIError {
 }
 
 func resetConf(e *Ethereum) {
-	coreconfig.Reset()
 	e.InitConfig(utConfig)
 }
 
