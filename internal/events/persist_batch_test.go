@@ -225,7 +225,7 @@ func TestPersistBatchContentSentByUsNotFoundFallback(t *testing.T) {
 
 }
 
-func TestPersistBatchContentSentByUsFoundMismatch(t *testing.T) {
+func TestPersistBatchContentSentByUsFoundDup(t *testing.T) {
 
 	em := newTestEventManager(t)
 	defer em.cleanup(t)
@@ -234,21 +234,24 @@ func TestPersistBatchContentSentByUsFoundMismatch(t *testing.T) {
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	batch.Node = testNodeID
 
+	msgID := batch.Payload.Messages[0].Header.ID
 	em.mdm.On("GetMessageWithDataCached", em.ctx, batch.Payload.Messages[0].Header.ID).Return(&core.Message{
 		Header: core.MessageHeader{
-			ID: fftypes.NewUUID(),
+			ID: msgID,
 		},
 	}, nil, true, nil)
 
 	em.mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
 	em.mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss"))
-	em.mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(database.HashMismatch)
+	em.mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).Return([]*core.IDAndSequence{
+		{ID: *msgID},
+	}, nil)
 
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
-	assert.False(t, ok)
+	assert.True(t, ok)
 
 }
 
@@ -261,9 +264,10 @@ func TestPersistBatchContentInsertMessagesFail(t *testing.T) {
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 
 	em.mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
-	em.mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss"))
-	em.mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(nil).Run(func(args mock.Arguments) {
-		args[3].(database.PostCompletionHook)()
+	em.mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss")).Once()
+	em.mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).Return([]*core.IDAndSequence{}, nil)
+	em.mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil).Once().Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
 	})
 
 	msgData := &messageAndData{

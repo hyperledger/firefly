@@ -660,8 +660,9 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 
 	em.mdi.On("InsertOrGetBatch", mock.Anything, mock.Anything).Return(nil, nil)
 	em.mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
-	em.mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimzation miss"))
-	em.mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("pop"))
+	em.mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimzation miss")).Once()
+	em.mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).Return([]*core.IDAndSequence{}, nil)
+	em.mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("pop")).Once()
 
 	em.mim.On("GetLocalNode", mock.Anything).Return(testNode, nil)
 
