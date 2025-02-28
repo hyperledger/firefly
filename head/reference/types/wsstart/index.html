@@ -3917,7 +3917,7 @@ subscription that lasts only for the duration that the connection is active.</p>
 <tr>
 <td><code>readAhead</code></td>
 <td>The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts</td>
-<td><code>uint16</code></td>
+<td><code>uint</code></td>
 </tr>
 <tr>
 <td><code>withData</code></td>
