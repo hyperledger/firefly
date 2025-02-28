@@ -102,12 +102,12 @@ func isBoolQuerySet(query url.Values, boolOption string) bool {
 	return hasOptionValues && (len(optionValues) == 0 || optionValues[0] != "false")
 }
 
-func (wc *websocketConnection) getReadAhead(query url.Values, isBatch bool) *uint16 {
+func (wc *websocketConnection) getReadAhead(query url.Values, isBatch bool) *uint {
 	readaheadStr := query.Get("readahead")
 	if readaheadStr != "" {
 		readAheadInt, err := strconv.ParseUint(readaheadStr, 10, 16)
 		if err == nil {
-			readahead := uint16(readAheadInt)
+			readahead := uint(readAheadInt)
 			return &readahead
 		}
 	}

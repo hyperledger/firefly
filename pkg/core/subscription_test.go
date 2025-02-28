@@ -26,7 +26,7 @@ import (
 
 func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	firstEvent := SubOptsFirstEventNewest
-	readAhead := uint16(50)
+	readAhead := uint(50)
 	yes := true
 	oneSec := "1s"
 	sub1 := &Subscription{
@@ -77,7 +77,7 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	b2, err := sub1.Options.Value()
 	assert.NoError(t, err)
 	assert.Equal(t, SubOptsFirstEventNewest, *sub2.Options.FirstEvent)
-	assert.Equal(t, uint16(50), *sub2.Options.ReadAhead)
+	assert.Equal(t, uint(50), *sub2.Options.ReadAhead)
 	assert.Equal(t, "myconfig", sub2.Options.TLSConfigName)
 	assert.Equal(t, string(b1.([]byte)), string(b2.([]byte)))
 

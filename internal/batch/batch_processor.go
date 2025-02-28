@@ -228,7 +228,7 @@ func (bp *batchProcessor) addWork(newWork *batchWork) (full, overflow bool) {
 		bp.assemblyQueueBytes += newWork.estimateSize()
 		bp.assemblyQueue = newQueue
 
-		full = len(bp.assemblyQueue) >= int(bp.conf.BatchMaxSize) || bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes
+		full = len(bp.assemblyQueue) >= bp.conf.BatchMaxSize || bp.assemblyQueueBytes >= bp.conf.BatchMaxBytes
 		overflow = len(bp.assemblyQueue) > 1 && (batchOfOne || bp.assemblyQueueBytes > bp.conf.BatchMaxBytes)
 	}
 

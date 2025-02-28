@@ -99,7 +99,7 @@ func NewBroadcastManager(ctx context.Context, ns *core.Namespace, di database.Pl
 	if ba != nil && mult != nil {
 		bo := batch.DispatcherOptions{
 			BatchType:      core.BatchTypeBroadcast,
-			BatchMaxSize:   config.GetUint(coreconfig.BroadcastBatchSize),
+			BatchMaxSize:   config.GetInt(coreconfig.BroadcastBatchSize),
 			BatchMaxBytes:  bm.maxBatchPayloadLength,
 			BatchTimeout:   config.GetDuration(coreconfig.BroadcastBatchTimeout),
 			DisposeTimeout: config.GetDuration(coreconfig.BroadcastBatchAgentTimeout),
