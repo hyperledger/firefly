@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,10 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var BroadcastSubmittedCounter prometheus.Counter
-var BroadcastConfirmedCounter prometheus.Counter
-var BroadcastRejectedCounter prometheus.Counter
-var BroadcastHistogram prometheus.Histogram
+var BroadcastSubmittedCounter *prometheus.CounterVec
+var BroadcastConfirmedCounter *prometheus.CounterVec
+var BroadcastRejectedCounter *prometheus.CounterVec
+var BroadcastHistogram *prometheus.HistogramVec
 
 // BroadcastSubmittedCounterName is the prometheus metric for tracking the total number of broadcasts submitted
 var BroadcastSubmittedCounterName = "ff_broadcast_submitted_total"
@@ -38,22 +38,22 @@ var BroadcastRejectedCounterName = "ff_broadcast_rejected_total"
 var BroadcastHistogramName = "ff_broadcast_histogram"
 
 func InitBroadcastMetrics() {
-	BroadcastSubmittedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	BroadcastSubmittedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: BroadcastSubmittedCounterName,
 		Help: "Number of submitted broadcasts",
-	})
-	BroadcastConfirmedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	BroadcastConfirmedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: BroadcastConfirmedCounterName,
 		Help: "Number of confirmed broadcasts",
-	})
-	BroadcastRejectedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	BroadcastRejectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: BroadcastRejectedCounterName,
 		Help: "Number of rejected broadcasts",
-	})
-	BroadcastHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	}, namespaceLabels)
+	BroadcastHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: BroadcastHistogramName,
 		Help: "Histogram of broadcasts, bucketed by time to finished",
-	})
+	}, namespaceLabels)
 }
 
 func RegisterBroadcastMetrics() {
