@@ -130,6 +130,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 			return nil, err
 		}
 		transport := &core.TransportWrapper{Group: group, Batch: batch}
+		pm.prepareBatchForNetworkTransport(ctx, transport)
 		return opSendBatch(op, node, transport), nil
 
 	default:

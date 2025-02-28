@@ -85,7 +85,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	um.RunFn = func(a mock.Arguments) {
 		msg := a[1].(*core.Message)
 		assert.Equal(t, core.MessageTypeGroupInit, msg.Header.Type)
-		assert.Equal(t, "ns1", msg.Header.Namespace)
+		assert.Equal(t, "ns1-remote", msg.Header.Namespace) // note this matches the remote network name, not the local namespace
 		assert.Len(t, msg.Data, 1)
 		assert.Equal(t, *dataID, *msg.Data[0].ID)
 	}
