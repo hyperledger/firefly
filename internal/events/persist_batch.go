@@ -301,9 +301,10 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 	if err != nil {
 		log.L(ctx).Debugf("Batch message insert optimization failed for batch '%s': %s", batch.ID, err)
 
-		// Messages are immutable in their contents, and it's entirely possible we're being sent duplicate message data
-		// that is for messages we've subsequently modified the state of (they've been confirmed).
-		// So we find a list of those that aren't in the DB and so an insert of just those\
+		// Messages are immutable in their contents, and it's entirely possible we're being sent
+		// messages we've already been sent in a previous batch, and subsequently modified th
+		// state of (they've been confirmed etc.).
+		// So we find a list of those that aren't in the DB and so and insert just those.
 		var foundIDs []*core.IDAndSequence
 		foundIDs, err = em.database.GetMessageIDs(ctx, batch.Namespace, messageIDFilter(ctx, batch.Payload.Messages))
 		if err == nil {
@@ -313,7 +314,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 				for _, foundID := range foundIDs {
 					if foundID.ID.Equals(m.Header.ID) {
 						isFound = true
-						log.L(ctx).Errorf("Message %s in batch '%s' is a duplicated", m.Header.ID, batch.ID)
+						log.L(ctx).Warnf("Message %s in batch '%s' is a duplicate", m.Header.ID, batch.ID)
 						break
 					}
 				}
