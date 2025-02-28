@@ -19,6 +19,8 @@ package networkmap
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/metrics"
+
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -37,6 +39,7 @@ type Manager interface {
 	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *core.Identity, err error)
 	RegisterIdentity(ctx context.Context, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error)
 	UpdateIdentity(ctx context.Context, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error)
+	CheckNodeIdentityStatus(ctx context.Context) error
 
 	GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (*core.Identity, error)
 	GetOrganizations(ctx context.Context, filter ffapi.AndFilter) ([]*core.Identity, *ffapi.FilterResult, error)
@@ -65,9 +68,11 @@ type networkMap struct {
 	identity   identity.Manager
 	syncasync  syncasync.Bridge
 	multiparty multiparty.Manager // optional
+
+	metrics metrics.Manager // optional
 }
 
-func NewNetworkMap(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, ds definitions.Sender, im identity.Manager, sa syncasync.Bridge, mm multiparty.Manager) (Manager, error) {
+func NewNetworkMap(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, ds definitions.Sender, im identity.Manager, sa syncasync.Bridge, mm multiparty.Manager, metrics metrics.Manager) (Manager, error) {
 	if di == nil || ds == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "NetworkMap")
 	}
@@ -81,6 +86,7 @@ func NewNetworkMap(ctx context.Context, ns string, di database.Plugin, dx dataex
 		identity:   im,
 		syncasync:  sa,
 		multiparty: mm,
+		metrics:    metrics,
 	}
 	return nm, nil
 }

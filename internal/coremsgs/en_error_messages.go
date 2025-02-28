@@ -318,4 +318,5 @@ var (
 	MsgDuplicateContractListenerFilterLocation = ffe("FF10477", "Duplicate filter provided for contract listener for location", 400)
 	MsgInvalidNamespaceForOperationUpdate      = ffe("FF10478", "Received different namespace for operation update '%s' than expected for manager '%s'")
 	MsgEmptyPluginForOperationUpdate           = ffe("FF10479", "Received empty plugin for operation update '%s'")
+	MsgInvalidIdentityPatch                    = ffe("FF10480", "A profile must be provided when updating an identity", 400)
 )

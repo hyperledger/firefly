@@ -488,6 +488,8 @@ func TestMessageEventsBackgroundStart(t *testing.T) {
 	h.SetOperationHandler("ns1", ocb)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
 
+	mcb.On("DXConnect", h).Return(nil)
+
 	err := h.Start()
 	assert.NoError(t, err)
 
@@ -547,6 +549,7 @@ func TestMessageEvents(t *testing.T) {
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
+	mcb.On("DXConnect", h).Return(nil)
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -612,6 +615,7 @@ func TestBlobEvents(t *testing.T) {
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
+	mcb.On("DXConnect", h).Return(nil)
 
 	err := h.Start()
 	assert.NoError(t, err)

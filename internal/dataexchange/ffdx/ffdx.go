@@ -295,6 +295,14 @@ func (h *FFDX) beforeConnect(ctx context.Context, w wsclient.WSClient) error {
 			return fmt.Errorf("DX returned non-ready status: %s", status.Status)
 		}
 	}
+
+	for _, cb := range h.callbacks.handlers {
+		err := cb.DXConnect(h)
+		if err != nil {
+			log.L(ctx).Errorf("error handling DX connect event: %v", err)
+		}
+	}
+
 	h.initialized = true
 	return nil
 }

@@ -44,6 +44,11 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dt
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 
+	// TODO is this right ? code below assumes this is true and errors otherwise
+	if dto.IdentityProfile.Profile == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidIdentityPatch)
+	}
+
 	// We can't sparse merge the generic JSON fields, but we need to propagate the ID
 	if dto.IdentityProfile.Profile.GetString("id") == "" {
 		existingID := identity.IdentityProfile.Profile.GetString("id")

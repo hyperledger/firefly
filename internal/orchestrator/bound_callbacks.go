@@ -97,3 +97,10 @@ func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.
 	}
 	return bc.o.events.TokensApproved(plugin, approval)
 }
+
+func (bc *boundCallbacks) DXConnect(plugin dataexchange.Plugin) error {
+	if err := bc.checkStopped(); err != nil {
+		return err
+	}
+	return bc.o.networkmap.CheckNodeIdentityStatus(bc.o.ctx)
+}

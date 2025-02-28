@@ -19,6 +19,7 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -34,17 +35,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestBoundCallbacks(t *testing.T) (*eventmocks.EventManager, *sharedstoragemocks.Plugin, *operationmocks.Manager, *boundCallbacks) {
+func newTestBoundCallbacks(t *testing.T) (*eventmocks.EventManager, *sharedstoragemocks.Plugin, *operationmocks.Manager, *networkmapmocks.Manager, *boundCallbacks) {
 
 	mei := &eventmocks.EventManager{}
 	mss := &sharedstoragemocks.Plugin{}
 	mom := &operationmocks.Manager{}
+	mnm := &networkmapmocks.Manager{}
 	bc := &boundCallbacks{
 		o: &orchestrator{
-			ctx:       context.Background(),
-			namespace: &core.Namespace{Name: "ns1"},
-			started:   true,
-			events:    mei,
+			ctx:        context.Background(),
+			namespace:  &core.Namespace{Name: "ns1"},
+			networkmap: mnm,
+			started:    true,
+			events:     mei,
 			plugins: &Plugins{
 				SharedStorage: SharedStoragePlugin{
 					Plugin: mss,
@@ -53,12 +56,12 @@ func newTestBoundCallbacks(t *testing.T) (*eventmocks.EventManager, *sharedstora
 			operations: mom,
 		},
 	}
-	return mei, mss, mom, bc
+	return mei, mss, mom, mnm, bc
 }
 
 func TestBoundCallbacks(t *testing.T) {
 
-	mei, mss, mom, bc := newTestBoundCallbacks(t)
+	mei, mss, mom, mnm, bc := newTestBoundCallbacks(t)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mti := &tokenmocks.Plugin{}
@@ -102,6 +105,10 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.DXEvent(mdx, &dataexchangemocks.DXEvent{})
 	assert.NoError(t, err)
 
+	mnm.On("CheckNodeIdentityStatus", mock.Anything, mock.Anything).Return(nil)
+	err = bc.DXConnect(mdx)
+	assert.NoError(t, err)
+
 	mei.On("TokenPoolCreated", mock.Anything, mti, &tokens.TokenPool{}).Return(nil)
 	err = bc.TokenPoolCreated(context.Background(), mti, &tokens.TokenPool{})
 	assert.NoError(t, err)
@@ -117,11 +124,12 @@ func TestBoundCallbacks(t *testing.T) {
 	mei.AssertExpectations(t)
 	mss.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mnm.AssertExpectations(t)
 }
 
 func TestBoundCallbacksStopped(t *testing.T) {
 
-	_, _, _, bc := newTestBoundCallbacks(t)
+	_, _, _, _, bc := newTestBoundCallbacks(t)
 	bc.o.started = false
 
 	_, err := bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
@@ -134,6 +142,9 @@ func TestBoundCallbacksStopped(t *testing.T) {
 	assert.Regexp(t, "FF10446", err)
 
 	err = bc.DXEvent(nil, &dataexchangemocks.DXEvent{})
+	assert.Regexp(t, "FF10446", err)
+
+	err = bc.DXConnect(nil)
 	assert.Regexp(t, "FF10446", err)
 
 	err = bc.TokenPoolCreated(context.Background(), nil, &tokens.TokenPool{})

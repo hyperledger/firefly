@@ -559,7 +559,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace.Name, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace.Name, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty, or.metrics)
 		if err != nil {
 			return err
 		}

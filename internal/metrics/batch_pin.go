@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,16 +20,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var BatchPinCounter prometheus.Counter
+var BatchPinCounter *prometheus.CounterVec
 
 // MetricsBatchPin is the prometheus metric for total number of batch pins submitted
 var MetricsBatchPin = "ff_batchpin_total"
 
 func InitBatchPinMetrics() {
-	BatchPinCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	BatchPinCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: MetricsBatchPin,
 		Help: "Number of batch pins submitted",
-	})
+	}, namespaceLabels)
 }
 
 func RegisterBatchPinMetrics() {
