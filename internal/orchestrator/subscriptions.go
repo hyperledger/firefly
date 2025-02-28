@@ -180,9 +180,14 @@ func (or *orchestrator) GetSubscriptionEventsHistorical(ctx context.Context, sub
 		return nil, nil, err
 	}
 
+	intLimit := len(filteredEvents)
+	if requestedFiltering.Limit < uint64(intLimit) {
+		//nolint:gosec
+		intLimit = int(requestedFiltering.Limit)
+	}
 	var filteredEventsMatchingSubscription []*core.EnrichedEvent
-	if len(filteredEvents) > int(requestedFiltering.Limit) {
-		filteredEventsMatchingSubscription = filteredEvents[len(filteredEvents)-int(requestedFiltering.Limit):]
+	if len(filteredEvents) > intLimit {
+		filteredEventsMatchingSubscription = filteredEvents[len(filteredEvents)-intLimit:]
 	} else {
 		filteredEventsMatchingSubscription = filteredEvents
 	}
