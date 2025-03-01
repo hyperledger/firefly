@@ -18,6 +18,10 @@ package networkmap
 
 import (
 	"context"
+	"time"
+
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/metrics"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -47,6 +51,18 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 	nodeRequest.Profile, err = nm.exchange.GetEndpointInfo(ctx, localNodeName)
 	if err != nil {
 		return nil, err
+	}
+
+	if nm.metrics.IsMetricsEnabled() {
+		nm.metrics.NodeIdentityDXCertMismatch(nm.namespace, metrics.NodeIdentityDXCertMismatchStatusHealthy)
+		expiry, err := extractSoonestExpiryFromCertBundle(nodeRequest.Profile.GetString("cert"))
+		if err == nil {
+			if expiry.Before(time.Now()) {
+				log.L(ctx).Warnf("Certificate for node '%s' has expired", localNodeName)
+			}
+
+			nm.metrics.NodeIdentityDXCertExpiry(nm.namespace, expiry)
+		}
 	}
 
 	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
