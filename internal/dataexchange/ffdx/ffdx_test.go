@@ -26,6 +26,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
+
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftls"
@@ -44,6 +46,55 @@ import (
 )
 
 var utConfig = config.RootSection("ffdx_unit_tests")
+
+const (
+	testCertBundle = `
+-----BEGIN CERTIFICATE-----
+MIIDqTCCApGgAwIBAgIUbZT+Ds4f2oDmGpgVi+SaQq9gxvcwDQYJKoZIhvcNAQEL
+BQAwZDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xEzARBgNVBAoMCkV4YW1wbGUgQ0ExEzARBgNVBAMMCmV4
+YW1wbGUtY2EwHhcNMjUwMjI4MTkzMDM4WhcNMzUwMjI2MTkzMDM4WjBkMQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzETMBEGA1UECgwKRXhhbXBsZSBDQTETMBEGA1UEAwwKZXhhbXBsZS1jYTCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOWBryFqk0YqQ6pzGJvBDjbV
+4BnkMzsv+Fq869Xks09OP4eW44oqfFUmpCFyS3fEmRCz+389t4mKvxcCRIJMW0f5
+K9jffG1QKUKL4UuNfEPFpM0MXTwhI+dCdvofdelzc+KBGA6CDYlnWYcCKFSuWeSu
+xrb/qCEvhcCaSYt3e2WcRHRuK+OLzM3REeJctC4G/pq858OUV5CZU2B6aGV/9uFL
+ZW3TCrOaj+Khzzt5FNvjVdLiUw0FS8VESxFA4kH8p+XUshs9S0e7LfIBSID2NU8+
++5D6HliqNqikbsny1Ps6GhLa+nI37LOVj7nFcG7uk+gb6HUN1+0YvjOJ0/zvnLEC
+AwEAAaNTMFEwHQYDVR0OBBYEFJfNoXmIn5S6W7Lcj5G/huW5q1YQMB8GA1UdIwQY
+MBaAFJfNoXmIn5S6W7Lcj5G/huW5q1YQMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
+hvcNAQELBQADggEBALsdRYJHQMkhjLcrO4Yha1KXh2d+irmi8AqQqQgbLIsSzuqG
+bKFiYnJ8PKHaISHlev2xRM9kEjDZ/9q8T4aUELg4eBjj7VK+gs+gSBO6peJ+AcEg
+TepsE5GHmhoIIiE/3dIP6XnaM6NBb8q0ewsIg1c5vLlrt8W96LY6Og7f+742VvoV
+H31srpGjy7c5nYjBTn/Bu84eb5Lxfvy10sJjnenkXDJvzkUcnfbRzDQ9k5ZuPa05
+x+BsxonN0iaeZH91F+Y3kgJidLnU5EhIB/1KXYjuEbl9qUxD6GFHRststPRPeOmj
+7C+BtJCIjjavysSqVMvQWLQ6rXms3SpRPAimWqM=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIDqjCCApKgAwIBAgIUWnobAQ4vq8gWBAXZBf7XZG3oSiUwDQYJKoZIhvcNAQEL
+BQAwZDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xEzARBgNVBAoMCkV4YW1wbGUgQ0ExEzARBgNVBAMMCmV4
+YW1wbGUtY2EwHhcNMjUwMjI4MTkzMDU3WhcNMjgwMjI4MTkzMDU3WjB2MQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzEcMBoGA1UECgwTSHlwZXJsZWRnZXIgRmlyZWZseTEcMBoGA1UEAwwTaHlw
+ZXJsZWRnZXItZmlyZWZseTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+AKlbQ+7cWWS0+QPp03PrdxsnAAtG2tWOk2CEG7HS3AlBU82YImhCidKOw+jQPS68
+2f2d0tYBhugqB2Ki6HsfYMGTjHDLbUQ5y+cLk6PFbvhjm39Ayd+WGmhWht5qFtRN
+gllTa/SbG8+iGaSPIVFCyvg1IzxsFnBGn+05Gu+KjpL4i0l1RqDmy5ItxKGP77in
+RPEUkejiUozg/X3v2TWAGagIVF5+EQ2Cswot9W1faAvyu/QmSGLLfSH22GdEDHXa
+U4DV5ArJ2U2eNkOuasSWGKBopa/Wh1SZjKrNsy5Gw84ihAI4k7ARoP+vu1dIPdaX
+ElipmGMtUWu0Azn2l9QJZpMCAwEAAaNCMEAwHQYDVR0OBBYEFL798jEmX2+hw70t
+SmfJA78PZnnHMB8GA1UdIwQYMBaAFJfNoXmIn5S6W7Lcj5G/huW5q1YQMA0GCSqG
+SIb3DQEBCwUAA4IBAQBY1NXTuQJZvjip33dRXyWP6GsSDKbXTSCcSF38P4/m+pcH
+r/q/upo+K+8eTtPqUwBsIywH5bypWqoIPtM+rkd3FVBe7uti2FExufpcOruzEGsY
+rNTfiFZbc7eHmFRTkKXWW4j6b6ElygrBvV999BhCRNf6NS0/syjqsbALHkFGeIcl
+78wdaR+m2XVJBV7SmPmZ/EQzxvhCZONNVyU5zvW2sehI7sRbZt9/FG5U1Ng0LarW
+R0gnXX/IZFnLhLh6UpLOBB0KIGENh75EEU7755jMKDKFj16D0uA1Lzrh5YxicTMy
+ydFYQLpLycsWl2oV3JB4pO5TIzjY9awkRE0MeMMc
+-----END CERTIFICATE-----
+`
+)
 
 func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
@@ -64,8 +115,9 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	h = &FFDX{initialized: true}
 	h.InitConfig(utConfig)
 
+	mmm := metricsmocks.NewManager(t)
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, dxCancel, utConfig)
+	err := h.Init(dxCtx, dxCancel, utConfig, mmm)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -114,7 +166,7 @@ func TestInitBadURL(t *testing.T) {
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -127,7 +179,7 @@ func TestInitBadTLS(t *testing.T) {
 	tlsConfig.Set(fftls.HTTPConfTLSEnabled, true)
 	tlsConfig.Set(fftls.HTTPConfTLSCAFile, "badCA")
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.Regexp(t, "FF00153", err)
 }
 
@@ -136,7 +188,7 @@ func TestInitMissingURL(t *testing.T) {
 	h := &FFDX{}
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -159,7 +211,7 @@ func TestInitWithBackgroundStart(t *testing.T) {
 
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, h.backgroundRetry)
@@ -453,7 +505,7 @@ func TestBackgroundStartWSFail(t *testing.T) {
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
 	defer dxCancel()
-	err := h.Init(dxCtx, dxCancel, utConfig)
+	err := h.Init(dxCtx, dxCancel, utConfig, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -480,7 +532,7 @@ func TestMessageEventsBackgroundStart(t *testing.T) {
 	// Starting in background mode and making sure the event loop are started as well
 	// to listen to messages
 	utConfig.Set(DataExchangeBackgroundStart, true)
-	h.Init(h.ctx, h.cancelCtx, utConfig)
+	h.Init(h.ctx, h.cancelCtx, utConfig, nil)
 
 	mcb := &dataexchangemocks.Callbacks{}
 	h.SetHandler("ns1", "node1", mcb)
@@ -811,7 +863,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.NoError(t, err)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{})
 
@@ -859,7 +911,7 @@ func TestWebsocketWithEmptyNodesInit(t *testing.T) {
 
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.NoError(t, err)
 
 	err = h.Start()
@@ -909,3 +961,14 @@ func TestDeleteBlobFail(t *testing.T) {
 	err := h.DeleteBlob(context.Background(), fmt.Sprintf("ns1/%s", u))
 	assert.Regexp(t, "FF10229", err)
 }
+
+//
+//matchingProfile := fftypes.JSONAnyPtr(fmt.Sprintf(`{"cert": "%s" }`, strings.ReplaceAll(testCertBundle, "\n", `\n`))).JSONObject()
+//
+//nm.identity.(*identitymanagermocks.Manager).On("GetLocalNode", ctx).Return(&core.Identity{
+//IdentityProfile: core.IdentityProfile{
+//Profile: matchingProfile,
+//},
+//}, nil)
+//
+//expiry := time.Unix(1835379057, 0).UTC()

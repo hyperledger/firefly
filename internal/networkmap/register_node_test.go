@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/metricsmocks"
-
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -45,14 +43,14 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim.On("GetRootOrg", nm.ctx).Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
-	mnm := nm.metrics.(*metricsmocks.Manager)
-	mnm.On("IsMetricsEnabled").Return(false)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(fftypes.JSONObject{
+	dxPeer := fftypes.JSONObject{
 		"id":       "peer1",
 		"endpoint": "details",
-	}, nil)
+	}
+	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(dxPeer, nil)
+	mdx.On("CheckNodeIdentityStatus", nm.ctx, dxPeer, mock.Anything).Return(nil)
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
 	mds.On("ClaimIdentity", nm.ctx,

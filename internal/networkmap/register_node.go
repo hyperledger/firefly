@@ -18,12 +18,9 @@ package networkmap
 
 import (
 	"context"
-	"time"
-
-	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/metrics"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -53,17 +50,9 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 		return nil, err
 	}
 
-	if nm.metrics.IsMetricsEnabled() {
-		nm.metrics.NodeIdentityDXCertMismatch(nm.namespace, metrics.NodeIdentityDXCertMismatchStatusHealthy)
-		expiry, err := extractSoonestExpiryFromCertBundle(nodeRequest.Profile.GetString("cert"))
-		if err == nil {
-			if expiry.Before(time.Now()) {
-				log.L(ctx).Warnf("Certificate for node '%s' has expired", localNodeName)
-			}
-
-			nm.metrics.NodeIdentityDXCertExpiry(nm.namespace, expiry)
-		}
+	node, err := nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
+	if statusErr := nm.exchange.CheckNodeIdentityStatus(ctx, nodeRequest.Profile, node); statusErr != nil {
+		log.L(ctx).Warnf("failed to check the node identity's status relative to the DX plugin: %v", err)
 	}
-
-	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
+	return node, err
 }

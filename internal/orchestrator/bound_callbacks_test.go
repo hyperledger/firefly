@@ -19,8 +19,9 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"testing"
+
+	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
