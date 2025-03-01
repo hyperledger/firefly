@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -913,6 +914,9 @@ func TestWebsocketWithEmptyNodesInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.NoError(t, err)
+	dxc := &dataexchangemocks.Callbacks{}
+	h.callbacks = callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}}
+	dxc.On("DXConnect", h).Return(nil)
 
 	err = h.Start()
 	assert.NoError(t, err)
@@ -960,6 +964,90 @@ func TestDeleteBlobFail(t *testing.T) {
 
 	err := h.DeleteBlob(context.Background(), fmt.Sprintf("ns1/%s", u))
 	assert.Regexp(t, "FF10229", err)
+}
+
+type mockDXCallbacks struct {
+	connectCalls int
+}
+
+func (m *mockDXCallbacks) DXConnect(plugin dataexchange.Plugin) error {
+	m.connectCalls++
+	return errors.New("connect callback failed")
+}
+
+func (m *mockDXCallbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error {
+	panic("implement me")
+}
+
+func TestWebsocketDXConnectFails(t *testing.T) {
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	_, _, wsURL, cancel := wsclient.NewTestWSServer(nil)
+	defer cancel()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+	h := &FFDX{}
+
+	coreconfig.Reset()
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
+	utConfig.Set(DataExchangeInitEnabled, true)
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			var reqNodes []fftypes.JSONObject
+
+			// we want to make sure when theres are no peer nodes, an empty list is being
+			// passed as the req, not "null"
+			err := json.NewDecoder(req.Body).Decode(&reqNodes)
+			assert.NoError(t, err)
+			assert.Empty(t, reqNodes)
+			assert.NotNil(t, reqNodes)
+
+			return httpmock.NewJsonResponse(200, fftypes.JSONObject{
+				"status": "ready",
+			})
+		})
+
+	h.InitConfig(utConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig, nil)
+	assert.NoError(t, err)
+	dxc := &mockDXCallbacks{
+		connectCalls: 0,
+	}
+	h.callbacks = callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}}
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, httpmock.GetTotalCallCount())
+	assert.True(t, h.initialized)
+	assert.Equal(t, 1, dxc.connectCalls)
+}
+
+func TestExtractSoonestExpiryFromCertBundleEmpty(t *testing.T) {
+	_, err := extractSoonestExpiryFromCertBundle("")
+	assert.ErrorContains(t, err, "no valid certificate found")
+
+}
+
+func TestExtractSoonestExpiryFromCertBundleBadBundle(t *testing.T) {
+	nonCertPEMBundle := `
+-----BEGIN NON-CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJALa6+u2k5u2kMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV
+BAYTAkFVMRMwEQYDVQQIDApxdWVlbnNsYW5kMREwDwYDVQQHDAhCcm9va2ZpZWxk
+-----END NON-CERTIFICATE-----
+`
+
+	_, err := extractSoonestExpiryFromCertBundle(nonCertPEMBundle)
+	assert.ErrorContains(t, err, "failed to parse non-certificate within bundle")
+
 }
 
 //

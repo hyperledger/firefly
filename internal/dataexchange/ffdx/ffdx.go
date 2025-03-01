@@ -519,12 +519,10 @@ func extractSoonestExpiryFromCertBundle(certBundle string) (time.Time, error) {
 		if block == nil {
 			break
 		}
-		if block.Type != "CERTIFICATE" {
-			continue
-		}
+
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("failed to parse certificate: %v", err)
+			return time.Time{}, fmt.Errorf("failed to parse non-certificate within bundle: %v", err)
 		}
 		if leafCert == nil || cert.NotAfter.Before(leafCert.NotAfter) {
 			leafCert = cert
