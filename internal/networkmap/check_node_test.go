@@ -56,7 +56,6 @@ func TestCheckNodeIdentityStatusSuccess(t *testing.T) {
 }
 
 func TestCheckNodeIdentityStatusEndpointInfoFails(t *testing.T) {
-
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	ctx := context.TODO()
@@ -75,6 +74,50 @@ func TestCheckNodeIdentityStatusEndpointInfoFails(t *testing.T) {
 
 	nm.exchange.(*dataexchangemocks.Plugin).On("GetEndpointInfo", ctx, "local-node").Return(nil, errors.New("endpoint info went pop"))
 
-	err := nm.CheckNodeIdentityStatus(context.TODO())
+	err := nm.CheckNodeIdentityStatus(ctx)
+	assert.Error(t, err)
+}
+
+func TestCheckNodeIdenityStatusLocalNodeNameNotSet(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	ctx := context.TODO()
+
+	nm.multiparty.(*multipartymocks.Manager).On("LocalNode").Return(multiparty.LocalNode{})
+	err := nm.CheckNodeIdentityStatus(ctx)
+	assert.Error(t, err)
+}
+
+func TestCheckNodeIdenityStatusGetLocalNodeFails(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	ctx := context.TODO()
+
+	nm.multiparty.(*multipartymocks.Manager).On("LocalNode").Return(multiparty.LocalNode{
+		Name: "local-node",
+	})
+
+	nm.identity.(*identitymanagermocks.Manager).On("GetLocalNode", ctx).Return(nil, errors.New("failed to get local node"))
+
+	err := nm.CheckNodeIdentityStatus(ctx)
+	assert.Error(t, err)
+}
+
+func TestCheckNodeIdenityStatusGetLocalNodeMissingProfile(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	ctx := context.TODO()
+
+	nm.multiparty.(*multipartymocks.Manager).On("LocalNode").Return(multiparty.LocalNode{
+		Name: "local-node",
+	})
+
+	nm.identity.(*identitymanagermocks.Manager).On("GetLocalNode", ctx).Return(&core.Identity{
+		IdentityProfile: core.IdentityProfile{
+			Profile: nil,
+		},
+	}, nil)
+
+	err := nm.CheckNodeIdentityStatus(ctx)
 	assert.Error(t, err)
 }

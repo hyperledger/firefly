@@ -17,6 +17,7 @@
 package networkmap
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -126,5 +127,45 @@ func TestRegisterNodeGetOwnerFail(t *testing.T) {
 
 	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
+}
 
+func TestRegisterNodeOkButNodeIdentityStatusFails(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	parentOrg := testOrg("org1")
+	signerRef := &core.SignerRef{Key: "0x23456"}
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("GetRootOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
+	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
+
+	mdx := nm.exchange.(*dataexchangemocks.Plugin)
+	dxPeer := fftypes.JSONObject{
+		"id":       "peer1",
+		"endpoint": "details",
+	}
+	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(dxPeer, nil)
+	mdx.On("CheckNodeIdentityStatus", nm.ctx, dxPeer, mock.Anything).Return(errors.New("failed to check node identity status"))
+
+	mds := nm.defsender.(*definitionsmocks.Sender)
+	mds.On("ClaimIdentity", nm.ctx,
+		mock.AnythingOfType("*core.IdentityClaim"),
+		signerRef,
+		(*core.SignerRef)(nil),
+	).Return(nil)
+
+	mmp := nm.multiparty.(*multipartymocks.Manager)
+	mmp.On("LocalNode").Return(multiparty.LocalNode{Name: "node1"})
+
+	node, err := nm.RegisterNode(nm.ctx, false)
+	assert.NoError(t, err)
+	assert.NotNil(t, node)
+
+	mim.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mds.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }

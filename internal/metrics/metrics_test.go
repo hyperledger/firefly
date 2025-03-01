@@ -260,3 +260,12 @@ func TestNodeIdentityDXCertMismatchSetsDefaultState(t *testing.T) {
 	gaugeValue := testutil.ToFloat64(NodeIdentityDXCertMismatchGauge.WithLabelValues("test-namespace"))
 	assert.Equal(t, -1.0, gaugeValue)
 }
+
+func TestNodeIdentityDXCertExpiry(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	now := time.Now().UTC()
+	mm.NodeIdentityDXCertExpiry("test-namespace", now)
+	gaugeValue := testutil.ToFloat64(NodeIdentityDXCertExpiryGauge.WithLabelValues("test-namespace"))
+	assert.Equal(t, float64(now.Unix()), gaugeValue)
+}
