@@ -22,10 +22,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 
@@ -49,6 +52,8 @@ import (
 var utConfig = config.RootSection("ffdx_unit_tests")
 
 const (
+	// NOTE: the CA cert expires on Monday, February 28, 2035 7:30:57 PM,
+	//       and the leaf cert expires on Monday, February 28, 2028 7:30:57 PM
 	testCertBundle = `
 -----BEGIN CERTIFICATE-----
 MIIDqTCCApGgAwIBAgIUbZT+Ds4f2oDmGpgVi+SaQq9gxvcwDQYJKoZIhvcNAQEL
@@ -93,6 +98,30 @@ rNTfiFZbc7eHmFRTkKXWW4j6b6ElygrBvV999BhCRNf6NS0/syjqsbALHkFGeIcl
 78wdaR+m2XVJBV7SmPmZ/EQzxvhCZONNVyU5zvW2sehI7sRbZt9/FG5U1Ng0LarW
 R0gnXX/IZFnLhLh6UpLOBB0KIGENh75EEU7755jMKDKFj16D0uA1Lzrh5YxicTMy
 ydFYQLpLycsWl2oV3JB4pO5TIzjY9awkRE0MeMMc
+-----END CERTIFICATE-----
+`
+	testExpiredCert = `
+-----BEGIN CERTIFICATE-----
+MIIDqjCCApKgAwIBAgIUWnobAQ4vq8gWBAXZBf7XZG3oSicwDQYJKoZIhvcNAQEL
+BQAwZDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xEzARBgNVBAoMCkV4YW1wbGUgQ0ExEzARBgNVBAMMCmV4
+YW1wbGUtY2EwHhcNMjUwMzAyMTQxNDA1WhcNMjUwMzAyMTQxNDA1WjB2MQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzEcMBoGA1UECgwTSHlwZXJsZWRnZXIgRmlyZWZseTEcMBoGA1UEAwwTaHlw
+ZXJsZWRnZXItZmlyZWZseTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+AKlbQ+7cWWS0+QPp03PrdxsnAAtG2tWOk2CEG7HS3AlBU82YImhCidKOw+jQPS68
+2f2d0tYBhugqB2Ki6HsfYMGTjHDLbUQ5y+cLk6PFbvhjm39Ayd+WGmhWht5qFtRN
+gllTa/SbG8+iGaSPIVFCyvg1IzxsFnBGn+05Gu+KjpL4i0l1RqDmy5ItxKGP77in
+RPEUkejiUozg/X3v2TWAGagIVF5+EQ2Cswot9W1faAvyu/QmSGLLfSH22GdEDHXa
+U4DV5ArJ2U2eNkOuasSWGKBopa/Wh1SZjKrNsy5Gw84ihAI4k7ARoP+vu1dIPdaX
+ElipmGMtUWu0Azn2l9QJZpMCAwEAAaNCMEAwHQYDVR0OBBYEFL798jEmX2+hw70t
+SmfJA78PZnnHMB8GA1UdIwQYMBaAFJfNoXmIn5S6W7Lcj5G/huW5q1YQMA0GCSqG
+SIb3DQEBCwUAA4IBAQA1dY8UCf1YSLG3Vu/u20ucw5q9tnYYoTi4fHm/g+imTvEQ
+KgTQBd5s9EHmj0BSjVFy9eSSTx5XiH6JqzGhCJRSbOIQ8RwrXpUlTuLr7gp0cO9c
+Ykxz6wt0k1F+9Iq+K8Eb6jzXoZe/ebMz611zUqY7+9lIl1AIIgx96MoZcDS/LA0e
+p/TUQ6q+Mg3W9pSXqLm8jmWNBfDViQF1v9Z3ASFYHUF/yak8jMdBEUpAqDadd/ay
+BHm9m8IvFevQjpUw6kyyg77ehEBBn7H/ISTL3HTCpUbkR3qUnFjOyBJ0G02XoozB
+I/hI0mpd6y+/JwyvG0smbD2lioiO/JQaUEZGU8pU
 -----END CERTIFICATE-----
 `
 )
@@ -1047,16 +1076,109 @@ BAYTAkFVMRMwEQYDVQQIDApxdWVlbnNsYW5kMREwDwYDVQQHDAhCcm9va2ZpZWxk
 
 	_, err := extractSoonestExpiryFromCertBundle(nonCertPEMBundle)
 	assert.ErrorContains(t, err, "failed to parse non-certificate within bundle")
-
 }
 
-//
-//matchingProfile := fftypes.JSONAnyPtr(fmt.Sprintf(`{"cert": "%s" }`, strings.ReplaceAll(testCertBundle, "\n", `\n`))).JSONObject()
-//
-//nm.identity.(*identitymanagermocks.Manager).On("GetLocalNode", ctx).Return(&core.Identity{
-//IdentityProfile: core.IdentityProfile{
-//Profile: matchingProfile,
-//},
-//}, nil)
-//
-//expiry := time.Unix(1835379057, 0).UTC()
+func TestCheckNodeIdentityStatusReturnsErrorWhenNotInitialized(t *testing.T) {
+	h := &FFDX{initialized: false}
+	err := h.CheckNodeIdentityStatus(context.Background(), fftypes.JSONObject{}, &core.Identity{})
+	assert.Regexp(t, "FF10342", err)
+}
+
+func TestCheckNodeIdentityStatusReturnsNilWhenCertIsEmpty(t *testing.T) {
+	mmm := metricsmocks.NewManager(t)
+
+	h := &FFDX{initialized: true, metrics: mmm}
+	dxPeer := fftypes.JSONObject{"cert": ""}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+	}
+
+	mmm.On("IsMetricsEnabled").Return(true)
+	mmm.On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusUnknown).Return(true)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), dxPeer, node)
+	assert.NoError(t, err)
+}
+
+func TestCheckNodeIdentityStatusReturnsErrorWhenNodeProfileIsNil(t *testing.T) {
+	mmm := metricsmocks.NewManager(t)
+
+	h := &FFDX{initialized: true, metrics: mmm}
+	dxPeer := fftypes.JSONObject{"cert": "cert"}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+	}
+	mmm.On("IsMetricsEnabled").Return(false)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), dxPeer, node)
+	assert.Error(t, err)
+	//assert.Equal(t, coremsgs.MsgDXInfoMissingID, err.(*i18n.Error).ID)
+}
+
+func TestCheckNodeIdentityStatusSetsMismatchStateWhenCertsDiffer(t *testing.T) {
+
+	mmm := &metricsmocks.Manager{}
+	h := &FFDX{initialized: true, metrics: mmm}
+	dxPeer := fftypes.JSONObject{"cert": "a-cert"}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{"cert": "b-cert"},
+		},
+	}
+
+	mmm.On("IsMetricsEnabled").Return(true)
+	mmm.On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusMismatched).Return(true)
+	err := h.CheckNodeIdentityStatus(context.Background(), dxPeer, node)
+	assert.NoError(t, err)
+}
+
+func TestCheckNodeIdentityStatusSetsHealthyStateWhenCertsMatch(t *testing.T) {
+	mmm := metricsmocks.NewManager(t)
+	h := &FFDX{initialized: true, metrics: mmm}
+	dxPeer := fftypes.JSONObject{"cert": strings.ReplaceAll(testCertBundle, "\n", `\n`)}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{"cert": strings.ReplaceAll(testCertBundle, "\n", `\n`)},
+		},
+	}
+
+	mmm.On("IsMetricsEnabled").Return(true)
+	mmm.On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusHealthy).Return(true)
+	expiry := time.Unix(1835379057, 0).UTC()
+	mmm.On("NodeIdentityDXCertExpiry", "ns1", expiry).Return(true)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), dxPeer, node)
+	assert.NoError(t, err)
+}
+
+func TestCheckNodeIdentityStatusSetsHealthyStateWhenCertsExpire(t *testing.T) {
+	mmm := metricsmocks.NewManager(t)
+	h := &FFDX{initialized: true, metrics: mmm}
+	dxPeer := fftypes.JSONObject{"cert": strings.ReplaceAll(testExpiredCert, "\n", `\n`)}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{"cert": strings.ReplaceAll(testExpiredCert, "\n", `\n`)},
+		},
+	}
+
+	mmm.On("IsMetricsEnabled").Return(true)
+	mmm.On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusHealthy).Return(true)
+	expiry := time.Unix(1740924845, 0).UTC()
+	mmm.On("NodeIdentityDXCertExpiry", "ns1", expiry).Return(true)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), dxPeer, node)
+	assert.NoError(t, err)
+}

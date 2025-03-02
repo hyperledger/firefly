@@ -31,6 +31,8 @@ func (nm *networkMap) UpdateIdentity(ctx context.Context, uuidStr string, dto *c
 		return nil, err
 	}
 	return nm.updateIdentityID(ctx, id, dto, waitConfirm)
+
+	// TODO check node status if its the same as our local node ??
 }
 
 func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {

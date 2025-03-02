@@ -466,9 +466,15 @@ func (h *FFDX) TransferBlob(ctx context.Context, nsOpID string, peer, sender fft
 }
 
 func (h *FFDX) CheckNodeIdentityStatus(ctx context.Context, dxPeer fftypes.JSONObject, node *core.Identity) error {
-	if err := h.checkInitialized(h.ctx); err != nil {
+	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
+	var mismatchState = metrics.NodeIdentityDXCertMismatchStatusUnknown
+	defer func() {
+		if h.metrics != nil && h.metrics.IsMetricsEnabled() {
+			h.metrics.NodeIdentityDXCertMismatch(node.Namespace, mismatchState)
+		}
+	}()
 
 	if dxPeer.GetString("cert") == "" {
 		log.L(ctx).Warnf("DX peer does not have a 'cert', DX plugin may be unsupported")
@@ -479,20 +485,15 @@ func (h *FFDX) CheckNodeIdentityStatus(ctx context.Context, dxPeer fftypes.JSONO
 		return i18n.NewError(ctx, coremsgs.MsgDXInfoMissingID) // TODO
 	}
 
-	var mismatchState = metrics.NodeIdentityDXCertMismatchStatusUnknown
-	defer func() {
-		if h.metrics != nil && h.metrics.IsMetricsEnabled() {
-			h.metrics.NodeIdentityDXCertMismatch(node.Namespace, mismatchState)
-		}
-	}()
-
 	mismatchState = metrics.NodeIdentityDXCertMismatchStatusHealthy
 	if dxPeer.GetString("cert") != node.Profile.GetString("cert") {
 		mismatchState = metrics.NodeIdentityDXCertMismatchStatusMismatched
 	}
 
 	if h.metrics != nil && h.metrics.IsMetricsEnabled() {
-		expiry, err := extractSoonestExpiryFromCertBundle(dxPeer.GetString("cert"))
+		h.metrics.NodeIdentityDXCertMismatch(node.Namespace, mismatchState)
+
+		expiry, err := extractSoonestExpiryFromCertBundle(strings.ReplaceAll(dxPeer.GetString("cert"), `\n`, "\n"))
 		if err == nil {
 			if expiry.Before(time.Now()) {
 				log.L(ctx).Warnf("Certificate for node '%s' has expired", node.Name)
