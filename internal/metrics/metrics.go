@@ -29,8 +29,10 @@ import (
 
 var mutex = &sync.Mutex{}
 
+var namespaceLabels = []string{"ns"}
+
 type Manager interface {
-	CountBatchPin()
+	CountBatchPin(namespace string)
 	MessageSubmitted(msg *core.Message)
 	MessageConfirmed(msg *core.Message, eventType fftypes.FFEnum)
 	TransferSubmitted(transfer *core.TokenTransfer)
@@ -39,6 +41,8 @@ type Manager interface {
 	BlockchainTransaction(location, methodName string)
 	BlockchainQuery(location, methodName string)
 	BlockchainEvent(location, signature string)
+	NodeIdentityDXCertMismatch(namespace string, mismatch NodeIdentityDXCertMismatchStatus)
+	NodeIdentityDXCertExpiry(namespace string, expiry time.Time)
 	AddTime(id string)
 	GetTime(id string) time.Time
 	DeleteTime(id string)
@@ -61,17 +65,17 @@ func NewMetricsManager(ctx context.Context) Manager {
 	return mm
 }
 
-func (mm *metricsManager) CountBatchPin() {
-	BatchPinCounter.Inc()
+func (mm *metricsManager) CountBatchPin(namespace string) {
+	BatchPinCounter.WithLabelValues(namespace).Inc()
 }
 
 func (mm *metricsManager) MessageSubmitted(msg *core.Message) {
 	if len(msg.Header.ID.String()) > 0 {
 		switch msg.Header.Type {
 		case core.MessageTypeBroadcast:
-			BroadcastSubmittedCounter.Inc()
+			BroadcastSubmittedCounter.WithLabelValues(msg.LocalNamespace).Inc()
 		case core.MessageTypePrivate:
-			PrivateMsgSubmittedCounter.Inc()
+			PrivateMsgSubmittedCounter.WithLabelValues(msg.LocalNamespace).Inc()
 		}
 		mm.AddTime(msg.Header.ID.String())
 	}
@@ -87,23 +91,23 @@ func (mm *metricsManager) MessageConfirmed(msg *core.Message, eventType fftypes.
 		if !eventTime.IsZero() {
 			// Check that we recorded the submission
 			// as we might not be the party submitting
-			BroadcastHistogram.Observe(timeElapsed)
+			BroadcastHistogram.WithLabelValues(msg.LocalNamespace).Observe(timeElapsed)
 		}
 		if eventType == core.EventTypeMessageConfirmed { // Broadcast Confirmed
-			BroadcastConfirmedCounter.Inc()
+			BroadcastConfirmedCounter.WithLabelValues(msg.LocalNamespace).Inc()
 		} else if eventType == core.EventTypeMessageRejected { // Broadcast Rejected
-			BroadcastRejectedCounter.Inc()
+			BroadcastRejectedCounter.WithLabelValues(msg.LocalNamespace).Inc()
 		}
 	case core.MessageTypePrivate:
 		if !eventTime.IsZero() {
 			// Check that we recorded the submission
 			// as we might not be the party submitting
-			PrivateMsgHistogram.Observe(timeElapsed)
+			PrivateMsgHistogram.WithLabelValues(msg.LocalNamespace).Observe(timeElapsed)
 		}
 		if eventType == core.EventTypeMessageConfirmed { // Private Msg Confirmed
-			PrivateMsgConfirmedCounter.Inc()
+			PrivateMsgConfirmedCounter.WithLabelValues(msg.LocalNamespace).Inc()
 		} else if eventType == core.EventTypeMessageRejected { // Private Msg Rejected
-			PrivateMsgRejectedCounter.Inc()
+			PrivateMsgRejectedCounter.WithLabelValues(msg.LocalNamespace).Inc()
 		}
 	}
 }
@@ -112,11 +116,11 @@ func (mm *metricsManager) TransferSubmitted(transfer *core.TokenTransfer) {
 	if len(transfer.LocalID.String()) > 0 {
 		switch transfer.Type {
 		case core.TokenTransferTypeMint: // Mint submitted
-			MintSubmittedCounter.Inc()
+			MintSubmittedCounter.WithLabelValues(transfer.Namespace).Inc()
 		case core.TokenTransferTypeTransfer: // Transfer submitted
-			TransferSubmittedCounter.Inc()
+			TransferSubmittedCounter.WithLabelValues(transfer.Namespace).Inc()
 		case core.TokenTransferTypeBurn: // Burn submitted
-			BurnSubmittedCounter.Inc()
+			BurnSubmittedCounter.WithLabelValues(transfer.Namespace).Inc()
 		}
 		mm.AddTime(transfer.LocalID.String())
 	}
@@ -130,19 +134,19 @@ func (mm *metricsManager) TransferConfirmed(transfer *core.TokenTransfer) {
 	switch transfer.Type {
 	case core.TokenTransferTypeMint: // Mint confirmed
 		if !transferEvent.IsZero() {
-			MintHistogram.Observe(timeElapsed)
+			MintHistogram.WithLabelValues(transfer.Namespace).Observe(timeElapsed)
 		}
-		MintConfirmedCounter.Inc()
+		MintConfirmedCounter.WithLabelValues(transfer.Namespace).Inc()
 	case core.TokenTransferTypeTransfer: // Transfer confirmed
 		if !transferEvent.IsZero() {
-			TransferHistogram.Observe(timeElapsed)
+			TransferHistogram.WithLabelValues(transfer.Namespace).Observe(timeElapsed)
 		}
-		TransferConfirmedCounter.Inc()
+		TransferConfirmedCounter.WithLabelValues(transfer.Namespace).Inc()
 	case core.TokenTransferTypeBurn: // Burn confirmed
 		if !transferEvent.IsZero() {
-			BurnHistogram.Observe(timeElapsed)
+			BurnHistogram.WithLabelValues(transfer.Namespace).Observe(timeElapsed)
 		}
-		BurnConfirmedCounter.Inc()
+		BurnConfirmedCounter.WithLabelValues(transfer.Namespace).Inc()
 	}
 }
 

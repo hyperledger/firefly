@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -49,5 +50,9 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 		return nil, err
 	}
 
-	return nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
+	node, err := nm.RegisterIdentity(ctx, nodeRequest, waitConfirm)
+	if statusErr := nm.exchange.CheckNodeIdentityStatus(ctx, nodeRequest.Profile, node); statusErr != nil {
+		log.L(ctx).Warnf("failed to check the node identity's status relative to the DX plugin: %v", err)
+	}
+	return node, err
 }

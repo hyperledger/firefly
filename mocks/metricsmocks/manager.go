@@ -6,6 +6,8 @@ import (
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 	core "github.com/hyperledger/firefly/pkg/core"
 
+	metrics "github.com/hyperledger/firefly/internal/metrics"
+
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -41,9 +43,9 @@ func (_m *Manager) BlockchainTransaction(location string, methodName string) {
 	_m.Called(location, methodName)
 }
 
-// CountBatchPin provides a mock function with given fields:
-func (_m *Manager) CountBatchPin() {
-	_m.Called()
+// CountBatchPin provides a mock function with given fields: namespace
+func (_m *Manager) CountBatchPin(namespace string) {
+	_m.Called(namespace)
 }
 
 // DeleteTime provides a mock function with given fields: id
@@ -95,6 +97,16 @@ func (_m *Manager) MessageConfirmed(msg *core.Message, eventType fftypes.FFEnum)
 // MessageSubmitted provides a mock function with given fields: msg
 func (_m *Manager) MessageSubmitted(msg *core.Message) {
 	_m.Called(msg)
+}
+
+// NodeIdentityDXCertExpiry provides a mock function with given fields: namespace, expiry
+func (_m *Manager) NodeIdentityDXCertExpiry(namespace string, expiry time.Time) {
+	_m.Called(namespace, expiry)
+}
+
+// NodeIdentityDXCertMismatch provides a mock function with given fields: namespace, mismatch
+func (_m *Manager) NodeIdentityDXCertMismatch(namespace string, mismatch metrics.NodeIdentityDXCertMismatchStatus) {
+	_m.Called(namespace, mismatch)
 }
 
 // TransferConfirmed provides a mock function with given fields: transfer

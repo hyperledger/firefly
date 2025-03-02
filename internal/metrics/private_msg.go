@@ -20,10 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var PrivateMsgSubmittedCounter prometheus.Counter
-var PrivateMsgConfirmedCounter prometheus.Counter
-var PrivateMsgRejectedCounter prometheus.Counter
-var PrivateMsgHistogram prometheus.Histogram
+var PrivateMsgSubmittedCounter *prometheus.CounterVec
+var PrivateMsgConfirmedCounter *prometheus.CounterVec
+var PrivateMsgRejectedCounter *prometheus.CounterVec
+var PrivateMsgHistogram *prometheus.HistogramVec
 
 // PrivateMsgSubmittedCounterName is the prometheus metric for tracking the total number of private messages submitted
 var PrivateMsgSubmittedCounterName = "ff_private_msg_submitted_total"
@@ -40,22 +40,22 @@ var PrivateMsgRejectedCounterName = "ff_private_msg_rejected_total"
 var PrivateMsgHistogramName = "ff_private_msg_histogram"
 
 func InitPrivateMsgMetrics() {
-	PrivateMsgSubmittedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	PrivateMsgSubmittedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: PrivateMsgSubmittedCounterName,
 		Help: "Number of submitted private messages",
-	})
-	PrivateMsgConfirmedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	PrivateMsgConfirmedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: PrivateMsgConfirmedCounterName,
 		Help: "Number of confirmed private messages",
-	})
-	PrivateMsgRejectedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	PrivateMsgRejectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: PrivateMsgRejectedCounterName,
 		Help: "Number of rejected private messages",
-	})
-	PrivateMsgHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	}, namespaceLabels)
+	PrivateMsgHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: PrivateMsgHistogramName,
 		Help: "Histogram of private messages, bucketed by time to finished",
-	})
+	}, namespaceLabels)
 }
 
 func RegisterPrivateMsgMetrics() {

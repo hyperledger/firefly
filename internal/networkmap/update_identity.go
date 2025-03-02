@@ -31,6 +31,8 @@ func (nm *networkMap) UpdateIdentity(ctx context.Context, uuidStr string, dto *c
 		return nil, err
 	}
 	return nm.updateIdentityID(ctx, id, dto, waitConfirm)
+
+	// TODO check node status if its the same as our local node ??
 }
 
 func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {
@@ -42,6 +44,11 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dt
 	}
 	if identity == nil || identity.Namespace != nm.namespace {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NoResult)
+	}
+
+	// TODO is this right ? code below assumes this is true and errors otherwise
+	if dto.IdentityProfile.Profile == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidIdentityPatch)
 	}
 
 	// We can't sparse merge the generic JSON fields, but we need to propagate the ID
