@@ -18,6 +18,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -94,7 +95,7 @@ func run(host string) error {
 			protocolID := event.BlockchainEvent.ProtocolID
 			fmt.Printf("%-10d %s\n", lastSequence, protocolID)
 			if protocolID <= lastProtocolID {
-				return fmt.Errorf("out of order events detected")
+				return errors.New("out of order events detected")
 			}
 			lastProtocolID = protocolID
 			validated++

@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -161,7 +162,7 @@ func (s *streamManager) deleteEventStream(ctx context.Context, esID string, okNo
 		SetContext(ctx).
 		Delete("/eventstreams/" + esID)
 	if err != nil || !res.IsSuccess() {
-		if okNotFound && res.StatusCode() == 404 {
+		if okNotFound && res.StatusCode() == http.StatusNotFound {
 			return nil
 		}
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
@@ -186,7 +187,7 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string, okNot
 		SetResult(&sub).
 		Get(fmt.Sprintf("/subscriptions/%s", subID))
 	if err != nil || !res.IsSuccess() {
-		if okNotFound && res.StatusCode() == 404 {
+		if okNotFound && res.StatusCode() == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
@@ -282,7 +283,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string, ok
 		SetContext(ctx).
 		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
-		if okNotFound && res.StatusCode() == 404 {
+		if okNotFound && res.StatusCode() == http.StatusNotFound {
 			return nil
 		}
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
