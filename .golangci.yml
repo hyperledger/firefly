@@ -21,6 +21,7 @@ linters-settings:
     values:
       regexp:
         COMPANY: .*
+        YEAR: '\d\d\d\d(-\d\d\d\d)?'
     template: |-
       Copyright © {{ YEAR }} {{ COMPANY }}
       

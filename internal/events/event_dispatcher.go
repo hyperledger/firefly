@@ -68,7 +68,7 @@ type eventDispatcher struct {
 	eventDelivery chan []*core.EventDelivery
 	mux           sync.Mutex
 	namespace     string
-	readAhead     int
+	readAhead     uint64
 	batch         bool
 	subscription  *subscription
 	txHelper      txcommon.Helper
@@ -76,9 +76,9 @@ type eventDispatcher struct {
 
 func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.Plugin, di database.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
-	readAhead := uint(0)
+	readAhead := uint64(0)
 	if sub.definition.Options.ReadAhead != nil {
-		readAhead = uint(*sub.definition.Options.ReadAhead)
+		readAhead = uint64(*sub.definition.Options.ReadAhead)
 	}
 
 	batchTimeout := defaultBatchTimeout
@@ -105,7 +105,7 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*core.Event),
 		eventDelivery: make(chan []*core.EventDelivery, readAhead+1),
-		readAhead:     int(readAhead),
+		readAhead:     readAhead,
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		txHelper:      txHelper,
@@ -113,7 +113,7 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 	}
 
 	pollerConf := &eventPollerConf{
-		eventBatchSize:             config.GetInt(coreconfig.EventDispatcherBufferLength),
+		eventBatchSize:             config.GetUint64(coreconfig.EventDispatcherBufferLength),
 		eventBatchTimeout:          config.GetDuration(coreconfig.EventDispatcherBatchTimeout),
 		eventPollTimeout:           config.GetDuration(coreconfig.EventDispatcherPollTimeout),
 		startupOffsetRetryAttempts: 0, // We need to keep trying to start indefinitely
@@ -143,7 +143,7 @@ func newEventDispatcher(ctx context.Context, enricher *eventEnricher, ei events.
 			pollerConf.eventPollTimeout = batchTimeout
 		}
 	}
-	if batch || pollerConf.eventBatchSize < int(readAhead) {
+	if batch || pollerConf.eventBatchSize < readAhead {
 		pollerConf.eventBatchSize = ed.readAhead
 	}
 
@@ -243,9 +243,9 @@ func (ed *eventDispatcher) bufferedDelivery(events []core.LocallySequenced) (boo
 	for {
 		ed.mux.Lock()
 		var dispatchable []*core.EventDelivery
-		inflightCount := len(ed.inflight)
+		inflightCount := uint64(len(ed.inflight))
 		maxDispatch := 1 + ed.readAhead - inflightCount
-		if maxDispatch >= len(matching) {
+		if maxDispatch >= uint64(len(matching)) {
 			dispatchable = matching
 			matching = nil
 		} else if maxDispatch > 0 {
@@ -260,7 +260,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []core.LocallySequenced) (boo
 		for _, event := range dispatchable {
 			ed.mux.Lock()
 			ed.inflight[*event.ID] = &event.Event
-			inflightCount = len(ed.inflight)
+			inflightCount = uint64(len(ed.inflight))
 			ed.mux.Unlock()
 
 			dispatched++
