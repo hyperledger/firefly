@@ -20,7 +20,7 @@ of datatypes, as is used to broadcast the data itself.
 ## Additional info
 
 - Key Concepts: [Broadcast / shared data](../overview/multiparty/broadcast.md)
-- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewDatatype" data-proofer-ignore>POST /api/v1/namespaces/{ns}/datatypes</a>
+- Swagger: <a href="../../swagger/#/Default%20Namespace/postNewDatatype" data-proofer-ignore>POST /api/v1/namespaces/{ns}/datatypes</a>
 
 ### Example 1: Broadcast new datatype
 

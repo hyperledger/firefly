@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,10 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var BurnSubmittedCounter prometheus.Counter
-var BurnConfirmedCounter prometheus.Counter
-var BurnRejectedCounter prometheus.Counter
-var BurnHistogram prometheus.Histogram
+var BurnSubmittedCounter *prometheus.CounterVec
+var BurnConfirmedCounter *prometheus.CounterVec
+var BurnRejectedCounter *prometheus.CounterVec
+var BurnHistogram *prometheus.HistogramVec
 
 // BurnSubmittedCounterName is the prometheus metric for tracking the total number of burns submitted
 var BurnSubmittedCounterName = "ff_burn_submitted_total"
@@ -38,22 +38,22 @@ var BurnRejectedCounterName = "ff_burn_rejected_total"
 var BurnHistogramName = "ff_burn_histogram"
 
 func InitTokenBurnMetrics() {
-	BurnSubmittedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	BurnSubmittedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: BurnSubmittedCounterName,
 		Help: "Number of submitted burns",
-	})
-	BurnConfirmedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	BurnConfirmedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: BurnConfirmedCounterName,
 		Help: "Number of confirmed burns",
-	})
-	BurnRejectedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	BurnRejectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: BurnRejectedCounterName,
 		Help: "Number of rejected burns",
-	})
-	BurnHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	}, namespaceLabels)
+	BurnHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: BurnHistogramName,
 		Help: "Histogram of burns, bucketed by time to finished",
-	})
+	}, namespaceLabels)
 }
 
 func RegisterTokenBurnMetrics() {

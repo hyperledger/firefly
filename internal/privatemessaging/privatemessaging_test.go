@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -83,7 +83,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
-	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
+	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1-remote"}
 	pm, err := NewPrivateMessaging(ctx, ns, mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom, cmi)
 	assert.NoError(t, err)
 	cmi.AssertCalled(t, "GetCache", cache.NewCacheConfig(

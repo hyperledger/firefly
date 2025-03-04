@@ -568,7 +568,7 @@ func TestCreateSubscriptionSuccessBatch(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	assert.Equal(t, uint16(50), *sub.definition.Options.ReadAhead)
+	assert.Equal(t, uint(50), *sub.definition.Options.ReadAhead)
 	assert.Equal(t, "50ms", *sub.definition.Options.BatchTimeout)
 }
 

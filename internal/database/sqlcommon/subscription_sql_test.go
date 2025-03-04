@@ -62,7 +62,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	// Update the subscription (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	newest := core.SubOptsFirstEventNewest
-	fifty := uint16(50)
+	fifty := uint(50)
 	subOpts := core.SubscriptionOptions{
 		SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 			FirstEvent: &newest,

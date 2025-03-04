@@ -44,7 +44,11 @@ func NewBatchManager(ctx context.Context, ns string, di database.Plugin, dm data
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchManager")
 	}
 	pCtx, cancelCtx := context.WithCancel(log.WithLogField(ctx, "role", "batchmgr"))
-	readPageSize := config.GetUint(coreconfig.BatchManagerReadPageSize)
+	readPageSize := uint16(1)
+	confReadPageSize := config.GetUint64(coreconfig.BatchManagerReadPageSize)
+	if confReadPageSize > 0 && confReadPageSize <= 65535 {
+		readPageSize = uint16(confReadPageSize)
+	}
 	bm := &batchManager{
 		ctx:                        pCtx,
 		cancelCtx:                  cancelCtx,
@@ -54,7 +58,7 @@ func NewBatchManager(ctx context.Context, ns string, di database.Plugin, dm data
 		data:                       dm,
 		txHelper:                   txHelper,
 		readOffset:                 -1, // On restart we trawl for all ready messages
-		readPageSize:               uint64(readPageSize),
+		readPageSize:               readPageSize,
 		minimumPollDelay:           config.GetDuration(coreconfig.BatchManagerMinimumPollDelay),
 		messagePollTimeout:         config.GetDuration(coreconfig.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(coreconfig.OrchestratorStartupAttempts),
@@ -116,7 +120,7 @@ type batchManager struct {
 	inflightSequences          map[int64]*batchProcessor
 	inflightFlushed            []int64
 	shoulderTap                chan bool
-	readPageSize               uint64
+	readPageSize               uint16
 	minimumPollDelay           time.Duration
 	messagePollTimeout         time.Duration
 	startupOffsetRetryAttempts int
@@ -126,7 +130,7 @@ type DispatchHandler func(context.Context, *DispatchPayload) error
 
 type DispatcherOptions struct {
 	BatchType      core.BatchType
-	BatchMaxSize   uint
+	BatchMaxSize   int
 	BatchMaxBytes  int64
 	BatchTimeout   time.Duration
 	DisposeTimeout time.Duration
@@ -279,11 +283,11 @@ func (bm *batchManager) readPage(lastPageFull bool) ([]*core.IDAndSequence, bool
 	// Read a page from the DB
 	var ids []*core.IDAndSequence
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
-		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
+		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, uint64(bm.readPageSize))
 		ids, err = bm.database.GetMessageIDs(bm.ctx, bm.namespace, fb.And(
 			fb.Gt("sequence", bm.readOffset),
 			fb.Eq("state", core.MessageStateReady),
-		).Sort("sequence").Limit(bm.readPageSize))
+		).Sort("sequence").Limit(uint64(bm.readPageSize)))
 		return true, err
 	})
 
@@ -549,6 +553,7 @@ func (bm *batchManager) maskContext(ctx context.Context, state *dispatchState, m
 
 	// Now we have the nonce, add that at the end of the hash to make it unqiue to this message
 	nonceBytes := make([]byte, 8)
+	//nolint:gosec
 	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
 	hashBuilder.Write(nonceBytes)
 

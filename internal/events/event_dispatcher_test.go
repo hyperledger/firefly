@@ -64,7 +64,7 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
-	ten := uint16(10)
+	ten := uint(10)
 	oldest := core.SubOptsFirstEventOldest
 	ed, cancel := newTestEventDispatcher(&subscription{
 		dispatcherElection: make(chan bool, 1),
@@ -87,7 +87,7 @@ func TestEventDispatcherStartStop(t *testing.T) {
 		<-confirmedElected
 	}
 
-	assert.Equal(t, int(10), ed.readAhead)
+	assert.Equal(t, uint64(10), ed.readAhead)
 	ed.start()
 	confirmedElected <- true
 	close(confirmedElected)
@@ -96,7 +96,7 @@ func TestEventDispatcherStartStop(t *testing.T) {
 }
 
 func TestEventDispatcherStartStopBatched(t *testing.T) {
-	ten := uint16(10)
+	ten := uint(10)
 	oldest := core.SubOptsFirstEventOldest
 	truthy := true
 	ed, cancel := newTestEventDispatcher(&subscription{
@@ -121,7 +121,7 @@ func TestEventDispatcherStartStopBatched(t *testing.T) {
 		<-confirmedElected
 	}
 
-	assert.Equal(t, int(10), ed.readAhead)
+	assert.Equal(t, uint64(10), ed.readAhead)
 	ed.start()
 	confirmedElected <- true
 	close(confirmedElected)
@@ -171,7 +171,7 @@ func TestEventDispatcherLeaderElection(t *testing.T) {
 
 func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	log.SetLevel("debug")
-	var five = uint16(5)
+	var five = uint(5)
 	subID := fftypes.NewUUID()
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),
@@ -363,7 +363,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 func TestEventDispatcherBatchBased(t *testing.T) {
 	log.SetLevel("debug")
-	three := uint16(3)
+	three := uint(3)
 	longTime := "1m"
 	subID := fftypes.NewUUID()
 	truthy := true
@@ -465,7 +465,7 @@ func TestEventDispatcherBatchBased(t *testing.T) {
 
 func TestEventDispatcherBatchDispatchFail(t *testing.T) {
 	log.SetLevel("debug")
-	two := uint16(2)
+	two := uint(2)
 	longTime := "1m"
 	subID := fftypes.NewUUID()
 	truthy := true
@@ -1201,7 +1201,7 @@ func TestDeliverEventsWithDataFail(t *testing.T) {
 
 func TestEventDispatcherWithReply(t *testing.T) {
 	log.SetLevel("debug")
-	var two = uint16(5)
+	var two = uint(5)
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &core.Subscription{
@@ -1252,7 +1252,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 
 func TestEventDeliveryBatch(t *testing.T) {
 	log.SetLevel("debug")
-	var five = uint16(5)
+	var five = uint(5)
 	truthy := true
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),

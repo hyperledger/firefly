@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -61,7 +61,7 @@ func newTestMetricsManager(t *testing.T) (*metricsManager, func()) {
 func TestCountBatchPin(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	mm.CountBatchPin()
+	mm.CountBatchPin("a-ns")
 }
 
 func TestMessageSubmittedBroadcast(t *testing.T) {
@@ -226,4 +226,45 @@ func TestIsMetricsEnabledFalse(t *testing.T) {
 	defer cancel()
 	mm.metricsEnabled = false
 	assert.Equal(t, mm.IsMetricsEnabled(), false)
+}
+
+func TestNodeIdentityDXCertMismatchSetsMismatchedState(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.NodeIdentityDXCertMismatch("test-namespace", NodeIdentityDXCertMismatchStatusMismatched)
+	gaugeValue := testutil.ToFloat64(NodeIdentityDXCertMismatchGauge.WithLabelValues("test-namespace"))
+	assert.Equal(t, 1.0, gaugeValue)
+}
+
+func TestNodeIdentityDXCertMismatchSetsHealthyState(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.NodeIdentityDXCertMismatch("test-namespace", NodeIdentityDXCertMismatchStatusHealthy)
+	gaugeValue := testutil.ToFloat64(NodeIdentityDXCertMismatchGauge.WithLabelValues("test-namespace"))
+	assert.Equal(t, 0.0, gaugeValue)
+}
+
+func TestNodeIdentityDXCertMismatchSetsUnknownState(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.NodeIdentityDXCertMismatch("test-namespace", NodeIdentityDXCertMismatchStatusUnknown)
+	gaugeValue := testutil.ToFloat64(NodeIdentityDXCertMismatchGauge.WithLabelValues("test-namespace"))
+	assert.Equal(t, -1.0, gaugeValue)
+}
+
+func TestNodeIdentityDXCertMismatchSetsDefaultState(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	mm.NodeIdentityDXCertMismatch("test-namespace", "invalid-state")
+	gaugeValue := testutil.ToFloat64(NodeIdentityDXCertMismatchGauge.WithLabelValues("test-namespace"))
+	assert.Equal(t, -1.0, gaugeValue)
+}
+
+func TestNodeIdentityDXCertExpiry(t *testing.T) {
+	mm, cancel := newTestMetricsManager(t)
+	defer cancel()
+	now := time.Now().UTC()
+	mm.NodeIdentityDXCertExpiry("test-namespace", now)
+	gaugeValue := testutil.ToFloat64(NodeIdentityDXCertExpiryGauge.WithLabelValues("test-namespace"))
+	assert.Equal(t, float64(now.Unix()), gaugeValue)
 }

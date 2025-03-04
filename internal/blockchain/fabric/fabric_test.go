@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -50,9 +50,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var utConfig = config.RootSection("fab_unit_tests")
-var utFabconnectConf = utConfig.SubSection(FabconnectConfigKey)
-var signer = "orgMSP::x509::CN=signer001,OU=client::CN=fabric-ca"
+var (
+	utConfig         = config.RootSection("fab_unit_tests")
+	utFabconnectConf = utConfig.SubSection(FabconnectConfigKey)
+	signer           = "orgMSP::x509::CN=signer001,OU=client::CN=fabric-ca"
+)
 
 func resetConf(e *Fabric) {
 	e.InitConfig(utConfig)
@@ -261,7 +263,6 @@ func TestBadTLS(t *testing.T) {
 }
 
 func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
-
 	log.SetLevel("trace")
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -335,11 +336,9 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	fromServer <- `!json`
 	fromServer <- `{"not": "a reply"}`
 	fromServer <- `42`
-
 }
 
 func TestWSInitFail(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -356,7 +355,6 @@ func TestWSInitFail(t *testing.T) {
 
 	err = e.StartNamespace(e.ctx, "ns1")
 	assert.Regexp(t, "FF00149", err)
-
 }
 
 func TestCacheInitFail(t *testing.T) {
@@ -885,7 +883,6 @@ func TestInitNewConfig(t *testing.T) {
 }
 
 func TestStreamQueryError(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -911,11 +908,9 @@ func TestStreamQueryError(t *testing.T) {
 
 	err = e.StartNamespace(e.ctx, "ns1")
 	assert.Regexp(t, "FF10284.*pop", err)
-
 }
 
 func TestStreamCreateError(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -943,11 +938,9 @@ func TestStreamCreateError(t *testing.T) {
 
 	err = e.StartNamespace(e.ctx, "ns1")
 	assert.Regexp(t, "FF10284.*pop", err)
-
 }
 
 func TestEnsureStreamDelete(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -984,7 +977,6 @@ func TestEnsureStreamDelete(t *testing.T) {
 }
 
 func TestEnsureStreamDeleteFail(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -1049,7 +1041,6 @@ func TestDeleteStreamOKNotFound(t *testing.T) {
 }
 
 func TestSubQueryCreateError(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -1093,11 +1084,9 @@ func TestSubQueryCreateError(t *testing.T) {
 	e.streamID["ns1"] = "es12345"
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.Regexp(t, "FF10284.*pop", err)
-
 }
 
 func TestSubQueryCreate(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -1141,11 +1130,9 @@ func TestSubQueryCreate(t *testing.T) {
 	e.streamID["ns1"] = "es12345"
 	_, err = e.AddFireflySubscription(e.ctx, ns, contract, "")
 	assert.NoError(t, err)
-
 }
 
 func TestSubmitBatchPinOK(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -1185,11 +1172,9 @@ func TestSubmitBatchPinOK(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.NoError(t, err)
-
 }
 
 func TestSubmitBatchPinV1(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -1229,11 +1214,9 @@ func TestSubmitBatchPinV1(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.NoError(t, err)
-
 }
 
 func TestSubmitBatchPinBadLocation(t *testing.T) {
-
 	e, _ := newTestFabric()
 
 	signer := "signer001"
@@ -1258,7 +1241,6 @@ func TestSubmitBatchPinBadLocation(t *testing.T) {
 }
 
 func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -1297,11 +1279,9 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.NoError(t, err)
-
 }
 
 func TestSubmitBatchPinVersionFail(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -1330,11 +1310,9 @@ func TestSubmitBatchPinVersionFail(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.Regexp(t, "FF10284.*pop", err)
-
 }
 
 func TestSubmitBatchPinFail(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -1366,11 +1344,9 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.Regexp(t, "FF10284.*pop", err)
-
 }
 
 func TestSubmitBatchPinError(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -1404,7 +1380,6 @@ func TestSubmitBatchPinError(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", "ns1", signer, batch, location)
 
 	assert.Regexp(t, "FF10284.*Invalid", err)
-
 }
 
 func TestResolveSignerBlank(t *testing.T) {
@@ -1424,7 +1399,6 @@ func TestResolveFullIDSigner(t *testing.T) {
 	signKey, err := e.ResolveSigningKey(context.Background(), id, blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", signKey)
-
 }
 
 func TestResolveSigner(t *testing.T) {
@@ -1457,7 +1431,7 @@ func TestResolveSignerFailedFabricCARequest(t *testing.T) {
 	responder, _ := httpmock.NewJsonResponder(503, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
 	_, err := e.ResolveSigningKey(context.Background(), "signer001", blockchain.ResolveKeyIntentSign)
-	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s(<nil>)")
+	assert.Contains(t, err.Error(), "FF10284: Error from fabconnect:")
 }
 
 func TestResolveSignerBadECertReturned(t *testing.T) {
@@ -1571,7 +1545,6 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Batch.Contexts[1].String())
 
 	em.AssertExpectations(t)
-
 }
 
 func TestHandleMessageBatchPinMissingChaincodeID(t *testing.T) {
@@ -1614,7 +1587,6 @@ func TestHandleMessageBatchPinMissingChaincodeID(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.Regexp(t, "FF10310", err)
-
 }
 
 func TestHandleMessageUnknownEventName(t *testing.T) {
@@ -1805,7 +1777,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"receivedAt": 1630033474675
   }`)
 
-	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2" &&
@@ -1866,7 +1838,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 		"transactionHash": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2"
   }`)
 
-	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	em.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusFailed &&
 			update.BlockchainTXID == "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2" &&
@@ -3041,7 +3013,6 @@ func TestHandleNetworkAction(t *testing.T) {
 	assert.NoError(t, err)
 
 	em.AssertExpectations(t)
-
 }
 
 func TestHandleNetworkActionFail(t *testing.T) {
@@ -3083,7 +3054,6 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	em.AssertExpectations(t)
-
 }
 
 func TestGetNetworkVersion(t *testing.T) {
@@ -3243,7 +3213,6 @@ func TestConvertDeprecatedContractConfigNoChannel(t *testing.T) {
 }
 
 func TestSubmitNetworkAction(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -3274,7 +3243,6 @@ func TestSubmitNetworkAction(t *testing.T) {
 }
 
 func TestSubmitNetworkActionV1(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -3333,7 +3301,6 @@ func TestSubmitNetworkActionBadLocation(t *testing.T) {
 }
 
 func TestSubmitNetworkActionVersionError(t *testing.T) {
-
 	e, cancel := newTestFabric()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
