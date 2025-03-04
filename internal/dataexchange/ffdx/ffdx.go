@@ -305,11 +305,12 @@ func (h *FFDX) beforeConnect(ctx context.Context, w wsclient.WSClient) error {
 		}
 	}
 
+	h.initialized = true
+
 	for _, cb := range h.callbacks.handlers {
 		cb.DXConnect(h)
 	}
 
-	h.initialized = true
 	return nil
 }
 
@@ -463,10 +464,6 @@ func (h *FFDX) TransferBlob(ctx context.Context, nsOpID string, peer, sender fft
 }
 
 func (h *FFDX) CheckNodeIdentityStatus(ctx context.Context, node *core.Identity) error {
-	if err := h.checkInitialized(ctx); err != nil {
-		return err
-	}
-
 	if node == nil {
 		return i18n.NewError(ctx, coremsgs.MsgNodeNotProvidedForCheck)
 	}
