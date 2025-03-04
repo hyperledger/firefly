@@ -479,7 +479,3 @@ func setDefaults() {
 	viper.SetDefault(string(CacheTokenPoolLimit), 100)
 	viper.SetDefault(string(CacheTokenPoolTTL), "1h")
 }
-
-func Reset() {
-	config.RootConfigReset(setDefaults)
-}

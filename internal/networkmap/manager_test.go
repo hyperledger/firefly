@@ -31,7 +31,6 @@ import (
 )
 
 func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
-	coreconfig.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mds := &definitionsmocks.Sender{}

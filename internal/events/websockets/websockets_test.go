@@ -63,7 +63,6 @@ func (h *testNamespacedHandler) ServeHTTP(res http.ResponseWriter, req *http.Req
 	h.ws.ServeHTTPNamespaced(h.namespace, res, req)
 }
 func newTestWebsocketsCommon(t *testing.T, cbs *eventsmocks.Callbacks, authorizer core.Authorizer, namespace string, queryParams ...string) (ws *WebSockets, wsc wsclient.WSClient, cancel func()) {
-	coreconfig.Reset()
 
 	ws = &WebSockets{}
 	ctx, cancelCtx := context.WithCancel(context.Background())

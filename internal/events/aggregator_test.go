@@ -72,7 +72,6 @@ func (tag *testAggregator) cleanup(t *testing.T) {
 }
 
 func newTestAggregatorCommon(metrics bool) *testAggregator {
-	coreconfig.Reset()
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
@@ -174,7 +173,6 @@ func newTestManifest(mType core.MessageType, groupID *fftypes.Bytes32) (*core.Me
 }
 
 func TestNewAggregator(t *testing.T) {
-	coreconfig.Reset()
 	ctx := context.Background()
 	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
@@ -198,7 +196,6 @@ func TestNewAggregator(t *testing.T) {
 	))
 }
 func TestCacheInitFail(t *testing.T) {
-	coreconfig.Reset()
 	ctx := context.Background()
 	cacheInitError := errors.New("Initialization error.")
 	logrus.SetLevel(logrus.DebugLevel)
