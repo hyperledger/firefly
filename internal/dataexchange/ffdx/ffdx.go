@@ -18,11 +18,17 @@ package ffdx
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/hyperledger/firefly/internal/metrics"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -54,6 +60,8 @@ type FFDX struct {
 	retry           *retry.Retry
 	backgroundStart bool
 	backgroundRetry *retry.Retry
+
+	metrics metrics.Manager // optional
 }
 
 type dxNode struct {
@@ -168,7 +176,7 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section) (err error) {
+func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section, metrics metrics.Manager) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.cancelCtx = cancelCtx
 	h.ackChannel = make(chan *ack)
@@ -179,6 +187,7 @@ func (h *FFDX) Init(ctx context.Context, cancelCtx context.CancelFunc, config co
 	}
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
 	h.nodes = make(map[string]*dxNode)
+	h.metrics = metrics
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
@@ -295,6 +304,11 @@ func (h *FFDX) beforeConnect(ctx context.Context, w wsclient.WSClient) error {
 			return fmt.Errorf("DX returned non-ready status: %s", status.Status)
 		}
 	}
+
+	for _, cb := range h.callbacks.handlers {
+		cb.DXConnect(h)
+	}
+
 	h.initialized = true
 	return nil
 }
@@ -446,6 +460,95 @@ func (h *FFDX) TransferBlob(ctx context.Context, nsOpID string, peer, sender fft
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
+}
+
+func (h *FFDX) CheckNodeIdentityStatus(ctx context.Context, node *core.Identity) error {
+	if err := h.checkInitialized(ctx); err != nil {
+		return err
+	}
+
+	if node == nil {
+		return i18n.NewError(ctx, coremsgs.MsgNodeNotProvidedForCheck)
+	}
+
+	var mismatchState = metrics.NodeIdentityDXCertMismatchStatusUnknown
+	defer func() {
+		if h.metrics != nil && h.metrics.IsMetricsEnabled() {
+			h.metrics.NodeIdentityDXCertMismatch(node.Namespace, mismatchState)
+		}
+		log.L(ctx).Debugf("Identity status checked against DX node='%s' mismatch_state='%s'", node.Name, mismatchState)
+	}()
+
+	dxPeer, err := h.GetEndpointInfo(ctx, node.Name) // should be the same as the local node
+	if err != nil {
+		return err
+	}
+
+	dxPeerCert := dxPeer.GetString("cert")
+	// if this occurs, it is either a misconfigured / broken DX or likely a DX that is compatible from an API perspective
+	// but does not have the same peer info as the HTTPS mTLS DX
+	if dxPeerCert == "" {
+		log.L(ctx).Debugf("DX peer does not have a 'cert', DX plugin may be unsupported")
+		return nil
+	}
+
+	expiry, err := extractSoonestExpiryFromCertBundle(strings.ReplaceAll(dxPeerCert, `\n`, "\n"))
+	if err == nil {
+		if expiry.Before(time.Now()) {
+			log.L(ctx).Warnf("DX certificate for node '%s' has expired", node.Name)
+		}
+
+		if h.metrics != nil && h.metrics.IsMetricsEnabled() {
+			h.metrics.NodeIdentityDXCertExpiry(node.Namespace, expiry)
+		}
+	} else {
+		log.L(ctx).Errorf("Failed to find x509 cert within DX cert bundle node='%s' namespace='%s'", node.Name, node.Namespace)
+	}
+
+	if node.Profile == nil {
+		return i18n.NewError(ctx, coremsgs.MsgNodeNotProvidedForCheck)
+	}
+
+	nodeCert := node.Profile.GetString("cert")
+	if nodeCert != "" {
+		mismatchState = metrics.NodeIdentityDXCertMismatchStatusHealthy
+		if dxPeerCert != nodeCert {
+			log.L(ctx).Warnf("DX certificate for node '%s' is out-of-sync with on-chain identity", node.Name)
+			mismatchState = metrics.NodeIdentityDXCertMismatchStatusMismatched
+		}
+	}
+
+	return nil
+}
+
+// We assume the cert with the soonest expiry is the leaf cert, but even if its the CA,
+// that's what will invalidate the leaf anyways, so really we only care about the soonest expiry.
+// So we loop through the bundle finding the soonest expiry, not necessarily the leaf.
+func extractSoonestExpiryFromCertBundle(certBundle string) (time.Time, error) {
+	var expiringCert *x509.Certificate
+	var block *pem.Block
+	var rest = []byte(certBundle)
+
+	for {
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			break
+		}
+
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("failed to parse non-certificate within bundle: %v", err)
+		}
+		if expiringCert == nil || cert.NotAfter.Before(expiringCert.NotAfter) {
+			expiringCert = cert
+		}
+	}
+
+	if expiringCert == nil {
+		return time.Time{}, errors.New("no valid certificate found")
+	}
+
+	return expiringCert.NotAfter.UTC(), nil
 }
 
 func (h *FFDX) ackLoop() {

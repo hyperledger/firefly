@@ -20,11 +20,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/hyperledger/firefly/internal/metrics"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -45,6 +51,106 @@ import (
 
 var utConfig = config.RootSection("ffdx_unit_tests")
 
+const (
+	// NOTE: the CA cert expires on Monday, February 28, 2035 7:30:57 PM UTC,
+	//       and the leaf cert expires on Monday, February 28, 2028 7:30:57 PM UTC
+	testCertBundle = `
+-----BEGIN CERTIFICATE-----
+MIIDqTCCApGgAwIBAgIUbZT+Ds4f2oDmGpgVi+SaQq9gxvcwDQYJKoZIhvcNAQEL
+BQAwZDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xEzARBgNVBAoMCkV4YW1wbGUgQ0ExEzARBgNVBAMMCmV4
+YW1wbGUtY2EwHhcNMjUwMjI4MTkzMDM4WhcNMzUwMjI2MTkzMDM4WjBkMQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzETMBEGA1UECgwKRXhhbXBsZSBDQTETMBEGA1UEAwwKZXhhbXBsZS1jYTCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOWBryFqk0YqQ6pzGJvBDjbV
+4BnkMzsv+Fq869Xks09OP4eW44oqfFUmpCFyS3fEmRCz+389t4mKvxcCRIJMW0f5
+K9jffG1QKUKL4UuNfEPFpM0MXTwhI+dCdvofdelzc+KBGA6CDYlnWYcCKFSuWeSu
+xrb/qCEvhcCaSYt3e2WcRHRuK+OLzM3REeJctC4G/pq858OUV5CZU2B6aGV/9uFL
+ZW3TCrOaj+Khzzt5FNvjVdLiUw0FS8VESxFA4kH8p+XUshs9S0e7LfIBSID2NU8+
++5D6HliqNqikbsny1Ps6GhLa+nI37LOVj7nFcG7uk+gb6HUN1+0YvjOJ0/zvnLEC
+AwEAAaNTMFEwHQYDVR0OBBYEFJfNoXmIn5S6W7Lcj5G/huW5q1YQMB8GA1UdIwQY
+MBaAFJfNoXmIn5S6W7Lcj5G/huW5q1YQMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
+hvcNAQELBQADggEBALsdRYJHQMkhjLcrO4Yha1KXh2d+irmi8AqQqQgbLIsSzuqG
+bKFiYnJ8PKHaISHlev2xRM9kEjDZ/9q8T4aUELg4eBjj7VK+gs+gSBO6peJ+AcEg
+TepsE5GHmhoIIiE/3dIP6XnaM6NBb8q0ewsIg1c5vLlrt8W96LY6Og7f+742VvoV
+H31srpGjy7c5nYjBTn/Bu84eb5Lxfvy10sJjnenkXDJvzkUcnfbRzDQ9k5ZuPa05
+x+BsxonN0iaeZH91F+Y3kgJidLnU5EhIB/1KXYjuEbl9qUxD6GFHRststPRPeOmj
+7C+BtJCIjjavysSqVMvQWLQ6rXms3SpRPAimWqM=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIDqjCCApKgAwIBAgIUWnobAQ4vq8gWBAXZBf7XZG3oSiUwDQYJKoZIhvcNAQEL
+BQAwZDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xEzARBgNVBAoMCkV4YW1wbGUgQ0ExEzARBgNVBAMMCmV4
+YW1wbGUtY2EwHhcNMjUwMjI4MTkzMDU3WhcNMjgwMjI4MTkzMDU3WjB2MQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzEcMBoGA1UECgwTSHlwZXJsZWRnZXIgRmlyZWZseTEcMBoGA1UEAwwTaHlw
+ZXJsZWRnZXItZmlyZWZseTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+AKlbQ+7cWWS0+QPp03PrdxsnAAtG2tWOk2CEG7HS3AlBU82YImhCidKOw+jQPS68
+2f2d0tYBhugqB2Ki6HsfYMGTjHDLbUQ5y+cLk6PFbvhjm39Ayd+WGmhWht5qFtRN
+gllTa/SbG8+iGaSPIVFCyvg1IzxsFnBGn+05Gu+KjpL4i0l1RqDmy5ItxKGP77in
+RPEUkejiUozg/X3v2TWAGagIVF5+EQ2Cswot9W1faAvyu/QmSGLLfSH22GdEDHXa
+U4DV5ArJ2U2eNkOuasSWGKBopa/Wh1SZjKrNsy5Gw84ihAI4k7ARoP+vu1dIPdaX
+ElipmGMtUWu0Azn2l9QJZpMCAwEAAaNCMEAwHQYDVR0OBBYEFL798jEmX2+hw70t
+SmfJA78PZnnHMB8GA1UdIwQYMBaAFJfNoXmIn5S6W7Lcj5G/huW5q1YQMA0GCSqG
+SIb3DQEBCwUAA4IBAQBY1NXTuQJZvjip33dRXyWP6GsSDKbXTSCcSF38P4/m+pcH
+r/q/upo+K+8eTtPqUwBsIywH5bypWqoIPtM+rkd3FVBe7uti2FExufpcOruzEGsY
+rNTfiFZbc7eHmFRTkKXWW4j6b6ElygrBvV999BhCRNf6NS0/syjqsbALHkFGeIcl
+78wdaR+m2XVJBV7SmPmZ/EQzxvhCZONNVyU5zvW2sehI7sRbZt9/FG5U1Ng0LarW
+R0gnXX/IZFnLhLh6UpLOBB0KIGENh75EEU7755jMKDKFj16D0uA1Lzrh5YxicTMy
+ydFYQLpLycsWl2oV3JB4pO5TIzjY9awkRE0MeMMc
+-----END CERTIFICATE-----
+`
+	// The CA is at the bottom of the bundle and expires same as above,
+	// Monday, February 28, 2035 7:30:57 PM. The leaf cert at the top of
+	// the bundle is already expired.
+	testExpiredCert = `
+-----BEGIN CERTIFICATE-----
+MIIDqjCCApKgAwIBAgIUWnobAQ4vq8gWBAXZBf7XZG3oSicwDQYJKoZIhvcNAQEL
+BQAwZDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xEzARBgNVBAoMCkV4YW1wbGUgQ0ExEzARBgNVBAMMCmV4
+YW1wbGUtY2EwHhcNMjUwMzAyMTQxNDA1WhcNMjUwMzAyMTQxNDA1WjB2MQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzEcMBoGA1UECgwTSHlwZXJsZWRnZXIgRmlyZWZseTEcMBoGA1UEAwwTaHlw
+ZXJsZWRnZXItZmlyZWZseTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+AKlbQ+7cWWS0+QPp03PrdxsnAAtG2tWOk2CEG7HS3AlBU82YImhCidKOw+jQPS68
+2f2d0tYBhugqB2Ki6HsfYMGTjHDLbUQ5y+cLk6PFbvhjm39Ayd+WGmhWht5qFtRN
+gllTa/SbG8+iGaSPIVFCyvg1IzxsFnBGn+05Gu+KjpL4i0l1RqDmy5ItxKGP77in
+RPEUkejiUozg/X3v2TWAGagIVF5+EQ2Cswot9W1faAvyu/QmSGLLfSH22GdEDHXa
+U4DV5ArJ2U2eNkOuasSWGKBopa/Wh1SZjKrNsy5Gw84ihAI4k7ARoP+vu1dIPdaX
+ElipmGMtUWu0Azn2l9QJZpMCAwEAAaNCMEAwHQYDVR0OBBYEFL798jEmX2+hw70t
+SmfJA78PZnnHMB8GA1UdIwQYMBaAFJfNoXmIn5S6W7Lcj5G/huW5q1YQMA0GCSqG
+SIb3DQEBCwUAA4IBAQA1dY8UCf1YSLG3Vu/u20ucw5q9tnYYoTi4fHm/g+imTvEQ
+KgTQBd5s9EHmj0BSjVFy9eSSTx5XiH6JqzGhCJRSbOIQ8RwrXpUlTuLr7gp0cO9c
+Ykxz6wt0k1F+9Iq+K8Eb6jzXoZe/ebMz611zUqY7+9lIl1AIIgx96MoZcDS/LA0e
+p/TUQ6q+Mg3W9pSXqLm8jmWNBfDViQF1v9Z3ASFYHUF/yak8jMdBEUpAqDadd/ay
+BHm9m8IvFevQjpUw6kyyg77ehEBBn7H/ISTL3HTCpUbkR3qUnFjOyBJ0G02XoozB
+I/hI0mpd6y+/JwyvG0smbD2lioiO/JQaUEZGU8pU
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIDqTCCApGgAwIBAgIUbZT+Ds4f2oDmGpgVi+SaQq9gxvcwDQYJKoZIhvcNAQEL
+BQAwZDELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM
+DVNhbiBGcmFuY2lzY28xEzARBgNVBAoMCkV4YW1wbGUgQ0ExEzARBgNVBAMMCmV4
+YW1wbGUtY2EwHhcNMjUwMjI4MTkzMDM4WhcNMzUwMjI2MTkzMDM4WjBkMQswCQYD
+VQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j
+aXNjbzETMBEGA1UECgwKRXhhbXBsZSBDQTETMBEGA1UEAwwKZXhhbXBsZS1jYTCC
+ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAOWBryFqk0YqQ6pzGJvBDjbV
+4BnkMzsv+Fq869Xks09OP4eW44oqfFUmpCFyS3fEmRCz+389t4mKvxcCRIJMW0f5
+K9jffG1QKUKL4UuNfEPFpM0MXTwhI+dCdvofdelzc+KBGA6CDYlnWYcCKFSuWeSu
+xrb/qCEvhcCaSYt3e2WcRHRuK+OLzM3REeJctC4G/pq858OUV5CZU2B6aGV/9uFL
+ZW3TCrOaj+Khzzt5FNvjVdLiUw0FS8VESxFA4kH8p+XUshs9S0e7LfIBSID2NU8+
++5D6HliqNqikbsny1Ps6GhLa+nI37LOVj7nFcG7uk+gb6HUN1+0YvjOJ0/zvnLEC
+AwEAAaNTMFEwHQYDVR0OBBYEFJfNoXmIn5S6W7Lcj5G/huW5q1YQMB8GA1UdIwQY
+MBaAFJfNoXmIn5S6W7Lcj5G/huW5q1YQMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZI
+hvcNAQELBQADggEBALsdRYJHQMkhjLcrO4Yha1KXh2d+irmi8AqQqQgbLIsSzuqG
+bKFiYnJ8PKHaISHlev2xRM9kEjDZ/9q8T4aUELg4eBjj7VK+gs+gSBO6peJ+AcEg
+TepsE5GHmhoIIiE/3dIP6XnaM6NBb8q0ewsIg1c5vLlrt8W96LY6Og7f+742VvoV
+H31srpGjy7c5nYjBTn/Bu84eb5Lxfvy10sJjnenkXDJvzkUcnfbRzDQ9k5ZuPa05
+x+BsxonN0iaeZH91F+Y3kgJidLnU5EhIB/1KXYjuEbl9qUxD6GFHRststPRPeOmj
+7C+BtJCIjjavysSqVMvQWLQ6rXms3SpRPAimWqM=
+-----END CERTIFICATE-----
+`
+)
+
 func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
@@ -64,8 +170,9 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	h = &FFDX{initialized: true}
 	h.InitConfig(utConfig)
 
+	mmm := metricsmocks.NewManager(t)
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, dxCancel, utConfig)
+	err := h.Init(dxCtx, dxCancel, utConfig, mmm)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -114,7 +221,7 @@ func TestInitBadURL(t *testing.T) {
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -127,7 +234,7 @@ func TestInitBadTLS(t *testing.T) {
 	tlsConfig.Set(fftls.HTTPConfTLSEnabled, true)
 	tlsConfig.Set(fftls.HTTPConfTLSCAFile, "badCA")
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.Regexp(t, "FF00153", err)
 }
 
@@ -136,7 +243,7 @@ func TestInitMissingURL(t *testing.T) {
 	h := &FFDX{}
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -159,7 +266,7 @@ func TestInitWithBackgroundStart(t *testing.T) {
 
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, h.backgroundRetry)
@@ -453,7 +560,7 @@ func TestBackgroundStartWSFail(t *testing.T) {
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
 	defer dxCancel()
-	err := h.Init(dxCtx, dxCancel, utConfig)
+	err := h.Init(dxCtx, dxCancel, utConfig, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -480,13 +587,15 @@ func TestMessageEventsBackgroundStart(t *testing.T) {
 	// Starting in background mode and making sure the event loop are started as well
 	// to listen to messages
 	utConfig.Set(DataExchangeBackgroundStart, true)
-	h.Init(h.ctx, h.cancelCtx, utConfig)
+	h.Init(h.ctx, h.cancelCtx, utConfig, nil)
 
 	mcb := &dataexchangemocks.Callbacks{}
 	h.SetHandler("ns1", "node1", mcb)
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
+
+	mcb.On("DXConnect", h).Return(nil)
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -547,6 +656,7 @@ func TestMessageEvents(t *testing.T) {
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
+	mcb.On("DXConnect", h).Return(nil)
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -612,6 +722,7 @@ func TestBlobEvents(t *testing.T) {
 	ocb := &coremocks.OperationCallbacks{}
 	h.SetOperationHandler("ns1", ocb)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{"id": "peer1"})
+	mcb.On("DXConnect", h).Return(nil)
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -807,7 +918,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.NoError(t, err)
 	h.AddNode(context.Background(), "ns1", "node1", fftypes.JSONObject{})
 
@@ -855,8 +966,11 @@ func TestWebsocketWithEmptyNodesInit(t *testing.T) {
 
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
-	err := h.Init(ctx, cancel, utConfig)
+	err := h.Init(ctx, cancel, utConfig, nil)
 	assert.NoError(t, err)
+	dxc := &dataexchangemocks.Callbacks{}
+	h.callbacks = callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}}
+	dxc.On("DXConnect", h).Return(nil)
 
 	err = h.Start()
 	assert.NoError(t, err)
@@ -904,4 +1018,253 @@ func TestDeleteBlobFail(t *testing.T) {
 
 	err := h.DeleteBlob(context.Background(), fmt.Sprintf("ns1/%s", u))
 	assert.Regexp(t, "FF10229", err)
+}
+
+type mockDXCallbacks struct {
+	connectCalls int
+}
+
+func (m *mockDXCallbacks) DXConnect(plugin dataexchange.Plugin) {
+	m.connectCalls++
+}
+
+func (m *mockDXCallbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error {
+	panic("implement me")
+}
+
+func TestWebsocketDXConnect(t *testing.T) {
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	_, _, wsURL, cancel := wsclient.NewTestWSServer(nil)
+	defer cancel()
+
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+	h := &FFDX{}
+
+	coreconfig.Reset()
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
+	utConfig.Set(DataExchangeInitEnabled, true)
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			var reqNodes []fftypes.JSONObject
+
+			// we want to make sure when theres are no peer nodes, an empty list is being
+			// passed as the req, not "null"
+			err := json.NewDecoder(req.Body).Decode(&reqNodes)
+			assert.NoError(t, err)
+			assert.Empty(t, reqNodes)
+			assert.NotNil(t, reqNodes)
+
+			return httpmock.NewJsonResponse(200, fftypes.JSONObject{
+				"status": "ready",
+			})
+		})
+
+	h.InitConfig(utConfig)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := h.Init(ctx, cancel, utConfig, nil)
+	assert.NoError(t, err)
+	dxc := &mockDXCallbacks{
+		connectCalls: 0,
+	}
+	h.callbacks = callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}}
+
+	err = h.Start()
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, httpmock.GetTotalCallCount())
+	assert.True(t, h.initialized)
+	assert.Equal(t, 1, dxc.connectCalls)
+}
+
+func TestExtractSoonestExpiryFromCertBundleEmpty(t *testing.T) {
+	_, err := extractSoonestExpiryFromCertBundle("")
+	assert.ErrorContains(t, err, "no valid certificate found")
+
+}
+
+func TestExtractSoonestExpiryFromCertBundleBadBundle(t *testing.T) {
+	nonCertPEMBundle := `
+-----BEGIN NON-CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJALa6+u2k5u2kMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV
+BAYTAkFVMRMwEQYDVQQIDApxdWVlbnNsYW5kMREwDwYDVQQHDAhCcm9va2ZpZWxk
+-----END NON-CERTIFICATE-----
+`
+
+	_, err := extractSoonestExpiryFromCertBundle(nonCertPEMBundle)
+	assert.ErrorContains(t, err, "failed to parse non-certificate within bundle")
+}
+
+func TestCheckNodeIdentityStatusReturnsErrorWhenNotInitialized(t *testing.T) {
+	h := &FFDX{initialized: false}
+	err := h.CheckNodeIdentityStatus(context.Background(), &core.Identity{})
+	assert.Regexp(t, "FF10342", err)
+}
+
+func TestCheckNodeIdentityStatusNodeNil(t *testing.T) {
+	mmm := metricsmocks.NewManager(t)
+
+	h := &FFDX{initialized: true, metrics: mmm}
+
+	err := h.CheckNodeIdentityStatus(context.Background(), nil)
+	assert.Error(t, err)
+}
+
+func TestCheckNodeIdentityStatusReturnsNilWhenCertIsEmpty(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
+			"id":       "peer1",
+			"endpoint": "https://peer1.example.com",
+			"cert":     "",
+		}))
+
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+	}
+
+	h.metrics.(*metricsmocks.Manager).On("IsMetricsEnabled").Return(true)
+	h.metrics.(*metricsmocks.Manager).On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusUnknown).Return(true)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), node)
+	assert.NoError(t, err)
+}
+
+func TestCheckNodeIdentityStatusReturnsErrorWhenNodeProfileIsNil(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
+			"id":       "peer1",
+			"endpoint": "https://peer1.example.com",
+			"cert":     "a-cert",
+		}))
+
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+	}
+	h.metrics.(*metricsmocks.Manager).On("IsMetricsEnabled").Return(false)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), node)
+	assert.Error(t, err)
+}
+
+func TestCheckNodeIdentityStatusEndpointInfoFails(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
+		httpmock.NewErrorResponder(errors.New("failed to get peer info")))
+
+	h.metrics.(*metricsmocks.Manager).On("IsMetricsEnabled").Return(true)
+	h.metrics.(*metricsmocks.Manager).On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusUnknown).Return(true)
+
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+	}
+	err := h.CheckNodeIdentityStatus(context.Background(), node)
+	assert.Error(t, err)
+}
+
+func TestCheckNodeIdentityStatusSetsMismatchStateWhenCertsDiffer(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
+			"id":       "peer1",
+			"endpoint": "https://peer1.example.com",
+			"cert":     "a-cert",
+		}))
+
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{"cert": "b-cert"},
+		},
+	}
+
+	h.metrics.(*metricsmocks.Manager).On("IsMetricsEnabled").Return(true)
+	h.metrics.(*metricsmocks.Manager).On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusMismatched).Return(true)
+	err := h.CheckNodeIdentityStatus(context.Background(), node)
+	assert.NoError(t, err)
+}
+
+func TestCheckNodeIdentityStatusSetsHealthyStateWhenCertsMatch(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	jsonFriendlyCert := strings.ReplaceAll(testCertBundle, "\n", `\n`)
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
+			"id":       "peer1",
+			"endpoint": "https://peer1.example.com",
+			"cert":     jsonFriendlyCert,
+		}))
+
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{"cert": jsonFriendlyCert},
+		},
+	}
+
+	h.metrics.(*metricsmocks.Manager).On("IsMetricsEnabled").Return(true)
+	h.metrics.(*metricsmocks.Manager).On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusHealthy).Return(true)
+	expiry := time.Unix(1835379057, 0).UTC()
+	h.metrics.(*metricsmocks.Manager).On("NodeIdentityDXCertExpiry", "ns1", expiry).Return(true)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), node)
+	assert.NoError(t, err)
+}
+
+func TestCheckNodeIdentityStatusSetsHealthyStateWhenCertsExpire(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFDX(t, false)
+	defer done()
+
+	jsonFriendlyCert := strings.ReplaceAll(testExpiredCert, "\n", `\n`)
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/api/v1/id", httpURL),
+		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
+			"id":       "peer1",
+			"endpoint": "https://peer1.example.com",
+			"cert":     jsonFriendlyCert,
+		}))
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			Namespace: "ns1",
+		},
+		IdentityProfile: core.IdentityProfile{
+			Profile: fftypes.JSONObject{"cert": jsonFriendlyCert},
+		},
+	}
+
+	h.metrics.(*metricsmocks.Manager).On("IsMetricsEnabled").Return(true)
+	h.metrics.(*metricsmocks.Manager).On("NodeIdentityDXCertMismatch", "ns1", metrics.NodeIdentityDXCertMismatchStatusHealthy).Return(true)
+	expiry := time.Unix(1740924845, 0).UTC()
+	h.metrics.(*metricsmocks.Manager).On("NodeIdentityDXCertExpiry", "ns1", expiry).Return(true)
+
+	err := h.CheckNodeIdentityStatus(context.Background(), node)
+	assert.NoError(t, err)
 }

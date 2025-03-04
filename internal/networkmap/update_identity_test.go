@@ -268,3 +268,16 @@ func TestUpdateIdentityProfileOverwrite(t *testing.T) {
 	mim.AssertExpectations(t)
 	mds.AssertExpectations(t)
 }
+
+func TestUpdateIdentityProfileNotProvided(t *testing.T) {
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	identity := testOrg("org1")
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
+
+	_, err := nm.UpdateIdentity(nm.ctx, identity.ID.String(), &core.IdentityUpdateDTO{}, true)
+	assert.Regexp(t, "FF10480", err)
+}
