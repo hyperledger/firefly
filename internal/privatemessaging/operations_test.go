@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -149,6 +149,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	assert.Equal(t, node, po.Data.(batchSendData).Node)
 	assert.Equal(t, group, po.Data.(batchSendData).Transport.Group)
 	assert.Equal(t, batch, po.Data.(batchSendData).Transport.Batch)
+	assert.Equal(t, "ns1-remote", po.Data.(batchSendData).Transport.Batch.Namespace) // ensure its set to the network name not the local namespace name
 
 	_, phase, err := pm.RunOperation(context.Background(), po)
 

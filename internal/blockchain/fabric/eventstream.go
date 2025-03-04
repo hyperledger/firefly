@@ -36,7 +36,7 @@ type streamManager struct {
 	signer         string
 	cache          cache.CInterface
 	batchSize      uint
-	batchTimeoutMS uint
+	batchTimeoutMS int64
 }
 
 type eventStream struct {
@@ -44,7 +44,7 @@ type eventStream struct {
 	Name           string               `json:"name"`
 	ErrorHandling  string               `json:"errorHandling"`
 	BatchSize      uint                 `json:"batchSize"`
-	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
+	BatchTimeoutMS int64                `json:"batchTimeoutMS"`
 	Type           string               `json:"type"`
 	WebSocket      eventStreamWebsocket `json:"websocket"`
 	Timestamps     bool                 `json:"timestamps"`
@@ -65,7 +65,7 @@ type eventFilter struct {
 	EventFilter string `json:"eventFilter"`
 }
 
-func newStreamManager(client *resty.Client, signer string, cache cache.CInterface, batchSize, batchTimeout uint) *streamManager {
+func newStreamManager(client *resty.Client, signer string, cache cache.CInterface, batchSize uint, batchTimeout int64) *streamManager {
 	return &streamManager{
 		client:         client,
 		signer:         signer,
@@ -86,7 +86,7 @@ func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventSt
 	return streams, nil
 }
 
-func buildEventStream(topic string, batchSize, batchTimeout uint) *eventStream {
+func buildEventStream(topic string, batchSize uint, batchTimeout int64) *eventStream {
 	return &eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",

@@ -203,7 +203,7 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 	}
 	t.cache = cache
 
-	t.streams = newStreamManager(t.client, t.cache, t.tezosconnectConf.GetUint(TezosconnectConfigBatchSize), uint(t.tezosconnectConf.GetDuration(TezosconnectConfigBatchTimeout).Milliseconds()))
+	t.streams = newStreamManager(t.client, t.cache, t.tezosconnectConf.GetUint(TezosconnectConfigBatchSize), t.tezosconnectConf.GetDuration(TezosconnectConfigBatchTimeout).Milliseconds())
 
 	t.backgroundStart = t.tezosconnectConf.GetBool(TezosconnectBackgroundStart)
 	if t.backgroundStart {

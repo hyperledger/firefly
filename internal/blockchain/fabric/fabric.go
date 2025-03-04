@@ -242,7 +242,7 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	f.streamID = make(map[string]string)
 	f.closed = make(map[string]chan struct{})
 	f.wsconn = make(map[string]wsclient.WSClient)
-	f.streams = newStreamManager(f.client, f.signer, f.cache, f.fabconnectConf.GetUint(FabconnectConfigBatchSize), uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds()))
+	f.streams = newStreamManager(f.client, f.signer, f.cache, f.fabconnectConf.GetUint(FabconnectConfigBatchSize), f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 
 	return nil
 }

@@ -485,7 +485,7 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 		return true
 	})).Return(nil)
 	mp.mmi.On("IsMetricsEnabled").Return(true)
-	mp.mmi.On("CountBatchPin").Return()
+	mp.mmi.On("CountBatchPin", "ns1").Return()
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
@@ -618,7 +618,7 @@ func TestSubmitBatchPinWithBatchOpNotFound(t *testing.T) {
 		return true
 	})).Return(nil)
 	mp.mmi.On("IsMetricsEnabled").Return(true)
-	mp.mmi.On("CountBatchPin").Return()
+	mp.mmi.On("CountBatchPin", "ns1").Return()
 	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(txcommon.BatchPinData)
 		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch

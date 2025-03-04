@@ -20,6 +20,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/hyperledger/firefly/internal/metrics"
+
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -60,7 +62,7 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc, config config.Section, metrics metrics.Manager) error
 
 	// SetHandler registers a handler to receive callbacks
 	// Plugin will attempt (but is not guaranteed) to deliver events only for the given namespace and node
@@ -101,10 +103,14 @@ type Plugin interface {
 
 	// GetPeerID extracts the peer ID from the peer JSON
 	GetPeerID(peer fftypes.JSONObject) string
+
+	// CheckNodeIdentityStatus checks the status of the local node's network identity relative to the DX plugin's config
+	CheckNodeIdentityStatus(ctx context.Context, node *core.Identity) error
 }
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
 type Callbacks interface {
+	DXConnect(plugin Plugin)
 	// Event has sub-types as defined below, and can be processed and ack'd asynchronously
 	DXEvent(plugin Plugin, event DXEvent) error
 }

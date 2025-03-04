@@ -86,13 +86,17 @@ func privatePinHash(topic string, group *fftypes.Bytes32, identity string, nonce
 	h.Write((*group)[:])
 	h.Write([]byte(identity))
 	nonceBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
+	n := uint64(0)
+	if nonce > 0 {
+		n = uint64(nonce)
+	}
+	binary.BigEndian.PutUint64(nonceBytes, n)
 	h.Write(nonceBytes)
 	return fftypes.HashResult(h)
 }
 
 func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager, cacheManager cache.Manager) (*aggregator, error) {
-	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
+	batchSize := config.GetUint64(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:          log.WithLogField(ctx, "role", "aggregator"),
 		namespace:    ns,

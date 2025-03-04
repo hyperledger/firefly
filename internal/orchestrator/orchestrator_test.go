@@ -457,6 +457,7 @@ func TestStartBatchFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdm.On("Start").Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
+	or.mnm.On("CheckNodeIdentityStatus", or.ctx).Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -479,6 +480,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
+	or.mnm.On("CheckNodeIdentityStatus", or.ctx).Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mtw.On("Start").Return()
 	or.mam.On("Start").Return(nil)
@@ -502,6 +504,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
+	or.mnm.On("CheckNodeIdentityStatus", or.ctx).Return(errors.New("benign error"))
 	or.mom.On("Start").Return(nil)
 	or.mtw.On("Start").Return()
 	or.mam.On("Start").Return(nil)

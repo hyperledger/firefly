@@ -52,6 +52,7 @@ func newTestBatchManager(t *testing.T) (*batchManager, func()) {
 	cmi := &cachemocks.Manager{}
 	cmi.On("GetCache", mock.Anything).Return(cache.NewUmanagedCache(ctx, 100, 5*time.Minute), nil)
 	txHelper, _ := txcommon.NewTransactionHelper(ctx, "ns1", mdi, mdm, cmi)
+	config.Set(coreconfig.BatchManagerReadPageSize, 0) // will get min value of 1
 	bm, err := NewBatchManager(context.Background(), "ns1", mdi, mdm, mim, txHelper)
 	assert.NoError(t, err)
 	return bm.(*batchManager), bm.(*batchManager).cancelCtx

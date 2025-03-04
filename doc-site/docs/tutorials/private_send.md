@@ -37,7 +37,7 @@ title: Privately send data
 ## Additional info
 
 - Key Concepts: [Private data exchange](../overview/multiparty/data_exchange.md)
-- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessagePrivate" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/private</a>
+- Swagger: <a href="../../swagger/#/Default%20Namespace/postNewMessagePrivate" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/private</a>
 
 ## Example 1: Pinned private send of in-line string data
 

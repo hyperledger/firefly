@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -184,8 +184,8 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync),
 	}
 	om.updater.cancelFunc()
 
@@ -206,8 +206,8 @@ func TestRunOperationFailIdempotentInit(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync, 1),
 	}
 
 	ctx := context.Background()
@@ -234,8 +234,8 @@ func TestRunOperationFailNonIdempotentInit(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync, 1),
 	}
 
 	ctx := context.Background()
@@ -262,8 +262,8 @@ func TestRunOperationFailConflict(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate, 1),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync, 1),
 	}
 
 	ctx := context.Background()
@@ -287,8 +287,8 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	om.updater.workQueues = []chan *core.OperationUpdate{
-		make(chan *core.OperationUpdate),
+	om.updater.workQueues = []chan *core.OperationUpdateAsync{
+		make(chan *core.OperationUpdateAsync),
 	}
 	om.updater.cancelFunc()
 
@@ -739,4 +739,160 @@ func TestResubmitIdempotentOperationExecError(t *testing.T) {
 func TestErrTernaryHelper(t *testing.T) {
 	assert.Equal(t, core.OpPhasePending, ErrTernary(nil, core.OpPhaseInitializing, core.OpPhasePending))
 	assert.Equal(t, core.OpPhaseInitializing, ErrTernary(fmt.Errorf("pop"), core.OpPhaseInitializing, core.OpPhasePending))
+}
+
+func TestSubmitBulkOperationUpdates(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		Namespace: "ns1",
+		ID:        opID,
+		Plugin:    "blockchain",
+		Type:      core.OpTypeBlockchainPinBatch,
+		Status:    core.OpStatusInitialized,
+	}
+	op2ID := fftypes.NewUUID()
+	op2 := &core.Operation{
+		Namespace: "ns2",
+		ID:        op2ID,
+		Plugin:    "blockchain",
+		Type:      core.OpTypeBlockchainContractDeploy,
+		Status:    core.OpStatusInitialized,
+	}
+	operations = append(operations, op, op2)
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + opID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
+	}
+
+	submittedUpdate2 := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + op2ID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+
+	mdi.On("UpdateOperation", ctx, "ns1", opID, mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("UpdateOperation", ctx, "ns2", op2ID, mock.Anything, mock.Anything).Return(true, nil)
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate, submittedUpdate2})
+	assert.NoError(t, err)
+}
+
+func TestSubmitBulkOperationUpdatesErrorNoPlugin(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+
+	operations = append(operations, op)
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + opID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10479", err.Error())
+}
+
+func TestSubmitBulkOperationUpdatesErrorWrongNamespace(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+	operations = append(operations, op)
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "different-namespace:" + opID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
+	}
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.Error(t, err)
+	assert.Regexp(t, "FF10478", err.Error())
+}
+
+func TestSubmitBulkOperationUpdatesIgnoredBadID(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:BAD-UUID",
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
+	}
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.Error(t, err)
+	assert.Regexp(t, "FF00138", err.Error())
+}
+
+func TestSubmitBulkOperationUpdatesError(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+
+	operations := make([]*core.Operation, 0)
+	opID := fftypes.NewUUID()
+	op := &core.Operation{
+		ID:     opID,
+		Plugin: "blockchain",
+		Type:   core.OpTypeBlockchainPinBatch,
+		Status: core.OpStatusInitialized,
+	}
+	operations = append(operations, op)
+
+	submittedUpdate := &core.OperationUpdate{
+		NamespacedOpID: "ns1:" + opID.String(),
+		Status:         core.OpStatusSucceeded,
+		ErrorMessage:   "my-error-message",
+		Plugin:         "blockchain",
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", ctx, "ns1", mock.Anything).Return(operations, nil, errors.New("Failed to get operations"))
+
+	err := om.SubmitBulkOperationUpdates(ctx, []*core.OperationUpdate{submittedUpdate})
+	assert.Error(t, err)
 }

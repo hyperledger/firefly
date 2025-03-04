@@ -81,7 +81,7 @@ func (swg *ffiSwaggerGen) Build(ctx context.Context, api *core.ContractAPI, ffi 
 
 func addFFIMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FFIMethod, hasLocation bool) []*ffapi.Route {
 	description := method.Description
-	if method.Details != nil && len(method.Details) > 0 {
+	if len(method.Details) > 0 {
 		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
 		description = fmt.Sprintf("%s\n\n%s:\n\n%s", description, additionalDetailsHeader, buildDetailsTable(ctx, method.Details))
 	}
@@ -117,7 +117,7 @@ func addFFIMethod(ctx context.Context, routes []*ffapi.Route, method *fftypes.FF
 
 func addFFIEvent(ctx context.Context, routes []*ffapi.Route, event *fftypes.FFIEvent, hasLocation bool) []*ffapi.Route {
 	description := event.Description
-	if event.Details != nil && len(event.Details) > 0 {
+	if len(event.Details) > 0 {
 		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
 		description = fmt.Sprintf("%s\n\n%s:\n\n%s", description, additionalDetailsHeader, buildDetailsTable(ctx, event.Details))
 	}

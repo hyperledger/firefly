@@ -272,7 +272,7 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 		nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 		nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return().Once()
 		nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, nmm.mmi, mock.Anything).Return(nil).Once()
-		nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+		nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 		nmm.mps.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 		nmm.mti[0].On("Init", mock.Anything, mock.Anything, "erc721", mock.Anything).Return(nil).Once()
 		nmm.mti[1].On("Init", mock.Anything, mock.Anything, "erc1155", mock.Anything).Return(nil).Once()
@@ -362,7 +362,7 @@ func TestInitDataExchangeFail(t *testing.T) {
 	nm, nmm, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := nm.initPlugins(map[string]*plugin{
 		"ffdx": nm.plugins["ffdx"],

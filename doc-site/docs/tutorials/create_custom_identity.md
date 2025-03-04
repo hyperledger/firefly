@@ -11,7 +11,7 @@ Out of the box, a FireFly Supernode contains both an `org` and a `node` identity
 ## Additional info
 
 - Reference: [Identities](../reference/identities.md)
-- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewIdentity" data-proofer-ignore>POST /api/v1/identities</a>
+- Swagger: <a href="../../swagger/#/Default%20Namespace/postNewIdentity" data-proofer-ignore>POST /api/v1/identities</a>
 
 ## Previous steps: Start your environment
 
