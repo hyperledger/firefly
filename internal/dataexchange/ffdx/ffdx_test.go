@@ -1095,17 +1095,9 @@ BAYTAkFVMRMwEQYDVQQIDApxdWVlbnNsYW5kMREwDwYDVQQHDAhCcm9va2ZpZWxk
 	assert.ErrorContains(t, err, "failed to parse non-certificate within bundle")
 }
 
-func TestCheckNodeIdentityStatusReturnsErrorWhenNotInitialized(t *testing.T) {
-	h := &FFDX{initialized: false}
-	err := h.CheckNodeIdentityStatus(context.Background(), &core.Identity{})
-	assert.Regexp(t, "FF10342", err)
-}
-
 func TestCheckNodeIdentityStatusNodeNil(t *testing.T) {
 	mmm := metricsmocks.NewManager(t)
-
-	h := &FFDX{initialized: true, metrics: mmm}
-
+	h := &FFDX{metrics: mmm}
 	err := h.CheckNodeIdentityStatus(context.Background(), nil)
 	assert.Error(t, err)
 }
