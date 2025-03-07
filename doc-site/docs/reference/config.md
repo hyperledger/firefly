@@ -636,6 +636,82 @@ title: Configuration Reference
 |name|The name of the configured Blockchain plugin|`string`|`<nil>`
 |type|The type of the configured Blockchain Connector plugin|`string`|`<nil>`
 
+## plugins.blockchain[].cardano.cardanoconnect
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|batchSize|The number of events Cardanoconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
+|batchTimeout|How long Cardanoconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxConnsPerHost|The max number of connections, per unique hostname. Zero means no limit|`int`|`0`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|maxIdleConnsPerHost|The max number of idle connections, per unique hostname. Zero means net/http uses the default of only 2.|`int`|`100`
+|passthroughHeadersEnabled|Enable passing through the set of allowed HTTP request headers|`boolean`|`false`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|topic|The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single cardanoconnect|`string`|`<nil>`
+|url|The URL of the Cardanoconnect instance|URL `string`|`<nil>`
+
+## plugins.blockchain[].cardano.cardanoconnect.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.blockchain[].cardano.cardanoconnect.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to connect through|`string`|`<nil>`
+
+## plugins.blockchain[].cardano.cardanoconnect.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|errorStatusCodeRegex|The regex that the error response status code must match to trigger retry|`string`|`<nil>`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].cardano.cardanoconnect.throttle
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|burst|The maximum number of requests that can be made in a short period of time before the throttling kicks in.|`int`|`<nil>`
+|requestsPerSecond|The average rate at which requests are allowed to pass through over time.|`int`|`<nil>`
+
+## plugins.blockchain[].cardano.cardanoconnect.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|ca|The TLS certificate authority in PEM format (this option is ignored if caFile is also set)|`string`|`<nil>`
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|cert|The TLS certificate in PEM format (this option is ignored if certFile is also set)|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|insecureSkipHostVerify|When to true in unit test development environments to disable TLS verification. Use with extreme caution|`boolean`|`<nil>`
+|key|The TLS certificate key in PEM format (this option is ignored if keyFile is also set)|`string`|`<nil>`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+|requiredDNAttributes|A set of required subject DN attributes. Each entry is a regular expression, and the subject certificate must have a matching attribute of the specified type (CN, C, O, OU, ST, L, STREET, POSTALCODE, SERIALNUMBER are valid attributes)|`map[string]string`|`<nil>`
+
+## plugins.blockchain[].cardano.cardanoconnect.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The amount of time to wait while establishing a connection (or auto-reconnection)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`45s`
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|url|URL to use for WebSocket - overrides url one level up (in the HTTP config)|`string`|`<nil>`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
 ## plugins.blockchain[].ethereum.addressResolver
 
 |Key|Description|Type|Default Value|
