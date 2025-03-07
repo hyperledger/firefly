@@ -20,6 +20,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/hyperledger/firefly-common/pkg/log"
+
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -96,4 +98,14 @@ func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.
 		return err
 	}
 	return bc.o.events.TokensApproved(plugin, approval)
+}
+
+func (bc *boundCallbacks) DXConnect(plugin dataexchange.Plugin) {
+	err := bc.checkStopped()
+	if err == nil {
+		err = bc.o.networkmap.CheckNodeIdentityStatus(bc.o.ctx)
+	}
+	if err != nil {
+		log.L(bc.o.ctx).Errorf("Error handling DX connect callback: %s", err)
+	}
 }

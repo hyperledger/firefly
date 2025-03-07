@@ -14,18 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package networkmap
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"context"
 )
 
-func TestPrometheusMiddleware(t *testing.T) {
-	Registry()
-	adminInstrumentation = nil
-	restInstrumentation = nil
-	assert.NotNil(t, GetAdminServerInstrumentation())
-	assert.NotNil(t, GetRestServerInstrumentation())
+func (nm *networkMap) CheckNodeIdentityStatus(ctx context.Context) error {
+	node, err := nm.identity.GetLocalNode(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nm.exchange.CheckNodeIdentityStatus(ctx, node)
 }

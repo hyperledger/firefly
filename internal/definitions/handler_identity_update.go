@@ -87,6 +87,24 @@ func (dh *definitionHandler) handleIdentityUpdate(ctx context.Context, state *co
 		event := core.NewEvent(core.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
+
+	if dh.multiparty && identity.Type == core.IdentityTypeNode {
+		nodeDID, err := dh.identity.GetLocalNodeDID(ctx)
+		if err != nil {
+			return HandlerResult{Action: core.ActionRetry}, err
+		}
+
+		if nodeDID == identity.DID {
+			state.AddFinalize(func(ctx context.Context) error {
+				err := dh.exchange.CheckNodeIdentityStatus(ctx, identity)
+				if err != nil {
+					log.L(ctx).Warnf("Failed to check node identity status relative to dataexchange: %s", err)
+				}
+				return nil
+			})
+		}
+	}
+
 	return HandlerResult{Action: core.ActionConfirm}, err
 
 }
