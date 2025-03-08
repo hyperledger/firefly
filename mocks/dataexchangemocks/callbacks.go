@@ -12,6 +12,11 @@ type Callbacks struct {
 	mock.Mock
 }
 
+// DXConnect provides a mock function with given fields: plugin
+func (_m *Callbacks) DXConnect(plugin dataexchange.Plugin) {
+	_m.Called(plugin)
+}
+
 // DXEvent provides a mock function with given fields: plugin, event
 func (_m *Callbacks) DXEvent(plugin dataexchange.Plugin, event dataexchange.DXEvent) error {
 	ret := _m.Called(plugin, event)

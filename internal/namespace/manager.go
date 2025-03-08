@@ -702,7 +702,7 @@ func (nm *namespaceManager) initPlugins(pluginsToStart map[string]*plugin) (err 
 				return err
 			}
 		case pluginCategoryDataexchange:
-			if err = p.dataexchange.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config); err != nil {
+			if err = p.dataexchange.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config, nm.metrics); err != nil {
 				return err
 			}
 		case pluginCategorySharedstorage:

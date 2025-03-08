@@ -19,6 +19,7 @@ package definitions
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -63,6 +64,43 @@ func testIdentityUpdate(t *testing.T) (*core.Identity, *core.Message, *core.Data
 	}
 
 	return org1, updateMsg, updateData, iu
+}
+
+func testNodeIdentityUpdate(t *testing.T) (*core.Identity, *core.Identity, *core.Message, *core.Data, *core.IdentityUpdate) {
+	org1 := testOrgIdentity(t, "org1")
+	org1.Parent = fftypes.NewUUID() // Not involved in verification for updates, just must not change
+	node1 := testNodeIdentity(t, "node1", org1)
+
+	iu := &core.IdentityUpdate{
+		Identity: node1.IdentityBase,
+		Updates: core.IdentityProfile{
+			Profile: fftypes.JSONObject{
+				"new": "profile",
+			},
+			Description: "new description",
+		},
+	}
+	b, err := json.Marshal(&iu)
+	assert.NoError(t, err)
+	updateData := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtrBytes(b),
+	}
+
+	updateMsg := &core.Message{
+		Header: core.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Type:   core.MessageTypeDefinition,
+			Tag:    core.SystemTagIdentityUpdate,
+			Topics: fftypes.FFStringArray{node1.Topic()},
+			SignerRef: core.SignerRef{
+				Author: org1.DID,
+				Key:    "0x12345",
+			},
+		},
+	}
+
+	return org1, node1, updateMsg, updateData, iu
 }
 
 func TestHandleDefinitionIdentityUpdateOk(t *testing.T) {
@@ -249,4 +287,58 @@ func TestHandleDefinitionIdentityMissingData(t *testing.T) {
 	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
+}
+
+func TestHandleDefinitionIdentityUpdateLocalNodeOk(t *testing.T) {
+	dh, bs := newTestDefinitionHandler(t)
+	ctx := context.Background()
+
+	org1, node1, updateMsg, updateData, iu := testNodeIdentityUpdate(t)
+
+	dh.mim.On("VerifyIdentityChain", ctx, node1).Return(org1, false, nil)
+	dh.mim.On("CachedIdentityLookupByID", ctx, node1.ID).Return(node1, nil)
+	dh.mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
+		assert.Equal(t, *updateMsg.Header.ID, *identity.Messages.Update)
+		assert.Equal(t, node1.IdentityBase, identity.IdentityBase)
+		assert.Equal(t, iu.Updates, identity.IdentityProfile)
+		return true
+	}), database.UpsertOptimizationExisting).Return(nil)
+	dh.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeIdentityUpdated
+	})).Return(nil)
+	dh.mim.On("GetLocalNodeDID", ctx).Return(node1.DID, nil)
+	dh.mdx.On("CheckNodeIdentityStatus", ctx, node1).Return(errors.New("failed to check status but no worries"))
+
+	dh.multiparty = true
+	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, updateMsg, core.DataArray{updateData}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
+	assert.NoError(t, err)
+
+	err = bs.RunFinalize(ctx)
+	assert.NoError(t, err)
+}
+
+func TestHandleDefinitionIdentityUpdateLocalNodeMisconfigured(t *testing.T) {
+	dh, bs := newTestDefinitionHandler(t)
+	ctx := context.Background()
+
+	org1, node1, updateMsg, updateData, iu := testNodeIdentityUpdate(t)
+
+	dh.mim.On("VerifyIdentityChain", ctx, node1).Return(org1, false, nil)
+	dh.mim.On("CachedIdentityLookupByID", ctx, node1.ID).Return(node1, nil)
+	dh.mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
+		assert.Equal(t, *updateMsg.Header.ID, *identity.Messages.Update)
+		assert.Equal(t, node1.IdentityBase, identity.IdentityBase)
+		assert.Equal(t, iu.Updates, identity.IdentityProfile)
+		return true
+	}), database.UpsertOptimizationExisting).Return(nil)
+	dh.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeIdentityUpdated
+	})).Return(nil)
+	dh.mim.On("GetLocalNodeDID", ctx).Return(node1.DID, errors.New("no local node but somehow we got this far"))
+
+	dh.multiparty = true
+	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, updateMsg, core.DataArray{updateData}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
+	assert.Error(t, err)
 }

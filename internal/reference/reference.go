@@ -50,7 +50,7 @@ type TypeReferenceDoc struct {
 func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, error) {
 
 	newest := core.SubOptsFirstEventNewest
-	fifty := uint16(50)
+	fifty := uint(50)
 	falseVar := false
 
 	types := []interface{}{
@@ -790,14 +790,14 @@ func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, exa
 	if typeReferenceDoc.Description != nil {
 		buff.Write(typeReferenceDoc.Description)
 	}
-	if typeReferenceDoc.Example != nil && len(typeReferenceDoc.Example) > 0 {
+	if len(typeReferenceDoc.Example) > 0 {
 		if sectionCount > 1 {
 			buff.WriteString("### Example\n\n```json\n")
 		}
 		buff.Write(typeReferenceDoc.Example)
 		buff.WriteString("\n```\n\n")
 	}
-	if typeReferenceDoc.FieldDescriptions != nil && len(typeReferenceDoc.FieldDescriptions) > 0 {
+	if len(typeReferenceDoc.FieldDescriptions) > 0 {
 		if sectionCount > 1 {
 			buff.WriteString("### Field Descriptions\n\n")
 		}
@@ -805,7 +805,7 @@ func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, exa
 		buff.WriteString("\n")
 	}
 
-	if typeReferenceDoc.SubFieldTables != nil && len(typeReferenceDoc.SubFieldTables) > 0 {
+	if len(typeReferenceDoc.SubFieldTables) > 0 {
 		buff.Write(typeReferenceDoc.SubFieldTables)
 	}
 

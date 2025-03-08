@@ -60,7 +60,7 @@ func (s *SQLCommon) getSelectStatements(ns string, tableName string, intervals [
 					sq.Eq{"namespace": ns},
 				}).
 			OrderBy(timestampKey).
-			Limit(uint64(config.GetInt(coreconfig.HistogramsMaxChartRows))))
+			Limit(config.GetUint64(coreconfig.HistogramsMaxChartRows)))
 	}
 
 	return queries
