@@ -15,6 +15,8 @@ import (
 
 	io "io"
 
+	metrics "github.com/hyperledger/firefly/internal/metrics"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -56,6 +58,24 @@ func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*dataexchange.Capabilities)
 		}
+	}
+
+	return r0
+}
+
+// CheckNodeIdentityStatus provides a mock function with given fields: ctx, node
+func (_m *Plugin) CheckNodeIdentityStatus(ctx context.Context, node *core.Identity) error {
+	ret := _m.Called(ctx, node)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CheckNodeIdentityStatus")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Identity) error); ok {
+		r0 = rf(ctx, node)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -157,17 +177,17 @@ func (_m *Plugin) GetPeerID(peer fftypes.JSONObject) string {
 	return r0
 }
 
-// Init provides a mock function with given fields: ctx, cancelCtx, _a2
-func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, _a2 config.Section) error {
-	ret := _m.Called(ctx, cancelCtx, _a2)
+// Init provides a mock function with given fields: ctx, cancelCtx, _a2, _a3
+func (_m *Plugin) Init(ctx context.Context, cancelCtx context.CancelFunc, _a2 config.Section, _a3 metrics.Manager) error {
+	ret := _m.Called(ctx, cancelCtx, _a2, _a3)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Init")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc, config.Section) error); ok {
-		r0 = rf(ctx, cancelCtx, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc, config.Section, metrics.Manager) error); ok {
+		r0 = rf(ctx, cancelCtx, _a2, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
