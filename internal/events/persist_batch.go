@@ -19,7 +19,9 @@ package events
 import (
 	"context"
 	"errors"
+	"database/sql/driver"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -299,22 +301,56 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 	})
 	if err != nil {
 		log.L(ctx).Debugf("Batch message insert optimization failed for batch '%s': %s", batch.ID, err)
-		// Fall back to individual upserts
-		for i, msg := range batch.Payload.Messages {
-			postHookUpdateMessageCache := func() {
-				mm := matchedMsgs[i]
-				em.data.UpdateMessageCache(mm.message, mm.data)
-			}
-			if err = em.database.UpsertMessage(ctx, msg, database.UpsertOptimizationExisting, postHookUpdateMessageCache); err != nil {
-				if errors.Is(err, database.HashMismatch) {
-					log.L(ctx).Errorf("Invalid message entry %d in batch'%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, msg.Header.ID, msg.Hash)
-					return false, nil // This is not retryable. skip this data entry
+
+		// Messages are immutable in their contents, and it's entirely possible we're being sent
+		// messages we've already been sent in a previous batch, and subsequently modified th
+		// state of (they've been confirmed etc.).
+		// So we find a list of those that aren't in the DB and so and insert just those.
+		var foundIDs []*core.IDAndSequence
+		foundIDs, err = em.database.GetMessageIDs(ctx, batch.Namespace, messageIDFilter(ctx, batch.Payload.Messages))
+		if err == nil {
+			remainingInserts := make([]*core.Message, 0, len(batch.Payload.Messages))
+			for _, m := range batch.Payload.Messages {
+				isFound := false
+				for _, foundID := range foundIDs {
+					if foundID.ID.Equals(m.Header.ID) {
+						isFound = true
+						log.L(ctx).Warnf("Message %s in batch '%s' is a duplicate", m.Header.ID, batch.ID)
+						break
+					}
 				}
-				log.L(ctx).Errorf("Failed to insert message entry %d in batch '%s': %s", i, batch.ID, err)
-				return false, err // a persistence failure here is considered retryable (so returned)
+				if !isFound {
+					remainingInserts = append(remainingInserts, m)
+				}
 			}
+			if len(remainingInserts) > 0 {
+				// Only the remaining ones get updates
+				err = em.database.InsertMessages(ctx, batch.Payload.Messages, func() {
+					for _, mm := range matchedMsgs {
+						for _, m := range remainingInserts {
+							if mm.message.Header.ID.Equals(m.Header.ID) {
+								em.data.UpdateMessageCache(mm.message, mm.data)
+							}
+						}
+					}
+				})
+			}
+		}
+		// If we have an error at this point, we cannot insert (must not be a duplicate)
+		if err != nil {
+			log.L(ctx).Errorf("Failed to insert messages: %s", err)
+			return false, err // a persistence failure here is considered retryable (so returned)
 		}
 	}
 
 	return true, nil
+}
+
+func messageIDFilter(ctx context.Context, msgs []*core.Message) ffapi.Filter {
+	fb := database.MessageQueryFactory.NewFilter(ctx)
+	ids := make([]driver.Value, len(msgs))
+	for i, msg := range msgs {
+		ids[i] = msg.Header.ID
+	}
+	return fb.In("id", ids)
 }

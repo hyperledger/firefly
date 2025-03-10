@@ -107,7 +107,7 @@ func TestGetEventsInSequenceRangeE2EWithDB(t *testing.T) {
 			Type:       core.EventTypeMessageConfirmed,
 			Reference:  fftypes.NewUUID(),
 			Correlator: fftypes.NewUUID(),
-			Topic:      fmt.Sprintf("topic%d", i % 2),
+			Topic:      fmt.Sprintf("topic%d", i%2),
 			Created:    fftypes.Now(),
 		}
 		err := s.InsertEvent(ctx, event)
@@ -322,10 +322,9 @@ func TestGetEventsInSequenceRangeBuildQueryFail(t *testing.T) {
 
 func TestGetEventsInSequenceRangeShouldCallGetEventsWhenNoSequencedProvidedAndThrowAnError(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", }).AddRow("only one"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.EventQueryFactory.NewFilter(context.Background()).And()
 	_, _, err := s.GetEventsInSequenceRange(context.Background(), "ns1", f, -1, -1)
 	assert.NotNil(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
-
