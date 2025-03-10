@@ -29287,7 +29287,6 @@ paths:
                             used in FireFly, so if your application crashes/reconnects
                             this is the maximum number of events you would expect
                             to be redelivered after it restarts
-                          maximum: 65535
                           minimum: 0
                           type: integer
                         reply:
@@ -29572,7 +29571,6 @@ paths:
                         At least once delivery semantics are used in FireFly, so if
                         your application crashes/reconnects this is the maximum number
                         of events you would expect to be redelivered after it restarts
-                      maximum: 65535
                       minimum: 0
                       type: integer
                     reply:
@@ -29846,7 +29844,6 @@ paths:
                           in FireFly, so if your application crashes/reconnects this
                           is the maximum number of events you would expect to be redelivered
                           after it restarts
-                        maximum: 65535
                         minimum: 0
                         type: integer
                       reply:
@@ -30128,7 +30125,6 @@ paths:
                         At least once delivery semantics are used in FireFly, so if
                         your application crashes/reconnects this is the maximum number
                         of events you would expect to be redelivered after it restarts
-                      maximum: 65535
                       minimum: 0
                       type: integer
                     reply:
@@ -30402,7 +30398,6 @@ paths:
                           in FireFly, so if your application crashes/reconnects this
                           is the maximum number of events you would expect to be redelivered
                           after it restarts
-                        maximum: 65535
                         minimum: 0
                         type: integer
                       reply:
@@ -30750,7 +30745,6 @@ paths:
                           in FireFly, so if your application crashes/reconnects this
                           is the maximum number of events you would expect to be redelivered
                           after it restarts
-                        maximum: 65535
                         minimum: 0
                         type: integer
                       reply:
@@ -38574,7 +38568,6 @@ paths:
                             used in FireFly, so if your application crashes/reconnects
                             this is the maximum number of events you would expect
                             to be redelivered after it restarts
-                          maximum: 65535
                           minimum: 0
                           type: integer
                         reply:
@@ -38852,7 +38845,6 @@ paths:
                         At least once delivery semantics are used in FireFly, so if
                         your application crashes/reconnects this is the maximum number
                         of events you would expect to be redelivered after it restarts
-                      maximum: 65535
                       minimum: 0
                       type: integer
                     reply:
@@ -39126,7 +39118,6 @@ paths:
                           in FireFly, so if your application crashes/reconnects this
                           is the maximum number of events you would expect to be redelivered
                           after it restarts
-                        maximum: 65535
                         minimum: 0
                         type: integer
                       reply:
@@ -39401,7 +39392,6 @@ paths:
                         At least once delivery semantics are used in FireFly, so if
                         your application crashes/reconnects this is the maximum number
                         of events you would expect to be redelivered after it restarts
-                      maximum: 65535
                       minimum: 0
                       type: integer
                     reply:
@@ -39675,7 +39665,6 @@ paths:
                           in FireFly, so if your application crashes/reconnects this
                           is the maximum number of events you would expect to be redelivered
                           after it restarts
-                        maximum: 65535
                         minimum: 0
                         type: integer
                       reply:
@@ -40009,7 +39998,6 @@ paths:
                           in FireFly, so if your application crashes/reconnects this
                           is the maximum number of events you would expect to be redelivered
                           after it restarts
-                        maximum: 65535
                         minimum: 0
                         type: integer
                       reply:

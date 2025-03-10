@@ -42,7 +42,7 @@ type Events struct {
 	mux       sync.Mutex
 	listeners map[string][]EventListener
 	connID    string
-	readAhead uint16
+	readAhead uint
 }
 
 type callbacks struct {
@@ -66,7 +66,7 @@ func (se *Events) Init(ctx context.Context, config config.Section) (err error) {
 			handlers: make(map[string]events.Callbacks),
 		},
 		listeners: make(map[string][]EventListener),
-		readAhead: uint16(config.GetInt(SystemEventsConfReadAhead)),
+		readAhead: config.GetUint(SystemEventsConfReadAhead),
 		connID:    fftypes.ShortID(),
 	}
 	return nil

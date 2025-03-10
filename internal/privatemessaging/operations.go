@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -130,6 +130,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 			return nil, err
 		}
 		transport := &core.TransportWrapper{Group: group, Batch: batch}
+		pm.prepareBatchForNetworkTransport(ctx, transport)
 		return opSendBatch(op, node, transport), nil
 
 	default:

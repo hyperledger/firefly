@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,10 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var TransferSubmittedCounter prometheus.Counter
-var TransferConfirmedCounter prometheus.Counter
-var TransferRejectedCounter prometheus.Counter
-var TransferHistogram prometheus.Histogram
+var TransferSubmittedCounter *prometheus.CounterVec
+var TransferConfirmedCounter *prometheus.CounterVec
+var TransferRejectedCounter *prometheus.CounterVec
+var TransferHistogram *prometheus.HistogramVec
 
 // TransferSubmittedCounterName is the prometheus metric for tracking the total number of transfers submitted
 var TransferSubmittedCounterName = "ff_transfer_submitted_total"
@@ -38,22 +38,22 @@ var TransferRejectedCounterName = "ff_transfer_rejected_total"
 var TransferHistogramName = "ff_transfer_histogram"
 
 func InitTokenTransferMetrics() {
-	TransferSubmittedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	TransferSubmittedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: TransferSubmittedCounterName,
 		Help: "Number of submitted transfers",
-	})
-	TransferConfirmedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	TransferConfirmedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: TransferConfirmedCounterName,
 		Help: "Number of confirmed transfers",
-	})
-	TransferRejectedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, namespaceLabels)
+	TransferRejectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: TransferRejectedCounterName,
 		Help: "Number of rejected transfers",
-	})
-	TransferHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	}, namespaceLabels)
+	TransferHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: TransferHistogramName,
 		Help: "Histogram of transfers, bucketed by time to finished",
-	})
+	}, namespaceLabels)
 }
 
 func RegisterTokenTransferMetrics() {

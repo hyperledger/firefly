@@ -122,6 +122,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	})).Return(nil)
 	dh.mdx.On("GetPeerID", node.DX.Endpoint).Return("member_0")
 	dh.mdx.On("AddNode", ctx, "ns1", node.Name, node.DX.Endpoint).Return(nil)
+	dh.mim.On("GetLocalNodeDID", ctx).Return("different node", nil)
 
 	dh.multiparty = true
 

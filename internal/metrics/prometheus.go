@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -88,6 +88,7 @@ func initMetricsCollectors() {
 	InitTokenBurnMetrics()
 	InitBatchPinMetrics()
 	InitBlockchainMetrics()
+	InitIdentityMetrics()
 }
 
 func registerMetricsCollectors() {
@@ -101,4 +102,5 @@ func registerMetricsCollectors() {
 	RegisterTokenTransferMetrics()
 	RegisterTokenBurnMetrics()
 	RegisterBlockchainMetrics()
+	RegisterIdentityMetrics()
 }
