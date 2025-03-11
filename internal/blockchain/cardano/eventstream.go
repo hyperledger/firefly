@@ -1,4 +1,4 @@
-// Copyright © 2025 Kaleido, Inc.
+// Copyright © 2025 IOG Singapore and SundaeSwap, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
