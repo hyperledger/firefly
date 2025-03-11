@@ -514,11 +514,9 @@ func (c *Cardano) eventLoop(namespace string) {
 					err = wsconn.Send(ctx, ack)
 				}
 			case map[string]interface{}:
-				isBatch := false
 				if batchNumber, ok := msgTyped["batchNumber"].(float64); ok {
 					if events, ok := msgTyped["events"].([]interface{}); ok {
 						// FFTM delivery with a batch number to use in the ack
-						isBatch = true
 						err = c.handleMessageBatch(ctx, namespace, (int64)(batchNumber), events)
 						// Errors processing messages are converted into nacks
 						ackOrNack := &cardanoWSCommandPayload{
@@ -535,15 +533,8 @@ func (c *Cardano) eventLoop(namespace string) {
 						b, _ := json.Marshal(&ackOrNack)
 						err = wsconn.Send(ctx, b)
 					}
-				}
-				if !isBatch {
-					var receipt common.BlockchainReceiptNotification
-					_ = json.Unmarshal(msgBytes, &receipt)
-
-					err := common.HandleReceipt(ctx, namespace, c, &receipt, c.callbacks)
-					if err != nil {
-						l.Errorf("Failed to process receipt: %+v", msgTyped)
-					}
+				} else {
+					l.Errorf("Message unexpected: %+v", msgTyped)
 				}
 			default:
 				l.Errorf("Message unexpected: %+v", msgTyped)
@@ -570,12 +561,27 @@ func (c *Cardano) handleMessageBatch(ctx context.Context, namespace string, batc
 		}
 		msgJSON := fftypes.JSONObject(msgMap)
 
-		signature := msgJSON.GetString("signature")
+		switch msgJSON.GetString("type") {
+		case "ContractEvent":
+			signature := msgJSON.GetString("signature")
 
-		logger := log.L(ctx)
-		logger.Infof("[Cardano:%d:%d/%d]: '%s'", batchID, i+1, count, signature)
-		logger.Tracef("Message: %+v", msgJSON)
-		c.processContractEvent(ctx, namespace, events, msgJSON)
+			logger := log.L(ctx)
+			logger.Infof("[Cardano:%d:%d/%d]: '%s'", batchID, i+1, count, signature)
+			logger.Tracef("Message: %+v", msgJSON)
+			c.processContractEvent(ctx, namespace, events, msgJSON)
+		case "Receipt":
+			var receipt common.BlockchainReceiptNotification
+			msgBytes, _ := json.Marshal(msgMap)
+			_ = json.Unmarshal(msgBytes, &receipt)
+
+			err := common.HandleReceipt(ctx, namespace, c, &receipt, c.callbacks)
+			if err != nil {
+				log.L(ctx).Errorf("Failed to process receipt: %+v", msgMap)
+			}
+		default:
+			log.L(ctx).Errorf("Unexpected message in batch: %+v", msgMap)
+		}
+
 	}
 
 	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces

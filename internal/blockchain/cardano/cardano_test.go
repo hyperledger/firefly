@@ -463,6 +463,7 @@ func TestEventLoopReceiveBatch(t *testing.T) {
 		"batchNumber": 1337,
 		"events": [
 			{
+				"type": "ContractEvent",
 				"listenerId": "lst12345",
 				"blockHash": "fcb0504f47abf2cc52cd6d509036d512fd6cbec19d0e1bbaaf21f0699882de7b",
 				"blockNumber": 11466734,
@@ -533,6 +534,7 @@ func TestEventLoopReceiveBadBatch(t *testing.T) {
 		"batchNumber": 1337,
 		"events": [
 		    {
+		        "type": "ContractEvent",
 				"listenerId": "lst12345",
 				"blockHash": "fcb0504f47abf2cc52cd6d509036d512fd6cbec19d0e1bbaaf21f0699882de7b",
 				"blockNumber": 11466734,
@@ -592,16 +594,19 @@ func TestEventLoopReceiveMalformedBatch(t *testing.T) {
 		"batchNumber": 1338,
 		"events": [
 			{
+				"type": "ContractEvent",
 				"listenerId": "lst12345",
 				"blockNumber": 1337,
 				"transactionHash": "cafed00d"
 			},
 			{
+				"type": "ContractEvent",
 				"listenerId": "lst12345",
 				"blockNumber": 1337,
 				"timestamp": "2025-02-10T12:00:00.000000000+00:00"
 			},
 			{
+				"type": "ContractEvent",
 				"listenerId": "lst12345",
 				"timestamp": "2025-02-10T12:00:00.000000000+00:00",
 				"transactionHash": "cafed00d"
@@ -645,20 +650,32 @@ func TestEventLoopReceiveReceipt(t *testing.T) {
 
 	go c.eventLoop("ns1")
 
-	// start by sending an invalid receipt, which it should ignore
 	r <- []byte(`{
-		"headers": {
-		  "requestId": "ns1:1234"
-		}
+		"batchNumber": 1339,
+		"events": [
+			{
+				"type": "Receipt",
+				"headers": {
+					"requestId": "ns1:1234"
+				}
+			},
+			{
+				"type": "Receipt",
+				"headers": {
+					"requestId": "ns1:5678",
+					"replyType": "TransactionSuccess"
+				},
+				"transactionHash": "txHash"
+			}
+		]
 	}`)
-	// then sand a valid receipt, which it should acknowledge
-	r <- []byte(`{
-		"headers": {
-		  "requestId": "ns1:5678",
-		  "replyType": "TransactionSuccess"
-		},
-		"transactionHash": "txHash"
-	}`)
+	response := <-s
+	var parsed cardanoWSCommandPayload
+	err := json.Unmarshal(response, &parsed)
+	assert.NoError(t, err)
+	assert.Equal(t, "topic1/ns1", parsed.Topic)
+	assert.Equal(t, int64(1339), parsed.BatchNumber)
+	assert.Equal(t, "ack", parsed.Type)
 }
 
 func TestSubmitBatchPinNotSupported(t *testing.T) {
