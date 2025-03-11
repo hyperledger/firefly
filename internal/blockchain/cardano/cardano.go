@@ -566,7 +566,7 @@ func (c *Cardano) handleMessageBatch(ctx context.Context, namespace string, batc
 			signature := msgJSON.GetString("signature")
 
 			logger := log.L(ctx)
-			logger.Infof("[Cardano:%d:%d/%d]: '%s'", batchID, i+1, count, signature)
+			logger.Infof("[%d:%d/%d]: '%s'", batchID, i+1, count, signature)
 			logger.Tracef("Message: %+v", msgJSON)
 			c.processContractEvent(ctx, namespace, events, msgJSON)
 		case "Receipt":
