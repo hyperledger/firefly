@@ -116,6 +116,12 @@ type BlockchainReceiptNotification struct {
 	ContractLocation *fftypes.JSONAny         `json:"contractLocation,omitempty"`
 }
 
+// possible values of BlockchainReceiptHeaders.ReplyType
+const (
+	ReceiptTransactionSuccess string = "TransactionSuccess"
+	ReceiptTransactionFailed  string = "TransactionFailed"
+)
+
 type BlockchainRESTError struct {
 	Error string `json:"error,omitempty"`
 	// See https://github.com/hyperledger/firefly-transaction-manager/blob/main/pkg/ffcapi/submission_error.go

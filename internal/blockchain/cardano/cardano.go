@@ -38,15 +38,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-const (
-	cardanoTxStatusPending string = "Pending"
-)
-
-const (
-	ReceiptTransactionSuccess string = "TransactionSuccess"
-	ReceiptTransactionFailed  string = "TransactionFailed"
-)
-
 type Cardano struct {
 	ctx                context.Context
 	cancelCtx          context.CancelFunc
@@ -472,37 +463,6 @@ func (c *Cardano) GetTransactionStatus(ctx context.Context, operation *core.Oper
 			return nil, nil
 		}
 		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgCardanoconnectRESTErr)
-	}
-
-	receiptInfo := statusResponse.GetObject("receipt")
-	txStatus := statusResponse.GetString("status")
-
-	if txStatus != "" {
-		var replyType string
-		if txStatus == "Succeeded" {
-			replyType = ReceiptTransactionSuccess
-		} else {
-			replyType = ReceiptTransactionFailed
-		}
-		// If the status has changed, mock up blockchain receipt as if we'd received it
-		// as a web socket notification
-		if (operation.Status == core.OpStatusPending || operation.Status == core.OpStatusInitialized) && txStatus != cardanoTxStatusPending {
-			receipt := &common.BlockchainReceiptNotification{
-				Headers: common.BlockchainReceiptHeaders{
-					ReceiptID: statusResponse.GetString("id"),
-					ReplyType: replyType,
-				},
-				TxHash:     statusResponse.GetString("transactionHash"),
-				Message:    statusResponse.GetString("errorMessage"),
-				ProtocolID: receiptInfo.GetString("protocolId")}
-			err := common.HandleReceipt(ctx, operation.Namespace, c, receipt, c.callbacks)
-			if err != nil {
-				log.L(ctx).Warnf("Failed to handle receipt")
-			}
-		}
-	} else {
-		// Don't expect to get here so issue a warning
-		log.L(ctx).Warnf("Transaction status didn't include txStatus information")
 	}
 
 	return statusResponse, nil

@@ -867,19 +867,9 @@ func TestGetTransactionStatusSuccess(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, transactionStatus)(req)
 		})
 
-	tm := &coremocks.OperationCallbacks{}
-	c.SetOperationHandler("ns1", tm)
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
-		return update.NamespacedOpID == "ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059" &&
-			update.Status == core.OpStatusSucceeded &&
-			update.BlockchainTXID == "txHash" &&
-			update.Plugin == "cardano"
-	})).Return(errors.New("won't stop processing"))
-
 	status, err := c.GetTransactionStatus(context.Background(), op)
 	assert.NoError(t, err)
 	assert.NotNil(t, status)
-	tm.AssertExpectations(t)
 }
 
 func TestGetTransactionStatusFailure(t *testing.T) {
@@ -904,19 +894,9 @@ func TestGetTransactionStatusFailure(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, transactionStatus)(req)
 		})
 
-	tm := &coremocks.OperationCallbacks{}
-	c.SetOperationHandler("ns1", tm)
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
-		return update.NamespacedOpID == "ns1:9ffc50ff-6bfe-4502-adc7-93aea54cc059" &&
-			update.Status == core.OpStatusFailed &&
-			update.ErrorMessage == "Something went wrong" &&
-			update.Plugin == "cardano"
-	})).Return(errors.New("won't stop processing"))
-
 	status, err := c.GetTransactionStatus(context.Background(), op)
 	assert.NoError(t, err)
 	assert.NotNil(t, status)
-	tm.AssertExpectations(t)
 }
 
 func TestGetTransactionStatusEmptyObject(t *testing.T) {
