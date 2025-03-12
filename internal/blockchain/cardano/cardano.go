@@ -117,7 +117,7 @@ func (c *Cardano) Init(ctx context.Context, cancelCtx context.CancelFunc, conf c
 	c.streamIDs = make(map[string]string)
 	c.closed = make(map[string]chan struct{})
 	c.wsconns = make(map[string]wsclient.WSClient)
-	c.streams = newStreamManager(c.client, c.cardanoconnectConf.GetUint(CardanoconnectConfigBatchSize), uint(c.cardanoconnectConf.GetDuration(CardanoconnectConfigBatchTimeout).Milliseconds()))
+	c.streams = newStreamManager(c.client, c.cardanoconnectConf.GetUint(CardanoconnectConfigBatchSize), c.cardanoconnectConf.GetDuration(CardanoconnectConfigBatchTimeout).Milliseconds())
 
 	return nil
 }
