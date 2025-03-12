@@ -59,7 +59,7 @@
       "image": "ethereum/solc:0.8.11-alpine"
     },
     "base": {
-      "image": "alpine:3.19"
+      "image": "alpine:3.19.7"
     }
   },
   "ui": {

@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1192,7 +1193,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 		SetResult(&statusResponse).
 		Get(transactionRequestPath)
 	if err != nil || !res.IsSuccess() {
-		if res.StatusCode() == 404 {
+		if res.StatusCode() == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
