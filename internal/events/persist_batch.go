@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 	"database/sql/driver"
+	"errors"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -276,7 +277,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *core.Bat
 		// Fall back to individual upserts
 		for i, data := range batch.Payload.Data {
 			if err := em.database.UpsertData(ctx, data, database.UpsertOptimizationExisting); err != nil {
-				if err == database.HashMismatch {
+				if errors.Is(err, database.HashMismatch) {
 					log.L(ctx).Errorf("Invalid data entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, data.ID, data.Hash)
 					return false, nil
 				}
