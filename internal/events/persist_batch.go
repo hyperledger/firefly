@@ -18,8 +18,8 @@ package events
 
 import (
 	"context"
-	"errors"
 	"database/sql/driver"
+	"errors"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
