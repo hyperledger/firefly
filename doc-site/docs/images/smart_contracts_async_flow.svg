@@ -1,210 +1,109 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="700" height="750">
-  <desc>title%20Smart%20Contracts%20Async%20Flow%0A%0AApp-%3EFireFly%3A%20Invoke%20custom%20contract%0AFireFly-%3EBlockchain%20Connector%3A%20Submit%20transaction%0ABlockchain%20Connector-%3EBlockchain%3A%20Forward%20transaction%0ABlockchain-%3EBlockchain%20Connector%3A%20Transaction%20accepted%0ABlockchain%20Connector-%3EFireFly%3A%20Transaction%20accepted%0AFireFly-%3EApp%3A%20Accepted%5Cn(Operation%20ID)%0ABlockchain-%3EBlockchain%3A%20Process%20transaction%0ABlockchain-%3EBlockchain%20Connector%3A%20Emit%20blockchain%20events%0ABlockchain%20Connector-%3EFireFly%3A%20Forward%20events%0AFireFly-%3EFireFly%3A%20Store%20events%20in%20database%0AFireFly-%3EApp%3A%20Emit%20blockchain_event_received%0ANote%20right%20of%20App%3A%20App%20can%20subscribe%20to%20events%5Cnvia%20WebSockets%20or%20Webhooks</desc>
-  <defs/>
-  <g>
-    <g/>
-    <g/>
-    <g/>
-    <g/>
-    <g/>
-    <g/>
-    <g/>
-    <g/>
-    <g>
-      <rect fill="white" stroke="none" x="0" y="0" width="700" height="750"/>
-    </g>
-    <g>
-      <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="18pt" font-style="normal" font-weight="bold" text-decoration="normal" x="144.77499658567513" y="26.3876361" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Smart Contracts Async Flow</text>
-    </g>
-    <g/>
-    <g>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 40.925164177730466 103.26361593799999 L 40.925164177730466 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 238.57374563795182 103.26361593799999 L 238.57374563795182 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 406.8952091782513 103.26361593799999 L 406.8952091782513 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 575.2166727185508 103.26361593799999 L 575.2166727185508 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
-    </g>
-    <g>
-      <path fill="none" stroke="none"/>
-      <g>
-        <path fill="#EBF8FF" stroke="#3182CE" paint-order="fill stroke markers" d=" M 8.795878699999996 55.765870957999994 L 73.05444965546093 55.765870957999994 L 73.05444965546093 103.26361593799999 L 8.795878699999996 103.26361593799999 L 8.795878699999996 55.765870957999994 Z" stroke-miterlimit="10" stroke-width="2.814681184" stroke-dasharray=""/>
-      </g>
-      <g>
-        <g/>
-        <text fill="#2C5282" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="bold" text-decoration="normal" x="27.882935478999997" y="85.67185853800001" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">App</text>
-      </g>
-      <path fill="none" stroke="none"/>
-      <g>
-        <path fill="#F0FFF4" stroke="#38A169" paint-order="fill stroke markers" d=" M 197.09227967926432 55.765870957999994 L 280.0552115966393 55.765870957999994 L 280.0552115966393 103.26361593799999 L 197.09227967926432 103.26361593799999 L 197.09227967926432 55.765870957999994 Z" stroke-miterlimit="10" stroke-width="2.814681184" stroke-dasharray=""/>
-      </g>
-      <g>
-        <g/>
-        <text fill="#276749" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="bold" text-decoration="normal" x="216.17933645826432" y="85.67185853800001" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">FireFly</text>
-      </g>
-      <path fill="none" stroke="none"/>
-      <g>
-        <path fill="#FFFAF0" stroke="#DD6B20" paint-order="fill stroke markers" d=" M 322.3607875921224 55.765870957999994 L 491.4296307643802 55.765870957999994 L 491.4296307643802 103.26361593799999 L 322.3607875921224 103.26361593799999 L 322.3607875921224 55.765870957999994 Z" stroke-miterlimit="10" stroke-width="2.814681184" stroke-dasharray=""/>
-      </g>
-      <g>
-        <g/>
-        <text fill="#C05621" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="bold" text-decoration="normal" x="341.4478443711224" y="85.67185853800001" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Blockchain Connector</text>
-      </g>
-      <path fill="none" stroke="none"/>
-      <g>
-        <path fill="#F0F5FF" stroke="#4C51BF" paint-order="fill stroke markers" d=" M 525.2166727185508 55.765870957999994 L 625.2166727185508 55.765870957999994 L 625.2166727185508 103.26361593799999 L 525.2166727185508 103.26361593799999 L 525.2166727185508 55.765870957999994 Z" stroke-miterlimit="10" stroke-width="2.814681184" stroke-dasharray=""/>
-      </g>
-      <g>
-        <g/>
-        <text fill="#3C366B" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="bold" text-decoration="normal" x="544.3037294975508" y="85.67185853800001" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Blockchain</text>
-      </g>
-    </g>
-    <g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="61.7420771010638" y="138.44713073799997" width="156.01475561355468" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="64.3808407110638" y="154.279712398" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Invoke custom contract</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 40.925164177730466 161.31641535799997 L 224.08986537861847 161.31641535799997" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(238.57374563795182,161.31641535799997) translate(-238.57374563795182,-161.31641535799997)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 223.9139478046185 153.9865164413333 L 238.57374563795182 161.31641535799997 L 223.9139478046185 168.64631427466665 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="259.39065856128514" y="187.70405145799995" width="126.68763769363281" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="262.02942217128515" y="203.53663311799997" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Submit transaction</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 238.57374563795182 210.57333607799995 L 392.411328918918 210.57333607799995" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(406.8952091782513,210.57333607799995) translate(-406.8952091782513,-210.57333607799995)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 392.23541134491796 203.24343716133328 L 406.8952091782513 210.57333607799995 L 392.23541134491796 217.90323499466663 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="427.71212210158467" y="236.96097217799993" width="126.68763769363281" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="430.35088571158467" y="252.79355383799995" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Forward transaction</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 406.8952091782513 259.83025679799994 L 560.7328924592175 259.83025679799994" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(575.2166727185508,259.83025679799994) translate(-575.2166727185508,-259.83025679799994)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 560.5568748852175 252.50035788133326 L 575.2166727185508 259.83025679799994 L 560.5568748852175 267.1601557146666 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="458.533808890875" y="286.21789289799995" width="126.40133703445312" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="461.172572500875" y="302.05047455799996" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Transaction accepted</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 575.2166727185508 309.08717751799996 L 421.37908943758464 309.08717751799996" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(406.8952091782513,309.08717751799996) translate(-406.8952091782513,-309.08717751799996)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 421.5550070115847 301.7572786013333 L 406.8952091782513 309.08717751799996 L 421.5550070115847 316.4170764346666 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="289.533808890875" y="335.47481361799994" width="126.40133703445312" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="292.172572500875" y="351.30739527799995" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Transaction accepted</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 406.8952091782513 358.34409823799995 L 253.05762589728516 358.34409823799995" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(238.57374563795182,358.34409823799995) translate(-238.57374563795182,-358.34409823799995)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 253.23354347128515 351.0141993213333 L 238.57374563795182 358.34409823799995 L 253.23354347128515 365.6739971546666 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="90.6719095595599" y="384.73173433799996" width="66.40133703445312" height="22.86928462"/>
-        </g>
-        <g>
-          <rect fill="white" stroke="none" x="90.6719095595599" y="402.32349173799996" width="98.1550906965625" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="93.31067316955989" y="400.56431599799997" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Accepted</text>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="93.31067316955989" y="418.15607339799997" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">(Operation ID)</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 238.57374563795182 425.1927763579999 L 55.4090444370638 425.1927763579999" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(40.925164177730466,425.1927763579999) translate(-40.925164177730466,-425.1927763579999)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 55.584962011063794 417.8628774413333 L 40.925164177730466 425.1927763579999 L 55.584962011063794 432.5226752746666 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="596.0337856218847" y="451.58041245799994" width="133.19442785476562" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="598.6725492318847" y="467.41299411799995" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Process transaction</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 575.2166727185508 474.44969707799993 L 645.5837023785508 474.44969707799993 L 645.5837023785508 497.3189816979999 L 589.7005629778842 497.3189816979999" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(575.2166727185508,497.3189816979999) translate(-575.2166727185508,-497.3189816979999)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 589.8764705518842 489.98908278133325 L 575.2166727185508 497.3189816979999 L 589.8764705518842 504.64888061466655 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="450.1029586711484" y="523.7066177979999" width="126.86303747390625" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="452.74172228114843" y="539.5391994579999" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Emit blockchain events</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 575.2166727185508 546.5759024179999 L 421.37908943758464 546.5759024179999" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(406.8952091782513,546.5759024179999) translate(-406.8952091782513,-546.5759024179999)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 421.5550070115847 539.2460035013332 L 406.8952091782513 546.5759024179999 L 421.5550070115847 553.9058013346665 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="281.8029586711484" y="572.9635385179999" width="81.86303747390625" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="284.44172228114843" y="588.7961201779999" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Forward events</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 406.8952091782513 595.8328231379999 L 253.05762589728516 595.8328231379999" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(238.57374563795182,595.8328231379999) translate(-238.57374563795182,-595.8328231379999)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 253.23354347128515 588.5029242213332 L 238.57374563795182 595.8328231379999 L 253.23354347128515 603.1627220546665 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="259.39065856128514" y="622.2204592379999" width="126.68763769363281" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="262.02942217128515" y="638.0530408979999" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Store events in database</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 238.57374563795182 645.0897438579999 L 309.0 645.0897438579999 L 309.0 667.9590284779999 L 253.05762589728516 667.9590284779999" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(238.57374563795182,667.9590284779999) translate(-238.57374563795182,-667.9590284779999)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 253.23354347128515 660.6291295613332 L 238.57374563795182 667.9590284779999 L 253.23354347128515 675.2889273946665 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="white" stroke="none" x="98.81793617088802" y="694.3466645779999" width="81.86303747390625" height="22.86928462"/>
-        </g>
-        <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="101.45669978088802" y="710.1792462379999" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Emit blockchain_event_received</text>
-      </g>
-      <g>
-        <path fill="none" stroke="#2D3748" paint-order="fill stroke markers" d=" M 238.57374563795182 717.2159491979999 L 55.4090444370638 717.2159491979999" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray=""/>
-        <g transform="translate(40.925164177730466,717.2159491979999) translate(-40.925164177730466,-717.2159491979999)">
-          <path fill="#2D3748" stroke="none" paint-order="stroke fill markers" d=" M 55.584962011063794 709.8860502813332 L 40.925164177730466 717.2159491979999 L 55.584962011063794 724.5458481146665 Z"/>
-        </g>
-      </g>
-      <g>
-        <g>
-          <rect fill="#FFF5F5" stroke="#E53E3E" paint-order="fill stroke markers" d=" M 80.925164177730466 730.0 L 350.0 730.0 L 350.0 745.0 L 80.925164177730466 745.0 L 80.925164177730466 730.0 Z" stroke-miterlimit="10" stroke-width="1" stroke-dasharray=""/>
-        </g>
-        <g>
-          <text fill="#C53030" stroke="none" font-family="sans-serif" font-size="10pt" font-style="normal" font-weight="normal" text-decoration="normal" x="85.925164177730466" y="740.0" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">App can subscribe to events via WebSockets or Webhooks</text>
-        </g>
-      </g>
-    </g>
-    <g/>
-    <g/>
-    <g/>
-  </g>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="600" height="600">
+  <defs>
+    <style type="text/css">
+      .lifeline { stroke: #718096; stroke-dasharray: 5,5; stroke-width: 1.5; }
+      .actor-box { stroke-width: 2; }
+      .app-box { fill: #EBF8FF; stroke: #3182CE; }
+      .app-text { fill: #2C5282; }
+      .firefly-box { fill: #F0FFF4; stroke: #38A169; }
+      .firefly-text { fill: #276749; }
+      .connector-box { fill: #FFFAF0; stroke: #DD6B20; }
+      .connector-text { fill: #C05621; }
+      .blockchain-box { fill: #F0F5FF; stroke: #4C51BF; }
+      .blockchain-text { fill: #3C366B; }
+      .message-arrow { stroke: #2D3748; stroke-width: 1.5; fill: none; }
+      .message-text { fill: #2D3748; font-size: 12px; }
+      .arrowhead { fill: #2D3748; }
+      .note-box { fill: #FFF5F5; stroke: #E53E3E; }
+      .note-text { fill: #C53030; font-size: 12px; }
+      .title { font-weight: bold; font-size: 18px; fill: #2D3748; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="600" height="600" fill="white" />
+  
+  <!-- Title -->
+  <text x="300" y="30" class="title" text-anchor="middle">Smart Contracts Async Flow</text>
+  
+  <!-- Actor boxes -->
+  <rect x="50" y="50" width="60" height="40" class="actor-box app-box" />
+  <text x="80" y="75" class="app-text" text-anchor="middle" font-weight="bold">App</text>
+  
+  <rect x="190" y="50" width="60" height="40" class="actor-box firefly-box" />
+  <text x="220" y="75" class="firefly-text" text-anchor="middle" font-weight="bold">FireFly</text>
+  
+  <rect x="330" y="50" width="120" height="40" class="actor-box connector-box" />
+  <text x="390" y="75" class="connector-text" text-anchor="middle" font-weight="bold">Blockchain Connector</text>
+  
+  <rect x="500" y="50" width="80" height="40" class="actor-box blockchain-box" />
+  <text x="540" y="75" class="blockchain-text" text-anchor="middle" font-weight="bold">Blockchain</text>
+  
+  <!-- Lifelines -->
+  <line x1="80" y1="90" x2="80" y2="550" class="lifeline" />
+  <line x1="220" y1="90" x2="220" y2="550" class="lifeline" />
+  <line x1="390" y1="90" x2="390" y2="550" class="lifeline" />
+  <line x1="540" y1="90" x2="540" y2="550" class="lifeline" />
+  
+  <!-- Messages -->
+  <!-- 1. Invoke custom contract -->
+  <line x1="80" y1="120" x2="220" y2="120" class="message-arrow" />
+  <polygon points="210,115 220,120 210,125" class="arrowhead" />
+  <text x="150" y="115" class="message-text" text-anchor="middle">Invoke custom contract</text>
+  
+  <!-- 2. Submit transaction -->
+  <line x1="220" y1="150" x2="390" y2="150" class="message-arrow" />
+  <polygon points="380,145 390,150 380,155" class="arrowhead" />
+  <text x="305" y="145" class="message-text" text-anchor="middle">Submit transaction</text>
+  
+  <!-- 3. Forward transaction -->
+  <line x1="390" y1="180" x2="540" y2="180" class="message-arrow" />
+  <polygon points="530,175 540,180 530,185" class="arrowhead" />
+  <text x="465" y="175" class="message-text" text-anchor="middle">Forward transaction</text>
+  
+  <!-- 4. Transaction accepted -->
+  <line x1="540" y1="210" x2="390" y2="210" class="message-arrow" />
+  <polygon points="400,205 390,210 400,215" class="arrowhead" />
+  <text x="465" y="205" class="message-text" text-anchor="middle">Transaction accepted</text>
+  
+  <!-- 5. Transaction accepted -->
+  <line x1="390" y1="240" x2="220" y2="240" class="message-arrow" />
+  <polygon points="230,235 220,240 230,245" class="arrowhead" />
+  <text x="305" y="235" class="message-text" text-anchor="middle">Transaction accepted</text>
+  
+  <!-- 6. Accepted (Operation ID) -->
+  <line x1="220" y1="270" x2="80" y2="270" class="message-arrow" />
+  <polygon points="90,265 80,270 90,275" class="arrowhead" />
+  <text x="150" y="265" class="message-text" text-anchor="middle">Accepted</text>
+  <text x="150" y="280" class="message-text" text-anchor="middle">(Operation ID)</text>
+  
+  <!-- 7. Process transaction -->
+  <path d="M 540,300 L 570,300 L 570,320 L 540,320" class="message-arrow" />
+  <polygon points="550,315 540,320 550,325" class="arrowhead" />
+  <text x="580" y="310" class="message-text" text-anchor="start">Process transaction</text>
+  
+  <!-- 8. Emit blockchain events -->
+  <line x1="540" y1="350" x2="390" y2="350" class="message-arrow" />
+  <polygon points="400,345 390,350 400,355" class="arrowhead" />
+  <text x="465" y="345" class="message-text" text-anchor="middle">Emit blockchain events</text>
+  
+  <!-- 9. Forward events -->
+  <line x1="390" y1="380" x2="220" y2="380" class="message-arrow" />
+  <polygon points="230,375 220,380 230,385" class="arrowhead" />
+  <text x="305" y="375" class="message-text" text-anchor="middle">Forward events</text>
+  
+  <!-- 10. Store events in database -->
+  <path d="M 220,410 L 250,410 L 250,430 L 220,430" class="message-arrow" />
+  <polygon points="230,425 220,430 230,435" class="arrowhead" />
+  <text x="280" y="420" class="message-text" text-anchor="start">Store events in database</text>
+  
+  <!-- 11. Emit blockchain_event_received -->
+  <line x1="220" y1="460" x2="80" y2="460" class="message-arrow" />
+  <polygon points="90,455 80,460 90,465" class="arrowhead" />
+  <text x="150" y="455" class="message-text" text-anchor="middle">Emit blockchain_event_received</text>
+  
+  <!-- Note -->
+  <rect x="80" y="490" width="270" height="30" class="note-box" rx="5" ry="5" />
+  <text x="215" y="510" class="note-text" text-anchor="middle">App can subscribe to events via WebSockets or Webhooks</text>
 </svg>
