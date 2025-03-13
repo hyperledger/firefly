@@ -18,7 +18,7 @@
   <rect x="190" y="60" width="60" height="40" fill="white" stroke="#00CC00" stroke-width="1.5"/>
   <text x="220" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">FireFly</text>
   
-  <rect x="330" y="60" width="130" height="40" fill="white" stroke="#CC6600" stroke-width="1.5"/>
+  <rect x="330" y="60" width="140" height="40" fill="white" stroke="#CC6600" stroke-width="1.5"/>
   <text x="395" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">Blockchain Connector</text>
   
   <rect x="490" y="60" width="80" height="40" fill="white" stroke="#6600CC" stroke-width="1.5"/>
@@ -75,7 +75,7 @@
   
   <!-- 11. Emit blockchain_event_received -->
   <line x1="220" y1="480" x2="80" y2="480" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="150" y="475" font-family="Arial" font-size="10" text-anchor="middle">Emit blockchain_event_received</text>
+  <text x="150" y="475" font-family="Arial" font-size="9" text-anchor="middle">Emit blockchain_event_received</text>
   
   <!-- Note -->
   <rect x="30" y="500" width="320" height="20" fill="white" stroke="#CC0000" stroke-width="1" rx="5" ry="5"/>
