@@ -22,13 +22,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hyperledger/firefly/internal/metrics"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hyperledger/firefly/internal/metrics"
 
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 
@@ -775,6 +776,12 @@ func TestEventsWithManifest(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFDX(t, true)
 	defer done()
 
+	mcb := &dataexchangemocks.Callbacks{}
+	mcb.On("DXConnect", h).Return(nil)
+	h.SetHandler("ns1", "node1", mcb)
+	ocb := &coremocks.OperationCallbacks{}
+	h.SetOperationHandler("ns1", ocb)
+
 	err := h.Start()
 	assert.NoError(t, err)
 
@@ -782,11 +789,6 @@ func TestEventsWithManifest(t *testing.T) {
 	fromServer <- `{"id":"0"}` // ignored with ack
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
-
-	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler("ns1", "node1", mcb)
-	ocb := &coremocks.OperationCallbacks{}
-	h.SetOperationHandler("ns1", ocb)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	ocb.On("OperationUpdate", mock.MatchedBy(func(ev *core.OperationUpdateAsync) bool {
