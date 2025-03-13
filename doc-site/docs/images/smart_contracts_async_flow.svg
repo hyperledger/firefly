@@ -58,8 +58,8 @@
   
   <!-- 7. Process transaction -->
   <path d="M 530,320 L 560,320 L 560,350 L 530,350" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
-  <text x="550" y="325" font-family="Arial" font-size="10" text-anchor="start">Process</text>
-  <text x="550" y="338" font-family="Arial" font-size="10" text-anchor="start">transaction</text>
+  <text x="550" y="315" font-family="Arial" font-size="10" text-anchor="start">Process</text>
+  <text x="550" y="325" font-family="Arial" font-size="10" text-anchor="start">transaction</text>
   
   <!-- 8. Emit blockchain events -->
   <line x1="530" y1="380" x2="395" y2="380" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
