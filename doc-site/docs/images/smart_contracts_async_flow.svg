@@ -8,55 +8,75 @@
     </marker>
   </defs>
   
-  <!-- Заголовок -->
+  <!-- Title -->
   <text x="285" y="30" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Smart Contracts Async Flow</text>
   
-  <!-- Блоки акторов -->
-  <rect x="70" y="60" width="60" height="40" fill="white" stroke="#0000CC" stroke-width="1.5"/>
-  <text x="100" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">App</text>
+  <!-- Actor boxes -->
+  <rect x="50" y="60" width="60" height="40" fill="white" stroke="#0000CC" stroke-width="1.5"/>
+  <text x="80" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">App</text>
   
-  <rect x="230" y="60" width="60" height="40" fill="white" stroke="#00CC00" stroke-width="1.5"/>
-  <text x="260" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">FireFly</text>
+  <rect x="190" y="60" width="60" height="40" fill="white" stroke="#00CC00" stroke-width="1.5"/>
+  <text x="220" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">FireFly</text>
   
-  <rect x="390" y="60" width="60" height="40" fill="white" stroke="#CC6600" stroke-width="1.5"/>
-  <text x="420" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">Blockchain</text>
+  <rect x="330" y="60" width="120" height="40" fill="white" stroke="#CC6600" stroke-width="1.5"/>
+  <text x="390" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">Blockchain Connector</text>
   
-  <!-- Линии жизни -->
-  <line x1="100" y1="100" x2="100" y2="520" stroke="#000000" stroke-dasharray="5,5" stroke-width="1"/>
-  <line x1="260" y1="100" x2="260" y2="520" stroke="#000000" stroke-dasharray="5,5" stroke-width="1"/>
-  <line x1="420" y1="100" x2="420" y2="520" stroke="#000000" stroke-dasharray="5,5" stroke-width="1"/>
+  <rect x="480" y="60" width="60" height="40" fill="white" stroke="#6600CC" stroke-width="1.5"/>
+  <text x="510" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">Blockchain</text>
   
-  <!-- Сообщения -->
+  <!-- Lifelines -->
+  <line x1="80" y1="100" x2="80" y2="520" stroke="#000000" stroke-dasharray="5,5" stroke-width="1"/>
+  <line x1="220" y1="100" x2="220" y2="520" stroke="#000000" stroke-dasharray="5,5" stroke-width="1"/>
+  <line x1="390" y1="100" x2="390" y2="520" stroke="#000000" stroke-dasharray="5,5" stroke-width="1"/>
+  <line x1="510" y1="100" x2="510" y2="520" stroke="#000000" stroke-dasharray="5,5" stroke-width="1"/>
+  
+  <!-- Messages -->
   <!-- 1. Invoke custom contract -->
-  <line x1="100" y1="140" x2="260" y2="140" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="180" y="135" font-family="Arial" font-size="11" text-anchor="middle">Invoke custom contract</text>
+  <line x1="80" y1="140" x2="220" y2="140" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="150" y="135" font-family="Arial" font-size="11" text-anchor="middle">Invoke custom contract</text>
   
   <!-- 2. Submit transaction -->
-  <line x1="260" y1="180" x2="420" y2="180" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="340" y="175" font-family="Arial" font-size="11" text-anchor="middle">Submit transaction</text>
+  <line x1="220" y1="170" x2="390" y2="170" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="305" y="165" font-family="Arial" font-size="11" text-anchor="middle">Submit transaction</text>
   
-  <!-- 3. Accepted -->
-  <line x1="420" y1="220" x2="260" y2="220" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="340" y="215" font-family="Arial" font-size="11" text-anchor="middle">Accepted</text>
+  <!-- 3. Forward transaction -->
+  <line x1="390" y1="200" x2="510" y2="200" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="450" y="195" font-family="Arial" font-size="11" text-anchor="middle">Forward transaction</text>
   
-  <!-- 4. Accepted (Operation ID) -->
-  <line x1="260" y1="260" x2="100" y2="260" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="180" y="245" font-family="Arial" font-size="11" text-anchor="middle">Accepted</text>
-  <text x="180" y="260" font-family="Arial" font-size="11" text-anchor="middle">(Operation ID)</text>
+  <!-- 4. Transaction accepted -->
+  <line x1="510" y1="230" x2="390" y2="230" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="450" y="225" font-family="Arial" font-size="11" text-anchor="middle">Transaction accepted</text>
   
-  <!-- 5. Perform transaction -->
-  <path d="M 420,300 L 470,300 L 470,330 L 420,330" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
-  <text x="490" y="315" font-family="Arial" font-size="11" text-anchor="start">Perform transaction</text>
+  <!-- 5. Transaction accepted -->
+  <line x1="390" y1="260" x2="220" y2="260" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="305" y="255" font-family="Arial" font-size="11" text-anchor="middle">Transaction accepted</text>
   
-  <!-- 6. Emit events -->
-  <line x1="420" y1="370" x2="260" y2="370" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="340" y="365" font-family="Arial" font-size="11" text-anchor="middle">Emit events</text>
+  <!-- 6. Accepted (Operation ID) -->
+  <line x1="220" y1="290" x2="80" y2="290" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="150" y="275" font-family="Arial" font-size="11" text-anchor="middle">Accepted</text>
+  <text x="150" y="290" font-family="Arial" font-size="11" text-anchor="middle">(Operation ID)</text>
   
-  <!-- 7. Emit events -->
-  <line x1="260" y1="410" x2="100" y2="410" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="180" y="405" font-family="Arial" font-size="11" text-anchor="middle">Emit events</text>
+  <!-- 7. Process transaction -->
+  <path d="M 510,320 L 540,320 L 540,350 L 510,350" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
+  <text x="545" y="335" font-family="Arial" font-size="11" text-anchor="start">Process</text>
+  
+  <!-- 8. Emit blockchain events -->
+  <line x1="510" y1="380" x2="390" y2="380" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="450" y="375" font-family="Arial" font-size="11" text-anchor="middle">Emit blockchain events</text>
+  
+  <!-- 9. Forward events -->
+  <line x1="390" y1="410" x2="220" y2="410" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="305" y="405" font-family="Arial" font-size="11" text-anchor="middle">Forward events</text>
+  
+  <!-- 10. Store events in database -->
+  <path d="M 220,430 L 250,430 L 250,460 L 220,460" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
+  <text x="220" y="425" font-family="Arial" font-size="11" text-anchor="start">Store events in database</text>
+  
+  <!-- 11. Emit blockchain_event_received -->
+  <line x1="220" y1="480" x2="80" y2="480" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="150" y="475" font-family="Arial" font-size="11" text-anchor="middle">Emit blockchain_event_received</text>
   
   <!-- Note -->
-  <rect x="50" y="450" width="350" height="30" fill="white" stroke="#000000" stroke-width="1" rx="0" ry="0"/>
-  <text x="225" y="470" font-family="Arial" font-size="11" text-anchor="middle">App can subscribe to events via WebSockets or Webhooks</text>
+  <rect x="30" y="500" width="320" height="20" fill="white" stroke="#CC0000" stroke-width="1" rx="5" ry="5"/>
+  <text x="190" y="513" font-family="Arial" font-size="11" text-anchor="middle" fill="#CC0000">App can subscribe to events via WebSockets or Webhooks</text>
 </svg>
