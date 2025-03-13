@@ -41,7 +41,21 @@ CLI_SECTION=$(cat manifest.json | jq .cli)
 
 rm -f manifest.json
 
+function repository_url() {
+    service=$1
+    case $service in
+        cardano*)
+            echo "https://api.github.com/repos/hyperledger/firefly-cardano"
+            ;;
+        *)
+            echo "https://api.github.com/repos/hyperledger/firefly-$service"
+            ;;
+    esac
+}
+
 SERVICES=(
+    "cardanoconnect"
+    "cardanosigner"
     "ethconnect"
     "evmconnect"
     "fabconnect"
@@ -62,7 +76,7 @@ do
 
     if [ $USE_HEAD = false ] ; then
         # Query GitHub API the latest release version
-        TAG=$(curl https://api.github.com/repos/hyperledger/firefly-${SERVICES[$i]}/releases/latest -s | jq .tag_name -r)
+        TAG=$(curl "$(repository_url "${SERVICES[$i]}")/releases/latest" -s | jq .tag_name -r)
     else
         # Otherwise, pull the newest built image straight off the main branch
         TAG="head"

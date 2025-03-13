@@ -1401,12 +1401,163 @@ func TestInvokeContractConnectorError(t *testing.T) {
 	assert.Regexp(t, "FF10282", err)
 }
 
-func TestQueryContractNotSupported(t *testing.T) {
+func TestQueryContractOK(t *testing.T) {
 	c, cancel := newTestCardano()
 	defer cancel()
+	httpmock.ActivateNonDefault(c.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "simple-tx",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	signingKey := "signingKey"
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"varString": "str",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
 
-	_, err := c.QueryContract(context.Background(), "", nil, nil, nil, nil)
-	assert.Regexp(t, "FF10429", err)
+	httpmock.RegisterResponder("POST", "http://localhost:12345/contracts/query", func(req *http.Request) (*http.Response, error) {
+		var body map[string]interface{}
+		json.NewDecoder(req.Body).Decode(&body)
+		params := body["params"].([]interface{})
+		assert.Equal(t, "simple-tx", body["address"])
+		assert.Equal(t, "testFunc", body["method"].(map[string]interface{})["name"])
+		assert.Equal(t, 1, len(params))
+		assert.Equal(t, signingKey, body["from"])
+		res := map[string]interface{}{
+			"foo": "bar",
+		}
+		return httpmock.NewJsonResponderOrPanic(200, res)(req)
+	})
+
+	parsedMethod, err := c.ParseInterface(context.Background(), method, nil)
+	assert.NoError(t, err)
+
+	res, err := c.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]interface{}{"foo": "bar"}, res)
+}
+
+func TestQueryContractAddressNotSet(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+	httpmock.ActivateNonDefault(c.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	signingKey := "signingKey"
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"varString": "str",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	parsedMethod, err := c.ParseInterface(context.Background(), method, nil)
+	assert.NoError(t, err)
+
+	_, err = c.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestQueryContractBadMethod(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+	httpmock.ActivateNonDefault(c.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "simple-tx",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	signingKey := "signingKey"
+	method := &fftypes.FFIMethod{}
+	params := map[string]interface{}{
+		"varString": "str",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	parsedMethod, err := c.ParseInterface(context.Background(), method, nil)
+	assert.NoError(t, err)
+
+	_, err = c.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
+	assert.Regexp(t, "FF10457", err)
+}
+
+func TestQueryContractConnectorError(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+	httpmock.ActivateNonDefault(c.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "simple-tx",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	signingKey := "signingKey"
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"varString": "str",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	httpmock.RegisterResponder("POST", "http://localhost:12345/contracts/invoke", func(req *http.Request) (*http.Response, error) {
+		var body map[string]interface{}
+		json.NewDecoder(req.Body).Decode(&body)
+		params := body["params"].([]interface{})
+		assert.Equal(t, "opId", body["id"])
+		assert.Equal(t, "simple-tx", body["address"])
+		assert.Equal(t, "testFunc", body["method"].(map[string]interface{})["name"])
+		assert.Equal(t, 1, len(params))
+		assert.Equal(t, signingKey, body["from"])
+		return httpmock.NewJsonResponderOrPanic(500, &common.BlockchainRESTError{
+			Error: "something went wrong",
+		})(req)
+	})
+
+	parsedMethod, err := c.ParseInterface(context.Background(), method, nil)
+	assert.NoError(t, err)
+
+	_, err = c.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
+	assert.Regexp(t, "FF10282", err)
+}
+
+func TestQueryContractInvalidJson(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+	httpmock.ActivateNonDefault(c.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := &Location{
+		Address: "simple-tx",
+	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
+	signingKey := "signingKey"
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"varString": "str",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+
+	httpmock.RegisterResponder("POST", "http://localhost:12345/contracts/query", httpmock.NewStringResponder(200, "\"whoops forgot a quote"))
+
+	parsedMethod, err := c.ParseInterface(context.Background(), method, nil)
+	assert.NoError(t, err)
+
+	_, err = c.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
+	assert.Error(t, err)
 }
 
 func TestDeployContractOK(t *testing.T) {

@@ -295,8 +295,44 @@ func (c *Cardano) InvokeContract(ctx context.Context, nsOpID string, signingKey 
 }
 
 func (c *Cardano) QueryContract(ctx context.Context, signingKey string, location *fftypes.JSONAny, parsedMethod interface{}, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
-	log.L(ctx).Warn("QueryContract is not supported")
-	return nil, i18n.NewError(ctx, coremsgs.MsgNotSupportedByBlockchainPlugin)
+	cardanoLocation, err := c.parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+
+	methodInfo, ok := parsedMethod.(*ffiMethodAndErrors)
+	if !ok || methodInfo.method == nil || methodInfo.method.Name == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnexpectedInterfaceType, parsedMethod)
+	}
+	method := methodInfo.method
+	params := make([]interface{}, 0)
+	for _, param := range method.Params {
+		params = append(params, input[param.Name])
+	}
+
+	body := map[string]interface{}{
+		"address": cardanoLocation.Address,
+		"method":  method,
+		"params":  params,
+	}
+	if signingKey != "" {
+		body["from"] = signingKey
+	}
+
+	var resErr common.BlockchainRESTError
+	res, err := c.client.R().
+		SetContext(ctx).
+		SetBody(body).
+		SetError(&resErr).
+		Post("/contracts/query")
+	if err != nil || !res.IsSuccess() {
+		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgCardanoconnectRESTErr)
+	}
+	var output interface{}
+	if err = json.Unmarshal(res.Body(), &output); err != nil {
+		return nil, err
+	}
+	return output, nil
 }
 
 func (c *Cardano) ParseInterface(ctx context.Context, method *fftypes.FFIMethod, errors []*fftypes.FFIError) (interface{}, error) {
