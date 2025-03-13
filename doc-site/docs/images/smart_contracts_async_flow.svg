@@ -1,4 +1,4 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="700" height="800">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="700" height="750">
   <desc>title%20Smart%20Contracts%20Async%20Flow%0A%0AApp-%3EFireFly%3A%20Invoke%20custom%20contract%0AFireFly-%3EBlockchain%20Connector%3A%20Submit%20transaction%0ABlockchain%20Connector-%3EBlockchain%3A%20Forward%20transaction%0ABlockchain-%3EBlockchain%20Connector%3A%20Transaction%20accepted%0ABlockchain%20Connector-%3EFireFly%3A%20Transaction%20accepted%0AFireFly-%3EApp%3A%20Accepted%5Cn(Operation%20ID)%0ABlockchain-%3EBlockchain%3A%20Process%20transaction%0ABlockchain-%3EBlockchain%20Connector%3A%20Emit%20blockchain%20events%0ABlockchain%20Connector-%3EFireFly%3A%20Forward%20events%0AFireFly-%3EFireFly%3A%20Store%20events%20in%20database%0AFireFly-%3EApp%3A%20Emit%20blockchain_event_received%0ANote%20right%20of%20App%3A%20App%20can%20subscribe%20to%20events%5Cnvia%20WebSockets%20or%20Webhooks</desc>
   <defs/>
   <g>
@@ -11,17 +11,17 @@
     <g/>
     <g/>
     <g>
-      <rect fill="white" stroke="none" x="0" y="0" width="700" height="800"/>
+      <rect fill="white" stroke="none" x="0" y="0" width="700" height="750"/>
     </g>
     <g>
       <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="18pt" font-style="normal" font-weight="bold" text-decoration="normal" x="144.77499658567513" y="26.3876361" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Smart Contracts Async Flow</text>
     </g>
     <g/>
     <g>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 40.925164177730466 103.26361593799999 L 40.925164177730466 780" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 238.57374563795182 103.26361593799999 L 238.57374563795182 780" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 406.8952091782513 103.26361593799999 L 406.8952091782513 780" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
-      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 575.2166727185508 103.26361593799999 L 575.2166727185508 780" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
+      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 40.925164177730466 103.26361593799999 L 40.925164177730466 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
+      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 238.57374563795182 103.26361593799999 L 238.57374563795182 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
+      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 406.8952091782513 103.26361593799999 L 406.8952091782513 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
+      <path fill="none" stroke="#718096" paint-order="fill stroke markers" d=" M 575.2166727185508 103.26361593799999 L 575.2166727185508 720" stroke-miterlimit="10" stroke-width="1.4659797833333332" stroke-dasharray="13.532121076923076,5.863919133333333"/>
     </g>
     <g>
       <path fill="none" stroke="none"/>
@@ -96,7 +96,7 @@
       </g>
       <g>
         <g>
-          <rect fill="white" stroke="none" x="458.533808890875" y="286.21789289799995" width="66.40133703445312" height="22.86928462"/>
+          <rect fill="white" stroke="none" x="458.533808890875" y="286.21789289799995" width="126.40133703445312" height="22.86928462"/>
         </g>
         <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="461.172572500875" y="302.05047455799996" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Transaction accepted</text>
       </g>
@@ -108,7 +108,7 @@
       </g>
       <g>
         <g>
-          <rect fill="white" stroke="none" x="289.533808890875" y="335.47481361799994" width="66.40133703445312" height="22.86928462"/>
+          <rect fill="white" stroke="none" x="289.533808890875" y="335.47481361799994" width="126.40133703445312" height="22.86928462"/>
         </g>
         <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="292.172572500875" y="351.30739527799995" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Transaction accepted</text>
       </g>
@@ -148,7 +148,7 @@
       </g>
       <g>
         <g>
-          <rect fill="white" stroke="none" x="450.1029586711484" y="523.7066177979999" width="81.86303747390625" height="22.86928462"/>
+          <rect fill="white" stroke="none" x="450.1029586711484" y="523.7066177979999" width="126.86303747390625" height="22.86928462"/>
         </g>
         <text fill="#2D3748" stroke="none" font-family="sans-serif" font-size="11pt" font-style="normal" font-weight="normal" text-decoration="normal" x="452.74172228114843" y="539.5391994579999" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">Emit blockchain events</text>
       </g>
@@ -196,11 +196,10 @@
       </g>
       <g>
         <g>
-          <rect fill="#FFF5F5" stroke="#E53E3E" paint-order="fill stroke markers" d=" M 80.925164177730466 740.0 L 350.0 780.0 L 350.0 820.0 L 80.925164177730466 820.0 L 80.925164177730466 740.0 Z" stroke-miterlimit="10" stroke-width="1" stroke-dasharray=""/>
+          <rect fill="#FFF5F5" stroke="#E53E3E" paint-order="fill stroke markers" d=" M 80.925164177730466 730.0 L 350.0 730.0 L 350.0 745.0 L 80.925164177730466 745.0 L 80.925164177730466 730.0 Z" stroke-miterlimit="10" stroke-width="1" stroke-dasharray=""/>
         </g>
         <g>
-          <text fill="#C53030" stroke="none" font-family="sans-serif" font-size="10pt" font-style="normal" font-weight="normal" text-decoration="normal" x="85.925164177730466" y="755.0" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">App can subscribe to events</text>
-          <text fill="#C53030" stroke="none" font-family="sans-serif" font-size="10pt" font-style="normal" font-weight="normal" text-decoration="normal" x="85.925164177730466" y="770.0" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">via WebSockets or Webhooks</text>
+          <text fill="#C53030" stroke="none" font-family="sans-serif" font-size="10pt" font-style="normal" font-weight="normal" text-decoration="normal" x="85.925164177730466" y="740.0" text-anchor="start" dominant-baseline="alphabetic" xml:space="preserve">App can subscribe to events via WebSockets or Webhooks</text>
         </g>
       </g>
     </g>
