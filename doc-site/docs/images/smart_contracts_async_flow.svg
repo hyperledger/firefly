@@ -18,7 +18,7 @@
   <rect x="190" y="60" width="60" height="40" fill="white" stroke="#00CC00" stroke-width="1.5"/>
   <text x="220" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">FireFly</text>
   
-  <rect x="330" y="60" width="140" height="40" fill="white" stroke="#CC6600" stroke-width="1.5"/>
+  <rect x="330" y="60" width="130" height="40" fill="white" stroke="#CC6600" stroke-width="1.5"/>
   <text x="395" y="85" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">Blockchain Connector</text>
   
   <rect x="490" y="60" width="80" height="40" fill="white" stroke="#6600CC" stroke-width="1.5"/>
