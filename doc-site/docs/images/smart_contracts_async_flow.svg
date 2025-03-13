@@ -1,109 +1,93 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="600" height="600">
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500">
+  <!-- Стили -->
+  <style>
+    .title { font-family: Arial; font-size: 14px; font-weight: bold; text-anchor: middle; }
+    .actor { font-family: Arial; font-size: 12px; font-weight: bold; text-anchor: middle; }
+    .message { font-family: Arial; font-size: 10px; text-anchor: middle; }
+    .note { font-family: Arial; font-size: 10px; text-anchor: middle; fill: #CC0000; }
+    .actor-box { stroke-width: 2; }
+    .lifeline { stroke: #000000; stroke-dasharray: 5,5; stroke-width: 1; }
+    .message-arrow { stroke: #000000; stroke-width: 1; fill: none; marker-end: url(#arrowhead); }
+    .note-box { stroke: #CC0000; fill: none; stroke-width: 1; }
+  </style>
+  
+  <!-- Маркеры для стрелок -->
   <defs>
-    <style type="text/css">
-      .lifeline { stroke: #718096; stroke-dasharray: 5,5; stroke-width: 1.5; }
-      .actor-box { stroke-width: 2; }
-      .app-box { fill: #EBF8FF; stroke: #3182CE; }
-      .app-text { fill: #2C5282; }
-      .firefly-box { fill: #F0FFF4; stroke: #38A169; }
-      .firefly-text { fill: #276749; }
-      .connector-box { fill: #FFFAF0; stroke: #DD6B20; }
-      .connector-text { fill: #C05621; }
-      .blockchain-box { fill: #F0F5FF; stroke: #4C51BF; }
-      .blockchain-text { fill: #3C366B; }
-      .message-arrow { stroke: #2D3748; stroke-width: 1.5; fill: none; }
-      .message-text { fill: #2D3748; font-size: 12px; }
-      .arrowhead { fill: #2D3748; }
-      .note-box { fill: #FFF5F5; stroke: #E53E3E; }
-      .note-text { fill: #C53030; font-size: 12px; }
-      .title { font-weight: bold; font-size: 18px; fill: #2D3748; }
-    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#000000" />
+    </marker>
   </defs>
   
-  <!-- Background -->
-  <rect width="600" height="600" fill="white" />
+  <!-- Заголовок -->
+  <text x="250" y="20" class="title">Smart Contracts Async Flow</text>
   
-  <!-- Title -->
-  <text x="300" y="30" class="title" text-anchor="middle">Smart Contracts Async Flow</text>
+  <!-- Блоки акторов -->
+  <rect x="50" y="40" width="60" height="30" fill="#E0E8FF" stroke="#0000CC" class="actor-box" />
+  <text x="80" y="60" class="actor">App</text>
   
-  <!-- Actor boxes -->
-  <rect x="50" y="50" width="60" height="40" class="actor-box app-box" />
-  <text x="80" y="75" class="app-text" text-anchor="middle" font-weight="bold">App</text>
+  <rect x="170" y="40" width="60" height="30" fill="#E0FFE8" stroke="#00CC00" class="actor-box" />
+  <text x="200" y="60" class="actor">FireFly</text>
   
-  <rect x="190" y="50" width="60" height="40" class="actor-box firefly-box" />
-  <text x="220" y="75" class="firefly-text" text-anchor="middle" font-weight="bold">FireFly</text>
+  <rect x="290" y="40" width="120" height="30" fill="#FFF0E0" stroke="#CC6600" class="actor-box" />
+  <text x="350" y="60" class="actor">Blockchain Connector</text>
   
-  <rect x="330" y="50" width="120" height="40" class="actor-box connector-box" />
-  <text x="390" y="75" class="connector-text" text-anchor="middle" font-weight="bold">Blockchain Connector</text>
+  <rect x="430" y="40" width="60" height="30" fill="#F0E0FF" stroke="#6600CC" class="actor-box" />
+  <text x="460" y="60" class="actor">Blockchain</text>
   
-  <rect x="500" y="50" width="80" height="40" class="actor-box blockchain-box" />
-  <text x="540" y="75" class="blockchain-text" text-anchor="middle" font-weight="bold">Blockchain</text>
+  <!-- Линии жизни -->
+  <line x1="80" y1="70" x2="80" y2="480" class="lifeline" />
+  <line x1="200" y1="70" x2="200" y2="480" class="lifeline" />
+  <line x1="350" y1="70" x2="350" y2="480" class="lifeline" />
+  <line x1="460" y1="70" x2="460" y2="480" class="lifeline" />
   
-  <!-- Lifelines -->
-  <line x1="80" y1="90" x2="80" y2="550" class="lifeline" />
-  <line x1="220" y1="90" x2="220" y2="550" class="lifeline" />
-  <line x1="390" y1="90" x2="390" y2="550" class="lifeline" />
-  <line x1="540" y1="90" x2="540" y2="550" class="lifeline" />
-  
-  <!-- Messages -->
+  <!-- Сообщения -->
   <!-- 1. Invoke custom contract -->
-  <line x1="80" y1="120" x2="220" y2="120" class="message-arrow" />
-  <polygon points="210,115 220,120 210,125" class="arrowhead" />
-  <text x="150" y="115" class="message-text" text-anchor="middle">Invoke custom contract</text>
+  <line x1="80" y1="100" x2="200" y2="100" class="message-arrow" />
+  <text x="140" y="95" class="message">Invoke custom contract</text>
   
   <!-- 2. Submit transaction -->
-  <line x1="220" y1="150" x2="390" y2="150" class="message-arrow" />
-  <polygon points="380,145 390,150 380,155" class="arrowhead" />
-  <text x="305" y="145" class="message-text" text-anchor="middle">Submit transaction</text>
+  <line x1="200" y1="130" x2="350" y2="130" class="message-arrow" />
+  <text x="275" y="125" class="message">Submit transaction</text>
   
   <!-- 3. Forward transaction -->
-  <line x1="390" y1="180" x2="540" y2="180" class="message-arrow" />
-  <polygon points="530,175 540,180 530,185" class="arrowhead" />
-  <text x="465" y="175" class="message-text" text-anchor="middle">Forward transaction</text>
+  <line x1="350" y1="160" x2="460" y2="160" class="message-arrow" />
+  <text x="405" y="155" class="message">Forward transaction</text>
   
   <!-- 4. Transaction accepted -->
-  <line x1="540" y1="210" x2="390" y2="210" class="message-arrow" />
-  <polygon points="400,205 390,210 400,215" class="arrowhead" />
-  <text x="465" y="205" class="message-text" text-anchor="middle">Transaction accepted</text>
+  <line x1="460" y1="190" x2="350" y2="190" class="message-arrow" />
+  <text x="405" y="185" class="message">Transaction accepted</text>
   
   <!-- 5. Transaction accepted -->
-  <line x1="390" y1="240" x2="220" y2="240" class="message-arrow" />
-  <polygon points="230,235 220,240 230,245" class="arrowhead" />
-  <text x="305" y="235" class="message-text" text-anchor="middle">Transaction accepted</text>
+  <line x1="350" y1="220" x2="200" y2="220" class="message-arrow" />
+  <text x="275" y="215" class="message">Transaction accepted</text>
   
   <!-- 6. Accepted (Operation ID) -->
-  <line x1="220" y1="270" x2="80" y2="270" class="message-arrow" />
-  <polygon points="90,265 80,270 90,275" class="arrowhead" />
-  <text x="150" y="265" class="message-text" text-anchor="middle">Accepted</text>
-  <text x="150" y="280" class="message-text" text-anchor="middle">(Operation ID)</text>
+  <line x1="200" y1="250" x2="80" y2="250" class="message-arrow" />
+  <text x="140" y="235" class="message">Accepted</text>
+  <text x="140" y="245" class="message">(Operation ID)</text>
   
   <!-- 7. Process transaction -->
-  <path d="M 540,300 L 570,300 L 570,320 L 540,320" class="message-arrow" />
-  <polygon points="550,315 540,320 550,325" class="arrowhead" />
-  <text x="580" y="310" class="message-text" text-anchor="start">Process transaction</text>
+  <path d="M 460,280 L 490,280 L 490,300 L 460,300" class="message-arrow" />
+  <text x="500" y="290" class="message" text-anchor="start">Process</text>
   
   <!-- 8. Emit blockchain events -->
-  <line x1="540" y1="350" x2="390" y2="350" class="message-arrow" />
-  <polygon points="400,345 390,350 400,355" class="arrowhead" />
-  <text x="465" y="345" class="message-text" text-anchor="middle">Emit blockchain events</text>
+  <line x1="460" y1="330" x2="350" y2="330" class="message-arrow" />
+  <text x="405" y="325" class="message">Emit blockchain events</text>
   
   <!-- 9. Forward events -->
-  <line x1="390" y1="380" x2="220" y2="380" class="message-arrow" />
-  <polygon points="230,375 220,380 230,385" class="arrowhead" />
-  <text x="305" y="375" class="message-text" text-anchor="middle">Forward events</text>
+  <line x1="350" y1="360" x2="200" y2="360" class="message-arrow" />
+  <text x="275" y="355" class="message">Forward events</text>
   
   <!-- 10. Store events in database -->
-  <path d="M 220,410 L 250,410 L 250,430 L 220,430" class="message-arrow" />
-  <polygon points="230,425 220,430 230,435" class="arrowhead" />
-  <text x="280" y="420" class="message-text" text-anchor="start">Store events in database</text>
+  <path d="M 200,390 L 230,390 L 230,410 L 200,410" class="message-arrow" />
+  <text x="240" y="400" class="message" text-anchor="start">Store events in database</text>
   
   <!-- 11. Emit blockchain_event_received -->
-  <line x1="220" y1="460" x2="80" y2="460" class="message-arrow" />
-  <polygon points="90,455 80,460 90,465" class="arrowhead" />
-  <text x="150" y="455" class="message-text" text-anchor="middle">Emit blockchain_event_received</text>
+  <line x1="200" y1="440" x2="80" y2="440" class="message-arrow" />
+  <text x="140" y="435" class="message">Emit blockchain_event_received</text>
   
   <!-- Note -->
-  <rect x="80" y="490" width="270" height="30" class="note-box" rx="5" ry="5" />
-  <text x="215" y="510" class="note-text" text-anchor="middle">App can subscribe to events via WebSockets or Webhooks</text>
+  <rect x="30" y="460" width="250" height="20" class="note-box" rx="5" ry="5" />
+  <text x="155" y="473" class="note">App can subscribe to events via WebSockets or Webhooks</text>
 </svg>
