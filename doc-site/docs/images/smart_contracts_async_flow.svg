@@ -71,7 +71,7 @@
   
   <!-- 10. Store events in database -->
   <path d="M 220,430 L 250,430 L 250,460 L 220,460" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
-  <text x="220" y="425" font-family="Arial" font-size="11" text-anchor="start">Store events in database</text>
+  <text x="225" y="425" font-family="Arial" font-size="11" text-anchor="start">Store events in database</text>
   
   <!-- 11. Emit blockchain_event_received -->
   <line x1="220" y1="480" x2="80" y2="480" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
