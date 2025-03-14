@@ -67,7 +67,7 @@
   
   <!-- 9. Forward interested blockchain events -->
   <line x1="395" y1="410" x2="220" y2="410" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="308" y="405" font-family="Arial" font-size="11" text-anchor="middle">Forward interested blockchain events</text>
+  <text x="308" y="405" font-family="Arial" font-size="10" text-anchor="middle">Forward interested blockchain events</text>
   
   <!-- 10. Store events in database -->
   <path d="M 220,430 L 250,430 L 250,460 L 220,460" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
