@@ -417,7 +417,9 @@ func (c *Cardano) AddContractListener(ctx context.Context, listener *core.Contra
 	}
 
 	result, err := c.streams.createListener(ctx, c.streamIDs[namespace], subName, firstEvent, filters)
-	listener.BackendID = result.ID
+	if result != nil {
+		listener.BackendID = result.ID
+	}
 	return err
 }
 
