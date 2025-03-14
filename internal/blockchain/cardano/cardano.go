@@ -408,10 +408,14 @@ func (c *Cardano) AddContractListener(ctx context.Context, listener *core.Contra
 		if err != nil {
 			return err
 		}
+		signature, err := c.GenerateEventSignature(ctx, &f.Event.FFIEventDefinition)
+		if err != nil {
+			return err
+		}
 		filters = append(filters, filter{
 			eventfilter{
 				Contract:  location.Address,
-				EventPath: f.Event.Name,
+				EventPath: signature,
 			},
 		})
 	}
