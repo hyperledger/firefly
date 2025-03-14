@@ -84,7 +84,7 @@ Global Flags:
   -d, --database string               Database type to use. Options are: [sqlite3 postgres] (default "sqlite3")
   -e, --external int                  Manage a number of FireFly core processes outside of the docker-compose stack - useful for development and debugging
   -p, --firefly-base-port int         Mapped port base of FireFly core API (1 added for each member) (default 5000)
-      --ipfs-mode string              Set the mode in which IFPS operates. Options are: [private public] (default "private")
+      --ipfs-mode string              Set the mode in which IPFS operates. Options are: [private public] (default "private")
   -m, --manifest string               Path to a manifest.json file containing the versions of each FireFly microservice to use. Overrides the --release flag.
       --multiparty                    Enable or disable multiparty mode (default true)
       --node-name stringArray         Node name
