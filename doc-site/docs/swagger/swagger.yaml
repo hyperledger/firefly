@@ -9396,6 +9396,7 @@ paths:
                           type:
                             description: The type of the verifier
                             enum:
+                            - cardano_address
                             - ethereum_address
                             - tezos_address
                             - fabric_msp_id
@@ -10098,6 +10099,7 @@ paths:
                     type:
                       description: The type of the verifier
                       enum:
+                      - cardano_address
                       - ethereum_address
                       - tezos_address
                       - fabric_msp_id
@@ -22859,6 +22861,7 @@ paths:
                           type:
                             description: The type of the verifier
                             enum:
+                            - cardano_address
                             - ethereum_address
                             - tezos_address
                             - fabric_msp_id
@@ -23596,6 +23599,7 @@ paths:
                     type:
                       description: The type of the verifier
                       enum:
+                      - cardano_address
                       - ethereum_address
                       - tezos_address
                       - fabric_msp_id
@@ -26379,6 +26383,7 @@ paths:
                           type:
                             description: The type of the verifier
                             enum:
+                            - cardano_address
                             - ethereum_address
                             - tezos_address
                             - fabric_msp_id
@@ -26514,6 +26519,7 @@ paths:
                         type:
                           description: The type of the verifier
                           enum:
+                          - cardano_address
                           - ethereum_address
                           - tezos_address
                           - fabric_msp_id
@@ -28617,6 +28623,7 @@ paths:
                             type:
                               description: The type of the verifier
                               enum:
+                              - cardano_address
                               - ethereum_address
                               - tezos_address
                               - fabric_msp_id
@@ -35325,6 +35332,7 @@ paths:
                     type:
                       description: The type of the verifier
                       enum:
+                      - cardano_address
                       - ethereum_address
                       - tezos_address
                       - fabric_msp_id
@@ -35394,6 +35402,7 @@ paths:
                   type:
                     description: The type of the verifier
                     enum:
+                    - cardano_address
                     - ethereum_address
                     - tezos_address
                     - fabric_msp_id
@@ -35436,6 +35445,7 @@ paths:
                 type:
                   description: The type of the verifier
                   enum:
+                  - cardano_address
                   - ethereum_address
                   - tezos_address
                   - fabric_msp_id
@@ -35455,6 +35465,7 @@ paths:
                   type:
                     description: The type of the verifier
                     enum:
+                    - cardano_address
                     - ethereum_address
                     - tezos_address
                     - fabric_msp_id
@@ -35786,6 +35797,7 @@ paths:
                           type:
                             description: The type of the verifier
                             enum:
+                            - cardano_address
                             - ethereum_address
                             - tezos_address
                             - fabric_msp_id
@@ -35914,6 +35926,7 @@ paths:
                         type:
                           description: The type of the verifier
                           enum:
+                          - cardano_address
                           - ethereum_address
                           - tezos_address
                           - fabric_msp_id
@@ -37919,6 +37932,7 @@ paths:
                             type:
                               description: The type of the verifier
                               enum:
+                              - cardano_address
                               - ethereum_address
                               - tezos_address
                               - fabric_msp_id
@@ -44409,6 +44423,7 @@ paths:
                     type:
                       description: The type of the verifier
                       enum:
+                      - cardano_address
                       - ethereum_address
                       - tezos_address
                       - fabric_msp_id
@@ -44471,6 +44486,7 @@ paths:
                   type:
                     description: The type of the verifier
                     enum:
+                    - cardano_address
                     - ethereum_address
                     - tezos_address
                     - fabric_msp_id
@@ -44506,6 +44522,7 @@ paths:
                 type:
                   description: The type of the verifier
                   enum:
+                  - cardano_address
                   - ethereum_address
                   - tezos_address
                   - fabric_msp_id
@@ -44525,6 +44542,7 @@ paths:
                   type:
                     description: The type of the verifier
                     enum:
+                    - cardano_address
                     - ethereum_address
                     - tezos_address
                     - fabric_msp_id
