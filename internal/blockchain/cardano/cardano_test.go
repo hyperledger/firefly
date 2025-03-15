@@ -641,11 +641,11 @@ func TestEventLoopReceiveReceipt(t *testing.T) {
 
 	tm := &coremocks.OperationCallbacks{}
 	c.SetOperationHandler("ns1", tm)
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
-		return update.NamespacedOpID == "ns1:5678" &&
-			update.Status == core.OpStatusSucceeded &&
-			update.BlockchainTXID == "txHash" &&
-			update.Plugin == "cardano"
+	tm.On("BulkOperationUpdates", mock.Anything, mock.MatchedBy(func(updates []*core.OperationUpdate) bool {
+		return updates[0].NamespacedOpID == "ns1:5678" &&
+			updates[0].Status == core.OpStatusSucceeded &&
+			updates[0].BlockchainTXID == "txHash" &&
+			updates[0].Plugin == "cardano"
 	})).Return(nil)
 
 	go c.eventLoop("ns1")
@@ -653,6 +653,9 @@ func TestEventLoopReceiveReceipt(t *testing.T) {
 	r <- []byte(`{
 		"batchNumber": 1339,
 		"events": [
+			{
+				"type": "Nonsense"
+			},
 			{
 				"type": "Receipt",
 				"headers": {
@@ -663,7 +666,7 @@ func TestEventLoopReceiveReceipt(t *testing.T) {
 				"type": "Receipt",
 				"headers": {
 					"requestId": "ns1:5678",
-					"replyType": "TransactionSuccess"
+					"type": "TransactionSuccess"
 				},
 				"transactionHash": "txHash"
 			}
@@ -676,6 +679,57 @@ func TestEventLoopReceiveReceipt(t *testing.T) {
 	assert.Equal(t, "topic1/ns1", parsed.Topic)
 	assert.Equal(t, int64(1339), parsed.BatchNumber)
 	assert.Equal(t, "ack", parsed.Type)
+}
+
+func TestEventLoopReceiveReceiptBulkOperationUpdateFail(t *testing.T) {
+	c, cancel := newTestCardano()
+	defer cancel()
+
+	r := make(chan []byte)
+	s := make(chan []byte)
+	wsm := &wsmocks.WSClient{}
+	c.wsconns["ns1"] = wsm
+	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		bytes, _ := args.Get(1).([]byte)
+		s <- bytes
+	}).Return(nil)
+	wsm.On("Close").Return()
+	c.streamIDs["ns1"] = "es12345"
+	c.closed["ns1"] = make(chan struct{})
+
+	tm := &coremocks.OperationCallbacks{}
+	c.SetOperationHandler("ns1", tm)
+	tm.On("BulkOperationUpdates", mock.Anything, mock.MatchedBy(func(updates []*core.OperationUpdate) bool {
+		return updates[0].NamespacedOpID == "ns1:5678" &&
+			updates[0].Status == core.OpStatusSucceeded &&
+			updates[0].BlockchainTXID == "txHash" &&
+			updates[0].Plugin == "cardano"
+	})).Return(errors.New("whoops"))
+
+	go c.eventLoop("ns1")
+
+	r <- []byte(`{
+		"batchNumber": 1339,
+		"events": [
+			{
+				"type": "Receipt",
+				"headers": {
+					"requestId": "ns1:5678",
+					"type": "TransactionSuccess"
+				},
+				"transactionHash": "txHash"
+			}
+		]
+	}`)
+	response := <-s
+	var parsed cardanoWSCommandPayload
+	err := json.Unmarshal(response, &parsed)
+	assert.NoError(t, err)
+	assert.Equal(t, "topic1/ns1", parsed.Topic)
+	assert.Equal(t, int64(1339), parsed.BatchNumber)
+	assert.Equal(t, "error", parsed.Type)
+	assert.Equal(t, "whoops", parsed.Message)
 }
 
 func TestSubmitBatchPinNotSupported(t *testing.T) {

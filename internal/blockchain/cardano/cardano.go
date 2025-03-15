@@ -408,10 +408,7 @@ func (c *Cardano) AddContractListener(ctx context.Context, listener *core.Contra
 		if err != nil {
 			return err
 		}
-		signature, err := c.GenerateEventSignature(ctx, &f.Event.FFIEventDefinition)
-		if err != nil {
-			return err
-		}
+		signature, _ := c.GenerateEventSignature(ctx, &f.Event.FFIEventDefinition)
 		filters = append(filters, filter{
 			eventfilter{
 				Contract:  location.Address,
@@ -594,6 +591,7 @@ func (c *Cardano) eventLoop(namespace string) {
 
 func (c *Cardano) handleMessageBatch(ctx context.Context, namespace string, batchID int64, messages []interface{}) error {
 	events := make(common.EventsToDispatch)
+	updates := make([]*core.OperationUpdate, 0)
 	count := len(messages)
 	for i, msgI := range messages {
 		msgMap, ok := msgI.(map[string]interface{})
@@ -616,7 +614,7 @@ func (c *Cardano) handleMessageBatch(ctx context.Context, namespace string, batc
 			msgBytes, _ := json.Marshal(msgMap)
 			_ = json.Unmarshal(msgBytes, &receipt)
 
-			err := common.HandleReceipt(ctx, namespace, c, &receipt, c.callbacks)
+			err := common.AddReceiptToBatch(ctx, namespace, c, &receipt, &updates)
 			if err != nil {
 				log.L(ctx).Errorf("Failed to process receipt: %+v", msgMap)
 			}
@@ -626,6 +624,12 @@ func (c *Cardano) handleMessageBatch(ctx context.Context, namespace string, batc
 
 	}
 
+	if len(updates) > 0 {
+		err := c.callbacks.BulkOperationUpdates(ctx, namespace, updates)
+		if err != nil {
+			return err
+		}
+	}
 	// Dispatch all the events from this patch that were successfully parsed and routed to namespaces
 	// (could be zero - that's ok)
 	return c.callbacks.DispatchBlockchainEvents(ctx, events)

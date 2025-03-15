@@ -456,6 +456,55 @@ func HandleReceipt(ctx context.Context, namespace string, plugin core.Named, rep
 	return nil
 }
 
+// Common function for synchronously handling receipts from blockchain connectors.
+// This won't actually handle the receipt, but will rather collect it into updates.
+// The caller will call BulkOperationUpdates with the batch later.
+func AddReceiptToBatch(ctx context.Context, namespace string, plugin core.Named, reply *BlockchainReceiptNotification, updates *[]*core.OperationUpdate) error {
+	l := log.L(ctx)
+
+	if namespace != "" {
+		opNamespace, _, _ := core.ParseNamespacedOpID(ctx, reply.Headers.ReceiptID)
+		if opNamespace != namespace {
+			l.Debugf("Ignoring operation update from other namespace: request=%s tx=%s message=%s", reply.Headers.ReceiptID, reply.TxHash, reply.Message)
+			return nil
+		}
+	}
+
+	if reply.Headers.ReceiptID == "" || reply.Headers.ReplyType == "" {
+		return fmt.Errorf("reply cannot be processed - missing fields: %+v", reply)
+	}
+
+	var updateType core.OpStatus
+	switch reply.Headers.ReplyType {
+	case "TransactionSuccess":
+		updateType = core.OpStatusSucceeded
+	case "TransactionUpdate":
+		updateType = core.OpStatusPending
+	default:
+		updateType = core.OpStatusFailed
+	}
+
+	// Slightly ugly conversion from ReceiptFromBlockchain -> JSONObject which the generic OperationUpdate() function requires
+	var output fftypes.JSONObject
+	obj, err := json.Marshal(reply)
+	if err != nil {
+		return fmt.Errorf("reply cannot be processed - marshalling error: %+v", reply)
+	}
+	_ = json.Unmarshal(obj, &output)
+
+	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, reply.Headers.ReceiptID, reply.TxHash, reply.Message)
+	*updates = append(*updates, &core.OperationUpdate{
+		Plugin:         plugin.Name(),
+		NamespacedOpID: reply.Headers.ReceiptID,
+		Status:         updateType,
+		BlockchainTXID: reply.TxHash,
+		ErrorMessage:   reply.Message,
+		Output:         output,
+	})
+
+	return nil
+}
+
 func WrapRESTError(ctx context.Context, errRes *BlockchainRESTError, res *resty.Response, err error, defMsgKey i18n.ErrorMessageKey) error {
 	if errRes != nil && errRes.Error != "" {
 		if res != nil && res.StatusCode() == http.StatusConflict {
