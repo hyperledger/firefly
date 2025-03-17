@@ -12,7 +12,7 @@ If you haven't set up the FireFly CLI already, please go back to the Getting Sta
 
 ## Create the stack
 
-A Cardano stack can be run in two different ways; with a firefly
+A Cardano stack can be run in two different ways; using a local Cardano node, or a remote Blockfrost address.
 
 ### Option 1: Use a local Cardano node
 
@@ -23,13 +23,11 @@ Start a local Cardano node. The fastest way to do this is to [use mithril](https
 For an example of how to bootstrap and run the Cardano node in Docker, see [the firefly-cardano repo](https://github.com/hyperledger/firefly-cardano/blob/1be3b08d301d6d6eeb5b79e40cf3dbf66181c3de/infra/docker-compose.node.yaml#L4).
 
 The cardano-node exposes a Unix socket named `node.socket`. Pass that to firefly-cli. The example below uses `firefly-cli` to
- - Create a new Cardano-based stack named `dev` with 1 member.
- - Disable `multiparty` mode.
+ - Create a new Cardano-based stack named `dev`.
  - Connect to the local Cardano node, which is running in the [preview network](https://preview.cexplorer.io/).
 
 ```sh
-ff init cardano dev 1 \
-    --multiparty false \
+ff init cardano dev \
     --network preview \
     --socket /path/to/ipc/node.socket
 ```
@@ -39,13 +37,11 @@ ff init cardano dev 1 \
 The Cardano connector can also use the [paid Blockfrost API](https://blockfrost.io/) in place of a local Cardano node.
 
 The example below uses firefly-cli to
- - Create a new Cardano-based stack named `dev` with 1 member.
- - Disable `multiparty` mode.
- - Use the given block
+ - Create a new Cardano-based stack named `dev`
+ - Use the given blockfrost key for the preview network.
 
 ```sh
-ff init cardano dev 1 \
-    --multiparty false \
+ff init cardano dev \
     --network preview \
     --blockfrost-key previewXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
