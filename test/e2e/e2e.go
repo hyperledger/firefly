@@ -19,6 +19,7 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,7 +64,7 @@ func PollForUp(t *testing.T, client *client.FireFlyClient) {
 	var err error
 	for i := 0; i < 12; i++ {
 		_, resp, err = client.GetStatus()
-		if err == nil && resp.StatusCode() == 200 {
+		if err == nil && resp.StatusCode() == http.StatusOK {
 			break
 		}
 		time.Sleep(5 * time.Second)
