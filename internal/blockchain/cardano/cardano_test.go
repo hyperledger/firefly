@@ -173,8 +173,12 @@ func TestInitAndStartWithCardanoConnect(t *testing.T) {
 	fromServer <- `[]`                // empty batch, will be ignored, but acked
 	reply := <-toServer
 	assert.Equal(t, `{"type":"ack","topic":"topic1/ns1"}`, reply)
-	fromServer <- `["different kind of bad batch"]`
-	fromServer <- `[{}]` // bad batch
+	fromServer <- `["different kind of bad batch"]` // bad batch, will be ignored but acked
+	reply = <-toServer
+	assert.Equal(t, `{"type":"ack","topic":"topic1/ns1"}`, reply)
+	fromServer <- `[{}]` // bad batch, will be ignored but acked
+	reply = <-toServer
+	assert.Equal(t, `{"type":"ack","topic":"topic1/ns1"}`, reply)
 
 	// Bad data will be ignored
 	fromServer <- `!json`
