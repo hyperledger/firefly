@@ -93,7 +93,7 @@ As noted throughout this document, the behavior of listeners has changed in v1.3
 - The `signature` field is preserved at the listener level
   - The format has been changed as described above
 
-## Input Examples
+## Input examples
 
 The two input formats supported when creating a contract listener are shown below.
 
