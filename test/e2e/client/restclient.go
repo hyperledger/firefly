@@ -370,7 +370,7 @@ func (client *FireFlyClient) GetOrganization(t *testing.T, idOrName string) *cor
 		SetResult(&identity).
 		Get(client.namespaced(fmt.Sprintf("%s/%s", urlGetOrganizations, idOrName)))
 	assert.NoError(t, err)
-	if res.StatusCode() == 404 {
+	if res.StatusCode() == http.StatusNotFound {
 		return nil
 	}
 	assert.True(t, res.IsSuccess())

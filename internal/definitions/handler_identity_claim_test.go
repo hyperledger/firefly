@@ -19,6 +19,7 @@ package definitions
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -41,6 +42,33 @@ func testOrgIdentity(t *testing.T, name string) *core.Identity {
 			Description: "desc",
 			Profile: fftypes.JSONObject{
 				"some": "profiledata",
+			},
+		},
+		Messages: core.IdentityMessages{
+			Claim: fftypes.NewUUID(),
+		},
+	}
+	var err error
+	i.DID, err = i.GenerateDID(context.Background())
+	assert.NoError(t, err)
+	return i
+}
+
+func testNodeIdentity(t *testing.T, name string, parent *core.Identity) *core.Identity {
+	i := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			Type:      core.IdentityTypeNode,
+			Namespace: "ns1",
+			Name:      name,
+			Parent:    parent.ID,
+		},
+		IdentityProfile: core.IdentityProfile{
+			Description: "desc",
+			Profile: fftypes.JSONObject{
+				"cert":     "some cert",
+				"endpoint": "https://a-dx-endpoint",
+				"id":       "dx id",
 			},
 		},
 		Messages: core.IdentityMessages{
@@ -134,6 +162,38 @@ func testCustomClaimAndVerification(t *testing.T) (*core.Identity, *core.Identit
 	}
 
 	return custom1, org1, claimMsg, claimData, verifyMsg, verifyData
+}
+
+func testNodeRegistrationAndVerification(t *testing.T) (*core.Identity, *core.Identity, *core.Message, *core.Data) {
+	org1 := testOrgIdentity(t, "org1")
+	node1 := testNodeIdentity(t, "node1", org1)
+
+	ic := &core.IdentityClaim{
+		Identity: node1,
+	}
+	b, err := json.Marshal(&ic)
+	assert.NoError(t, err)
+	claimData := &core.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.JSONAnyPtrBytes(b),
+	}
+
+	claimMsg := &core.Message{
+		Header: core.MessageHeader{
+			Namespace: "ns1",
+			ID:        node1.Messages.Claim,
+			Type:      core.MessageTypeDefinition,
+			Tag:       core.SystemTagIdentityClaim,
+			Topics:    fftypes.FFStringArray{node1.Topic()},
+			SignerRef: core.SignerRef{
+				Author: org1.DID,
+				Key:    "0x12345",
+			},
+		},
+	}
+	claimMsg.Hash = fftypes.NewRandB32()
+
+	return node1, org1, claimMsg, claimData
 }
 
 func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *testing.T) {
@@ -538,4 +598,77 @@ func TestHandleDefinitionIdentityClaimBadData(t *testing.T) {
 	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
+}
+
+func TestHandleDefinitionIdentityClaimLocalNodeWithFailingStatusCheck(t *testing.T) {
+	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
+
+	ctx := context.Background()
+	node1, org1, claimMsg, claimData := testNodeRegistrationAndVerification(t)
+
+	dh.mim.On("VerifyIdentityChain", ctx, node1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, node1.Namespace, node1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", node1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "a dx").Return(nil, nil)
+	dh.mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
+		assert.Equal(t, *claimMsg.Header.ID, *identity.Messages.Claim)
+		return true
+	}), database.UpsertOptimizationNew).Return(nil)
+	dh.mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+		assert.Equal(t, core.VerifierTypeFFDXPeerID, verifier.Type)
+		assert.Equal(t, "a dx", verifier.Value)
+		assert.Equal(t, *node1.ID, *verifier.Identity)
+		return true
+	}), database.UpsertOptimizationNew).Return(nil)
+	dh.mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeIdentityConfirmed
+	})).Return(nil)
+
+	dh.mdx.On("GetPeerID", node1.Profile).Return("a dx")
+	dh.mdx.On("AddNode", ctx, "ns1", node1.Name, node1.Profile).Return(nil)
+	dh.mim.On("GetLocalNodeDID", ctx).Return(node1.DID, nil)
+	dh.mdx.On("CheckNodeIdentityStatus", ctx, node1).Return(errors.New("failed to check status but no worries"))
+
+	dh.multiparty = true
+	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: core.ActionConfirm}, action)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{node1.DID}, bs.ConfirmedDIDClaims)
+
+	err = bs.RunPreFinalize(ctx)
+	assert.NoError(t, err)
+	err = bs.RunFinalize(ctx)
+	assert.NoError(t, err)
+}
+
+func TestHandleDefinitionIdentityClaimLocaNodeMisconfigured(t *testing.T) {
+	dh, bs := newTestDefinitionHandler(t)
+	defer dh.cleanup(t)
+
+	ctx := context.Background()
+	node1, org1, claimMsg, claimData := testNodeRegistrationAndVerification(t)
+
+	dh.mim.On("VerifyIdentityChain", ctx, node1).Return(org1, false, nil)
+	dh.mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, node1.Namespace, node1.Name).Return(nil, nil)
+	dh.mdi.On("GetIdentityByID", ctx, "ns1", node1.ID).Return(nil, nil)
+	dh.mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "a dx").Return(nil, nil)
+	dh.mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
+		assert.Equal(t, *claimMsg.Header.ID, *identity.Messages.Claim)
+		return true
+	}), database.UpsertOptimizationNew).Return(nil)
+	dh.mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+		assert.Equal(t, core.VerifierTypeFFDXPeerID, verifier.Type)
+		assert.Equal(t, "a dx", verifier.Value)
+		assert.Equal(t, *node1.ID, *verifier.Identity)
+		return true
+	}), database.UpsertOptimizationNew).Return(nil)
+
+	dh.mdx.On("GetPeerID", node1.Profile).Return("a dx")
+	dh.mim.On("GetLocalNodeDID", ctx).Return(node1.DID, errors.New("somehow local node isnt configured but we  got this far"))
+
+	dh.multiparty = true
+	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
+	assert.Equal(t, HandlerResult{Action: core.ActionRetry}, action)
+	assert.Error(t, err)
 }

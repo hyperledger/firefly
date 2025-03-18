@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -38,7 +39,7 @@ type streamManager struct {
 	client       *resty.Client
 	cache        cache.CInterface
 	batchSize    uint
-	batchTimeout uint
+	batchTimeout int64
 }
 
 type eventStream struct {
@@ -46,7 +47,7 @@ type eventStream struct {
 	Name           string               `json:"name"`
 	ErrorHandling  string               `json:"errorHandling"`
 	BatchSize      uint                 `json:"batchSize"`
-	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
+	BatchTimeoutMS int64                `json:"batchTimeoutMS"`
 	Type           string               `json:"type"`
 	WebSocket      eventStreamWebsocket `json:"websocket"`
 	Timestamps     bool                 `json:"timestamps"`
@@ -73,7 +74,7 @@ type subscriptionCheckpoint struct {
 	Catchup    bool               `json:"catchup,omitempty"`
 }
 
-func newStreamManager(client *resty.Client, cache cache.CInterface, batchSize, batchTimeout uint) *streamManager {
+func newStreamManager(client *resty.Client, cache cache.CInterface, batchSize uint, batchTimeout int64) *streamManager {
 	return &streamManager{
 		client:       client,
 		cache:        cache,
@@ -93,7 +94,7 @@ func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventSt
 	return streams, nil
 }
 
-func buildEventStream(topic string, batchSize, batchTimeout uint) *eventStream {
+func buildEventStream(topic string, batchSize uint, batchTimeout int64) *eventStream {
 	return &eventStream{
 		Name:           topic,
 		ErrorHandling:  "block",
@@ -120,7 +121,7 @@ func (s *streamManager) createEventStream(ctx context.Context, topic string) (*e
 	return stream, nil
 }
 
-func (s *streamManager) updateEventStream(ctx context.Context, topic string, batchSize, batchTimeout uint, eventStreamID string) (*eventStream, error) {
+func (s *streamManager) updateEventStream(ctx context.Context, topic string, batchSize uint, batchTimeout int64, eventStreamID string) (*eventStream, error) {
 	stream := buildEventStream(topic, batchSize, batchTimeout)
 	res, err := s.client.R().
 		SetContext(ctx).
@@ -161,7 +162,7 @@ func (s *streamManager) deleteEventStream(ctx context.Context, esID string, okNo
 		SetContext(ctx).
 		Delete("/eventstreams/" + esID)
 	if err != nil || !res.IsSuccess() {
-		if okNotFound && res.StatusCode() == 404 {
+		if okNotFound && res.StatusCode() == http.StatusNotFound {
 			return nil
 		}
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
@@ -186,7 +187,7 @@ func (s *streamManager) getSubscription(ctx context.Context, subID string, okNot
 		SetResult(&sub).
 		Get(fmt.Sprintf("/subscriptions/%s", subID))
 	if err != nil || !res.IsSuccess() {
-		if okNotFound && res.StatusCode() == 404 {
+		if okNotFound && res.StatusCode() == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)
@@ -282,7 +283,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string, ok
 		SetContext(ctx).
 		Delete("/subscriptions/" + subID)
 	if err != nil || !res.IsSuccess() {
-		if okNotFound && res.StatusCode() == 404 {
+		if okNotFound && res.StatusCode() == http.StatusNotFound {
 			return nil
 		}
 		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthConnectorRESTErr)

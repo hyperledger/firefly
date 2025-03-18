@@ -17,6 +17,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -29,7 +30,7 @@ var rootCmd = &cobra.Command{
 	Short: "FireFly configuration tool",
 	Long:  "Tool for managing and migrating config files for Hyperledger FireFly",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return fmt.Errorf("a command is required")
+		return errors.New("a command is required")
 	},
 }
 

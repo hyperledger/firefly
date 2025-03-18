@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,7 +47,8 @@ type Manager interface {
 	ResubmitOperations(ctx context.Context, txID *fftypes.UUID) (total int, resubmit []*core.Operation, err error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation, hooks ...database.PostCompletionHook) error
 	BulkInsertOperations(ctx context.Context, ops ...*core.Operation) error
-	SubmitOperationUpdate(update *core.OperationUpdate)
+	SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error
+	SubmitOperationUpdate(update *core.OperationUpdateAsync)
 	GetOperationByIDCached(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
@@ -75,6 +76,18 @@ type operationsManager struct {
 	txHelper  txcommon.Helper
 	updater   *operationUpdater
 	cache     cache.CInterface
+}
+
+// SubmitBulkOperationUpdate implements Manager.
+func (om *operationsManager) SubmitBulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error {
+	for _, update := range updates {
+		errString := ""
+		if update.ErrorMessage != "" {
+			errString = fmt.Sprintf(" error=%s", update.ErrorMessage)
+		}
+		log.L(om.ctx).Debugf("%s updating operation %s status=%s%s", update.Plugin, update.NamespacedOpID, update.Status, errString)
+	}
+	return om.updater.SubmitBulkOperationUpdates(ctx, updates)
 }
 
 func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, txHelper txcommon.Helper, cacheManager cache.Manager) (Manager, error) {
@@ -193,12 +206,14 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 			// Ok, we're failed
 			failState = core.OpStatusFailed
 		}
-		om.SubmitOperationUpdate(&core.OperationUpdate{
-			NamespacedOpID: op.NamespacedIDString(),
-			Plugin:         op.Plugin,
-			Status:         failState,
-			ErrorMessage:   err.Error(),
-			Output:         outputs,
+		om.SubmitOperationUpdate(&core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				NamespacedOpID: op.NamespacedIDString(),
+				Plugin:         op.Plugin,
+				Status:         failState,
+				ErrorMessage:   err.Error(),
+				Output:         outputs,
+			},
 		})
 	} else {
 		// No error so move us from "Initialized" to "Pending"
@@ -209,11 +224,13 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 			newState = core.OpStatusSucceeded
 		}
 
-		om.SubmitOperationUpdate(&core.OperationUpdate{
-			NamespacedOpID: op.NamespacedIDString(),
-			Plugin:         op.Plugin,
-			Status:         newState,
-			Output:         outputs,
+		om.SubmitOperationUpdate(&core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				NamespacedOpID: op.NamespacedIDString(),
+				Plugin:         op.Plugin,
+				Status:         newState,
+				Output:         outputs,
+			},
 		})
 	}
 	return outputs, err
@@ -284,7 +301,7 @@ func (om *operationsManager) ResolveOperationByID(ctx context.Context, opID *fft
 	return om.updater.resolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
 }
 
-func (om *operationsManager) SubmitOperationUpdate(update *core.OperationUpdate) {
+func (om *operationsManager) SubmitOperationUpdate(update *core.OperationUpdateAsync) {
 	errString := ""
 	if update.ErrorMessage != "" {
 		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)

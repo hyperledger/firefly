@@ -413,7 +413,7 @@ func mockInitConfig(nmm *nmMocks) {
 	nmm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nmm.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nmm.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nmm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nmm.mti[1].On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nmm.mei[0].On("Init", mock.Anything, mock.Anything).Return(nil)

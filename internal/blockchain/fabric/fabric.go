@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -242,7 +243,7 @@ func (f *Fabric) Init(ctx context.Context, cancelCtx context.CancelFunc, conf co
 	f.streamID = make(map[string]string)
 	f.closed = make(map[string]chan struct{})
 	f.wsconn = make(map[string]wsclient.WSClient)
-	f.streams = newStreamManager(f.client, f.signer, f.cache, f.fabconnectConf.GetUint(FabconnectConfigBatchSize), uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds()))
+	f.streams = newStreamManager(f.client, f.signer, f.cache, f.fabconnectConf.GetUint(FabconnectConfigBatchSize), f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 
 	return nil
 }
@@ -1118,7 +1119,7 @@ func (f *Fabric) GetTransactionStatus(ctx context.Context, operation *core.Opera
 		SetQueryParam("fly-signer", defaultSigner).
 		Get(transactionRequestPath)
 	if err != nil || !res.IsSuccess() {
-		if res.StatusCode() == 404 {
+		if res.StatusCode() == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgFabconnectRESTErr)

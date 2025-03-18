@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -161,7 +161,7 @@ func stringSlicesEqual(a, b []string) bool {
 func NewNamespaceManager() Manager {
 	nm := &namespaceManager{
 		namespaces:          make(map[string]*namespace),
-		metricsEnabled:      config.GetBool(coreconfig.MetricsEnabled),
+		metricsEnabled:      config.GetBool(coreconfig.DeprecatedMetricsEnabled) || config.GetBool(coreconfig.MonitoringEnabled),
 		tokenBroadcastNames: make(map[string]string),
 		watchConfig:         viper.WatchConfig,
 
@@ -702,7 +702,7 @@ func (nm *namespaceManager) initPlugins(pluginsToStart map[string]*plugin) (err 
 				return err
 			}
 		case pluginCategoryDataexchange:
-			if err = p.dataexchange.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config); err != nil {
+			if err = p.dataexchange.Init(p.ctx, nm.cancelCtx /* allow plugin to stop whole process */, p.config, nm.metrics); err != nil {
 				return err
 			}
 		case pluginCategorySharedstorage:

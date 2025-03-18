@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -685,7 +685,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		}
 	}`)
 
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusSucceeded &&
 			update.BlockchainTXID == "ooGcrcazgcGBrY1iym329ovV13MnWrTmV1fttCwWKH5DiYUQsiq" &&
@@ -769,7 +769,7 @@ func TestHandleReceiptTXUpdateTezosConnect(t *testing.T) {
 		"updated": "2023-09-10T14:49:36.030604Z"
 	}`)
 
-	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdate) bool {
+	tm.On("OperationUpdate", mock.MatchedBy(func(update *core.OperationUpdateAsync) bool {
 		return update.NamespacedOpID == "ns1:"+operationID.String() &&
 			update.Status == core.OpStatusPending &&
 			update.BlockchainTXID == "onhZJDmz5JihnW1RaZ96f17FgUBv3GoERkRECK3XVFt1kL5E6Yy" &&

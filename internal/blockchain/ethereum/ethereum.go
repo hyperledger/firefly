@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -196,7 +197,7 @@ func (e *Ethereum) Init(ctx context.Context, cancelCtx context.CancelFunc, conf 
 	e.streamID = make(map[string]string)
 	e.closed = make(map[string]chan struct{})
 	e.wsconn = make(map[string]wsclient.WSClient)
-	e.streams = newStreamManager(e.client, e.cache, e.ethconnectConf.GetUint(EthconnectConfigBatchSize), uint(e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()))
+	e.streams = newStreamManager(e.client, e.cache, e.ethconnectConf.GetUint(EthconnectConfigBatchSize), e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 
 	return nil
 }
@@ -1197,7 +1198,7 @@ func (e *Ethereum) GetTransactionStatus(ctx context.Context, operation *core.Ope
 		SetResult(&statusResponse).
 		Get(transactionRequestPath)
 	if err != nil || !res.IsSuccess() {
-		if res.StatusCode() == 404 {
+		if res.StatusCode() == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)

@@ -283,7 +283,7 @@ func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.Bat
 	}
 
 	if mm.metrics.IsMetricsEnabled() {
-		mm.metrics.CountBatchPin()
+		mm.metrics.CountBatchPin(mm.namespace.Name)
 	}
 	_, err := mm.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, payloadRef), idempotentSubmit)
 	return err

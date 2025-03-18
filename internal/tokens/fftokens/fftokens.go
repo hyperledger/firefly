@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -74,13 +74,15 @@ type callbacks struct {
 func (cb *callbacks) OperationUpdate(ctx context.Context, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
 	if handler, ok := cb.opHandlers[namespace]; ok {
-		handler.OperationUpdate(&core.OperationUpdate{
-			Plugin:         cb.plugin.Name(),
-			NamespacedOpID: nsOpID,
-			Status:         status,
-			BlockchainTXID: blockchainTXID,
-			ErrorMessage:   errorMessage,
-			Output:         opOutput,
+		handler.OperationUpdate(&core.OperationUpdateAsync{
+			OperationUpdate: core.OperationUpdate{
+				Plugin:         cb.plugin.Name(),
+				NamespacedOpID: nsOpID,
+				Status:         status,
+				BlockchainTXID: blockchainTXID,
+				ErrorMessage:   errorMessage,
+				Output:         opOutput,
+			},
 		})
 	} else {
 		log.L(ctx).Errorf("No handler found for token operation '%s'", nsOpID)
@@ -804,7 +806,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *co
 	if err != nil || !res.IsSuccess() {
 		return core.OpPhaseInitializing, wrapError(ctx, &errRes, res, err)
 	}
-	if res.StatusCode() == 200 {
+	if res.StatusCode() == http.StatusOK {
 		// HTTP 200: Creation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
@@ -839,7 +841,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool)
 	if err != nil || !res.IsSuccess() {
 		return core.OpPhaseInitializing, err
 	}
-	if res.StatusCode() == 200 {
+	if res.StatusCode() == http.StatusOK {
 		// HTTP 200: Activation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
@@ -849,7 +851,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, pool *core.TokenPool)
 			TX:     pool.TX.ID,
 			TXType: pool.TX.Type,
 		})
-	} else if res.StatusCode() == 204 {
+	} else if res.StatusCode() == http.StatusNoContent {
 		// HTTP 204: Activation was successful, but pool details are not available
 		// This will resolve the operation, but connector is responsible for re-delivering pool details on the websocket.
 		return core.OpPhaseComplete, nil
@@ -869,7 +871,7 @@ func (ft *FFTokens) DeactivateTokenPool(ctx context.Context, pool *core.TokenPoo
 		}).
 		SetError(&errRes).
 		Post("/api/v1/deactivatepool")
-	if err == nil && (res.IsSuccess() || res.StatusCode() == 404) {
+	if err == nil && (res.IsSuccess() || res.StatusCode() == http.StatusNotFound) {
 		return nil
 	}
 	return wrapError(ctx, &errRes, res, err)

@@ -46,7 +46,7 @@ type newEventsHandler func(events []core.LocallySequenced) (bool, error)
 
 type eventPollerConf struct {
 	ephemeral                  bool
-	eventBatchSize             int
+	eventBatchSize             uint64
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
 	firstEvent                 *core.SubOptsFirstEvent
@@ -179,7 +179,7 @@ func (ep *eventPoller) readPage() ([]core.LocallySequenced, error) {
 			fb.Gt("sequence", pollingOffset),
 		)
 		filter = ep.conf.addCriteria(filter)
-		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)), pollingOffset)
+		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(ep.conf.eventBatchSize), pollingOffset)
 		if err != nil {
 			return true, err // Retry indefinitely, until context cancelled
 		}
@@ -209,7 +209,7 @@ func (ep *eventPoller) eventLoop() {
 			return
 		}
 
-		eventCount := len(events)
+		eventCount := uint64(len(events))
 
 		// We might want to wait for the batch to fill - so we delay and re-poll
 		if ep.conf.eventBatchTimeout > 0 && !doBatchDelay && eventCount < ep.conf.eventBatchSize {
@@ -304,7 +304,7 @@ func (ep *eventPoller) waitForBatchTimeout() {
 	}
 }
 
-func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool {
+func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount uint64) bool {
 	l := log.L(ep.ctx)
 	longTimeoutDuration := ep.conf.eventPollTimeout
 

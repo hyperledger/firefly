@@ -1,4 +1,4 @@
-// Copyright © 2023 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,6 +19,8 @@ package orchestrator
 import (
 	"context"
 	"sync"
+
+	"github.com/hyperledger/firefly-common/pkg/log"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -41,7 +43,11 @@ func (bc *boundCallbacks) checkStopped() error {
 	return nil
 }
 
-func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdate) {
+func (bc *boundCallbacks) BulkOperationUpdates(ctx context.Context, updates []*core.OperationUpdate) error {
+	return bc.o.operations.SubmitBulkOperationUpdates(ctx, updates)
+}
+
+func (bc *boundCallbacks) OperationUpdate(update *core.OperationUpdateAsync) {
 	bc.o.operations.SubmitOperationUpdate(update)
 }
 
@@ -92,4 +98,14 @@ func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.
 		return err
 	}
 	return bc.o.events.TokensApproved(plugin, approval)
+}
+
+func (bc *boundCallbacks) DXConnect(plugin dataexchange.Plugin) {
+	err := bc.checkStopped()
+	if err == nil {
+		err = bc.o.networkmap.CheckNodeIdentityStatus(bc.o.ctx)
+	}
+	if err != nil {
+		log.L(bc.o.ctx).Errorf("Error handling DX connect callback: %s", err)
+	}
 }

@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"regexp"
 
 	"blockwatch.cc/tzgo/micheline"
@@ -203,7 +204,7 @@ func (t *Tezos) Init(ctx context.Context, cancelCtx context.CancelFunc, conf con
 	}
 	t.cache = cache
 
-	t.streams = newStreamManager(t.client, t.cache, t.tezosconnectConf.GetUint(TezosconnectConfigBatchSize), uint(t.tezosconnectConf.GetDuration(TezosconnectConfigBatchTimeout).Milliseconds()))
+	t.streams = newStreamManager(t.client, t.cache, t.tezosconnectConf.GetUint(TezosconnectConfigBatchSize), t.tezosconnectConf.GetDuration(TezosconnectConfigBatchTimeout).Milliseconds())
 
 	t.backgroundStart = t.tezosconnectConf.GetBool(TezosconnectBackgroundStart)
 	if t.backgroundStart {
@@ -564,7 +565,7 @@ func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operat
 		SetResult(&statusResponse).
 		Get(transactionRequestPath)
 	if err != nil || !res.IsSuccess() {
-		if res.StatusCode() == 404 {
+		if res.StatusCode() == http.StatusNotFound {
 			return nil, nil
 		}
 		return nil, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgTezosconnectRESTErr)

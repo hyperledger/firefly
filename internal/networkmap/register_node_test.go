@@ -45,10 +45,11 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(fftypes.JSONObject{
+	dxPeer := fftypes.JSONObject{
 		"id":       "peer1",
 		"endpoint": "details",
-	}, nil)
+	}
+	mdx.On("GetEndpointInfo", nm.ctx, "node1").Return(dxPeer, nil)
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
 	mds.On("ClaimIdentity", nm.ctx,
@@ -124,5 +125,4 @@ func TestRegisterNodeGetOwnerFail(t *testing.T) {
 
 	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
-
 }

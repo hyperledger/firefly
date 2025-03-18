@@ -19,7 +19,7 @@ package syncasync
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -615,7 +615,7 @@ func (sa *syncAsyncBridge) resolveSuccessfulOperation(inflight *inflightRequest,
 
 func (sa *syncAsyncBridge) resolveFailedOperation(inflight *inflightRequest, typeName string, op *core.Operation) {
 	log.L(sa.ctx).Debugf("Resolving %s request '%s' with error '%s'", typeName, inflight.id, op.Error)
-	inflight.response <- inflightResponse{err: fmt.Errorf(op.Error)}
+	inflight.response <- inflightResponse{err: errors.New(op.Error)}
 }
 
 func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftypes.UUID, reqType requestType, send SendFunction) (interface{}, error) {

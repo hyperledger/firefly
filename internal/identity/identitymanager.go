@@ -51,6 +51,7 @@ type Manager interface {
 	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
 	GetLocalNode(ctx context.Context) (node *core.Identity, err error)
+	GetLocalNodeDID(ctx context.Context) (string, error)
 	GetRootOrgDID(ctx context.Context) (string, error)
 	GetRootOrg(ctx context.Context) (org *core.Identity, err error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
@@ -103,13 +104,23 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 	}
 }
 
-func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
+// GetLocalNodeDID returns the expected local node DID based on the multiparty configuration, the node
+// identity does not need to be registered yet in order for this to succeed.
+func (im *identityManager) GetLocalNodeDID(ctx context.Context) (string, error) {
 	nodeName := im.multiparty.LocalNode().Name
 	if nodeName == "" {
-		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeNotSet)
+		return "", i18n.NewError(ctx, coremsgs.MsgLocalNodeNotSet)
 	}
 
-	nodeDID := fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName)
+	return fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, nodeName), nil
+}
+
+// GetLocalNode returns the local node identity, if it has been registered and is in the DB/cache.
+func (im *identityManager) GetLocalNode(ctx context.Context) (node *core.Identity, err error) {
+	nodeDID, err := im.GetLocalNodeDID(ctx)
+	if err != nil {
+		return nil, err
+	}
 	node, _, err = im.CachedIdentityLookupNilOK(ctx, nodeDID)
 	return node, err
 }

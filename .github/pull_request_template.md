@@ -30,7 +30,6 @@ Fixes # <issue_number_here>
 - [ ] I have performed a self-review of my own code or work.
 - [ ] I have commented my code, particularly in hard-to-understand areas.
 - [ ] My changes generates no new warnings.
-- [ ] My Pull Request title is in format <code>< issue name ></code> eg <code>Added links in the documentation</code>.
 - [ ] I have added tests that prove my fix is effective or that my feature works.
 - [ ] My changes have sufficient code coverage (unit, integration, e2e tests).
 

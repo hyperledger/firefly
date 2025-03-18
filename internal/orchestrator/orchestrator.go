@@ -304,6 +304,13 @@ func (or *orchestrator) Start() (err error) {
 	}
 
 	or.started = true
+
+	if or.config.Multiparty.Enabled {
+		err := or.networkmap.CheckNodeIdentityStatus(or.ctx)
+		if err != nil {
+			log.L(or.ctx).Errorf("Error checking node identity status: %s", err.Error())
+		}
+	}
 	return err
 }
 
