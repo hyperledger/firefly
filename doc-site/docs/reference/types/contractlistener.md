@@ -3,7 +3,7 @@ title: ContractListener
 ---
 {% include-markdown "./_includes/contractlistener_description.md" %}
 
-### Example
+### Example Response from the API
 
 ```json
 {
