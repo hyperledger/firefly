@@ -188,7 +188,7 @@ In these examples, the event schema in the FireFly Interface format is provided 
 
 ### With Interface Reference
 
-These examples use an `interface` reference when creating the filters, the `eventPath` field is used to reference an event defined within the interface provided. See an example of creating a [FireFly Interface](../../tutorials/custom_contracts/ethereum.md/#the-firefly-interface-format) for an EVM smart contract.
+These examples use an `interface` reference when creating the filters, the `eventPath` field is used to reference an event defined within the interface provided. In this case, we do not need to provide the event schema as the section above shows. See an example of creating a [FireFly Interface](../../tutorials/custom_contracts/ethereum.md/#the-firefly-interface-format) for an EVM smart contract. 
 
 **Muliple Filters**
 ```json
