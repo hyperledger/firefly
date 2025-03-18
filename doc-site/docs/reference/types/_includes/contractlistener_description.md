@@ -97,7 +97,7 @@ As noted throughout this document, the behavior of listeners has changed in v1.3
 
 The two input formats supported when creating a contract listener are shown below.
 
-### With Event Definition
+### With event definition
 
 In these examples, the event schema in the FireFly Interface format is provided describing the event and its parameters. See [FireFly Interface Format](../firefly_interface_format.md)
 
