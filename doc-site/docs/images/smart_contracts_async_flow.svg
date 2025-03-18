@@ -39,45 +39,53 @@
   <line x1="220" y1="170" x2="395" y2="170" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
   <text x="308" y="165" font-family="Arial" font-size="11" text-anchor="middle">Submit transaction</text>
   
-  <!-- 3. Submit transaction -->
-  <line x1="395" y1="200" x2="530" y2="200" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="463" y="195" font-family="Arial" font-size="11" text-anchor="middle">Submit transaction</text>
+  <!-- 3. Transaction accepted (REORDERED) -->
+  <line x1="395" y1="200" x2="220" y2="200" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="308" y="195" font-family="Arial" font-size="11" text-anchor="middle">Transaction accepted</text>
   
-  <!-- 4. Transaction accepted -->
-  <line x1="530" y1="230" x2="395" y2="230" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="463" y="225" font-family="Arial" font-size="11" text-anchor="middle">Transaction accepted</text>
+  <!-- 4. Submitted (Operation ID) -->
+  <line x1="220" y1="230" x2="80" y2="230" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="150" y="210" font-family="Arial" font-size="11" text-anchor="middle">Submitted</text>
+  <text x="150" y="220" font-family="Arial" font-size="11" text-anchor="middle">(Operation ID)</text>
   
-  <!-- 5. Transaction accepted -->
-  <line x1="395" y1="260" x2="220" y2="260" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="308" y="255" font-family="Arial" font-size="11" text-anchor="middle">Transaction accepted</text>
+  <!-- 5. Submit transaction to blockchain -->
+  <line x1="395" y1="260" x2="530" y2="260" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="463" y="255" font-family="Arial" font-size="11" text-anchor="middle">Submit transaction</text>
   
-  <!-- 6. Submitted (Operation ID) -->
-  <line x1="220" y1="290" x2="80" y2="290" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="150" y="275" font-family="Arial" font-size="11" text-anchor="middle">Submitted</text>
-  <text x="150" y="285" font-family="Arial" font-size="11" text-anchor="middle">(Operation ID)</text>
+  <!-- 6. Perform transaction -->
+  <path d="M 530,290 L 560,290 L 560,320 L 530,320" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
+  <text x="550" y="275" font-family="Arial" font-size="10" text-anchor="start">Perform</text>
+  <text x="550" y="285" font-family="Arial" font-size="10" text-anchor="start">transaction</text>
   
-  <!-- 7. Perform transaction -->
-  <path d="M 530,320 L 560,320 L 560,350 L 530,350" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
-  <text x="550" y="305" font-family="Arial" font-size="10" text-anchor="start">Perform</text>
-  <text x="550" y="315" font-family="Arial" font-size="10" text-anchor="start">transaction</text>
+  <!-- 7. NEW: Retrieve receipt/confirmation -->
+  <line x1="395" y1="350" x2="530" y2="350" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="463" y="345" font-family="Arial" font-size="10" text-anchor="middle">Retrieve receipt/confirmation</text>
   
-  <!-- 8. Emit blockchain events -->
+  <!-- 8. NEW: Return transaction receipt -->
   <line x1="530" y1="380" x2="395" y2="380" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="463" y="375" font-family="Arial" font-size="11" text-anchor="middle">Emit blockchain events</text>
+  <text x="465" y="375" font-family="Arial" font-size="11" text-anchor="middle">Return transaction receipt</text>
   
-  <!-- 9. Forward interested blockchain events -->
-  <line x1="395" y1="410" x2="220" y2="410" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="308" y="405" font-family="Arial" font-size="10" text-anchor="middle">Forward interested blockchain events</text>
+  <!-- 9. Update operation -->
+  <path d="M 395,400 L 425,400 L 425,420 L 395,420" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
+  <text x="430" y="410" font-family="Arial" font-size="10" text-anchor="start">Update operation</text>
   
-  <!-- 10. Store events in database -->
-  <path d="M 220,430 L 250,430 L 250,460 L 220,460" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
-  <text x="225" y="425" font-family="Arial" font-size="11" text-anchor="start">Store events in database</text>
+  <!-- 10. Emit blockchain events -->
+  <line x1="530" y1="440" x2="395" y2="440" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="463" y="435" font-family="Arial" font-size="11" text-anchor="middle">Emit blockchain events</text>
   
-  <!-- 11. Emit blockchain_event_received -->
-  <line x1="220" y1="480" x2="80" y2="480" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
-  <text x="150" y="475" font-family="Arial" font-size="9" text-anchor="middle">Emit blockchain_event_received</text>
+  <!-- 11. Forward interested blockchain events -->
+  <line x1="395" y1="470" x2="220" y2="470" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="308" y="465" font-family="Arial" font-size="10" text-anchor="middle">Forward interested blockchain events</text>
+  
+  <!-- 12. Store events in database -->
+  <path d="M 220,490 L 250,490 L 250,510 L 220,510" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)" fill="none"/>
+  <text x="225" y="485" font-family="Arial" font-size="11" text-anchor="start">Store events in database</text>
+  
+  <!-- 13. Emit blockchain_event_received -->
+  <line x1="220" y1="430" x2="80" y2="430" stroke="#000000" stroke-width="1" marker-end="url(#arrowhead)"/>
+  <text x="150" y="425" font-family="Arial" font-size="9" text-anchor="middle">Emit blockchain_event_received</text>
   
   <!-- Note -->
-  <rect x="30" y="500" width="320" height="20" fill="white" stroke="#CC0000" stroke-width="1" rx="5" ry="5"/>
-  <text x="190" y="513" font-family="Arial" font-size="11" text-anchor="middle" fill="#CC0000">App can subscribe to events via WebSockets or Webhooks</text>
+  <rect x="30" y="540" width="320" height="20" fill="white" stroke="#CC0000" stroke-width="1" rx="5" ry="5"/>
+  <text x="190" y="553" font-family="Arial" font-size="11" text-anchor="middle" fill="#CC0000">App can subscribe to events via WebSockets or Webhooks</text>
 </svg>
