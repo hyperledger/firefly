@@ -115,17 +115,18 @@ func (as *apiServer) Serve(ctx context.Context, mgr namespace.Manager) (err erro
 	} else if config.GetBool(coreconfig.LegacyAdminEnabled) {
 		log.L(ctx).Warnf("Your config includes an 'admin' section, which should be renamed to 'spi' - SPI server will not be enabled until this is corrected")
 	}
-	serverName := "metrics"
-	mConfig := deprecatedMetricsConfig
-	if as.monitoringEnabled {
-		serverName = "monitoring"
-		mConfig = monitoringConfig
-	}
-
 	if as.deprecatedMetricsEnabled || as.monitoringEnabled {
-		monitoringServer, err := httpserver.NewHTTPServer(ctx, serverName, as.createMonitoringMuxRouter(), metricsErrChan, mConfig, corsConfig, &httpserver.ServerOptions{
-			MaximumRequestTimeout: as.apiMaxTimeout,
-		})
+		var monitoringServer httpserver.HTTPServer
+		var err error
+		if as.monitoringEnabled {
+			monitoringServer, err = httpserver.NewHTTPServer(ctx, "monitoring", as.createMonitoringMuxRouter(), metricsErrChan, monitoringConfig, corsConfig, &httpserver.ServerOptions{
+				MaximumRequestTimeout: as.apiMaxTimeout,
+			})
+		} else {
+			monitoringServer, err = httpserver.NewHTTPServer(ctx, "metrics", as.createMonitoringMuxRouter(), metricsErrChan, deprecatedMetricsConfig, corsConfig, &httpserver.ServerOptions{
+				MaximumRequestTimeout: as.apiMaxTimeout,
+			})
+		}
 		if err != nil {
 			return err
 		}
