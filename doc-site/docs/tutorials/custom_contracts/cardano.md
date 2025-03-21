@@ -100,7 +100,7 @@ This is describing a contract with a single method, named `send_ada`. This metho
 
 It also emits three events: 
  - `TransactionAccepted(string)` is emitted when the transaction is included in a block.
- - `TransactionRolledBack(string)` is emitted if the transaction was included in a block, and that block got rolled back. This happens maybe once or twice a day on the Cardano network, so it is unlikely that you will ever see it in practice (but more likely than some other chains).
+ - `TransactionRolledBack(string)` is emitted if the transaction was included in a block, and that block got rolled back. This happens maybe once or twice a day on the Cardano network, which is more likely than some other chains, so your code must be able to gracefully handle rollbacks.
  - `TransactionFinalized(string)` is emitted when the transaction has been on the chain for "long enough" that it is effectively immutable. It is up to your tolerance risk.
 
 These three events are all automatically handled by the connector.
@@ -119,7 +119,7 @@ edition = "2021"
 
 [dependencies]
 # The version of firefly-balius should match the version of firefly-cardano which you are using.
-firefly-balius = { git = "https://github.com/hyperledger/firefly-cardano", rev = "0.3.1" }
+firefly-balius = { git = "https://github.com/hyperledger/firefly-cardano", rev = "0.4.1" }
 pallas-addresses = "0.32"
 serde = { version = "1", features = ["derive"] }
 
@@ -138,10 +138,11 @@ use balius_sdk::{
         AddressPattern, BuildError, FeeChangeReturn, OutputBuilder, TxBuilder, UtxoPattern,
         UtxoSource,
     },
-    Ack, Config, FnHandler, NewTx, Params, Worker, WorkerResult,
+    Ack, Config, FnHandler, Params, Worker, WorkerResult,
 };
 use firefly_balius::{
-    balius_sdk::{self, Json}, kv, CoinSelectionInput, FinalityMonitor, FinalizationCondition, SubmittedTx, WorkerExt as _
+    balius_sdk::{self, Json},
+    kv, CoinSelectionInput, FinalizationCondition, NewMonitoredTx, SubmittedTx, WorkerExt as _,
 };
 use pallas_addresses::Address;
 use serde::{Deserialize, Serialize};
@@ -163,7 +164,7 @@ struct CurrentState {
 }
 
 /// This function builds a transaction to send ADA from one address to another.
-fn send_ada(_: Config<()>, req: Params<SendAdaRequest>) -> WorkerResult<NewTx> {
+fn send_ada(_: Config<()>, req: Params<SendAdaRequest>) -> WorkerResult<NewMonitoredTx> {
     let from_address =
         Address::from_bech32(&req.from_address).map_err(|_| BuildError::MalformedAddress)?;
 
@@ -176,9 +177,9 @@ fn send_ada(_: Config<()>, req: Params<SendAdaRequest>) -> WorkerResult<NewTx> {
     });
 
     // In Cardano, addresses don't hold ADA or native tokens directly.
-    // Instead, they control uTXOS (unspent transaction outputs),
-    // and those uTXOs contain some amount of ADA and native tokens.
-    // You can't spent part of a uTXO in a transaction; instead, transactions
+    // Instead, they control UTxOs (unspent transaction outputs),
+    // and those UTxOs contain some amount of ADA and native tokens.
+    // You can't spent part of a UTxO in a transaction; instead, transactions
     // include inputs with more funds than they need, and a "change" output
     // to give any excess funds back to the original sender.
 
@@ -195,17 +196,18 @@ fn send_ada(_: Config<()>, req: Params<SendAdaRequest>) -> WorkerResult<NewTx> {
         )
         .with_output(FeeChangeReturn(address_source));
 
-    // Return that TX. The framework will sign and submit it.
-    Ok(NewTx(Box::new(tx)))
+    // Return that TX. The framework will sign, submit, and monitor it.
+    // By returning a `NewMonitoredTx`, we tell the framework that we want it to monitor this transaction.
+    // This enables the TransactionApproved, TransactionRolledBack, and TransactionFinalized events from before.
+    // Note that we decide the transaction has been finalized after 4 blocks have reached the chain.
+    Ok(NewMonitoredTx(
+        Box::new(tx),
+        FinalizationCondition::AfterBlocks(4),
+    ))
 }
 
 /// This function is called when a TX produced by this contract is submitted to the blockchain, but before it has reached a block.
 fn handle_submit(_: Config<()>, tx: SubmittedTx) -> WorkerResult<Ack> {
-    // Tell the framework that we want it to monitor this transaction.
-    // This enables the TransactionApproved, TransactionRolledBack, and TransactionFinalized events from before.
-    // Note that we decide the transaction has been finalized after 4 blocks have reached the chain.
-    FinalityMonitor.monitor_tx(&tx.hash, FinalizationCondition::AfterBlocks(4))?;
-
     // Keep track of which TXs have been submitted.
     let mut state: CurrentState = kv::get("current_state")?.unwrap_or_default();
     state.submitted_txs.insert(tx.hash);
