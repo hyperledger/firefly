@@ -397,6 +397,78 @@ func TestWrongNamespaceReceipt(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+type MockPlugin struct{}
+
+func (m *MockPlugin) Name() string {
+	return "Mock"
+}
+
+func TestGoodSuccessReceiptBatch(t *testing.T) {
+	var plugin MockPlugin
+	var reply BlockchainReceiptNotification
+	reply.Headers.ReceiptID = "ID"
+	reply.Headers.ReplyType = "TransactionSuccess"
+	reply.ProtocolID = "123456/098765453"
+
+	updates := []*core.OperationUpdate{}
+
+	err := AddReceiptToBatch(context.Background(), "", &plugin, &reply, &updates)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(updates))
+
+	reply.Headers.ReplyType = "TransactionUpdate"
+	err = AddReceiptToBatch(context.Background(), "", &plugin, &reply, &updates)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(updates))
+
+	reply.Headers.ReplyType = "TransactionFailed"
+	err = AddReceiptToBatch(context.Background(), "", &plugin, &reply, &updates)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(updates))
+}
+
+func TestReceiptMarshallingErrorBatch(t *testing.T) {
+	var plugin MockPlugin
+	var reply BlockchainReceiptNotification
+	reply.Headers.ReceiptID = "ID"
+	reply.Headers.ReplyType = "force-marshall-error"
+	reply.ProtocolID = "123456/098765453"
+
+	updates := []*core.OperationUpdate{}
+
+	err := AddReceiptToBatch(context.Background(), "", &plugin, &reply, &updates)
+	assert.Error(t, err)
+	assert.Regexp(t, ".*[^n]marshalling error.*", err)
+	assert.Equal(t, 0, len(updates))
+}
+
+func TestBadReceiptBatch(t *testing.T) {
+	var plugin MockPlugin
+	var reply BlockchainReceiptNotification
+	data := fftypes.JSONAnyPtr(`{}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
+	assert.NoError(t, err)
+
+	updates := []*core.OperationUpdate{}
+
+	err = AddReceiptToBatch(context.Background(), "", &plugin, &reply, &updates)
+	assert.Error(t, err)
+	assert.Equal(t, 0, len(updates))
+}
+
+func TestWrongNamespaceReceiptBatch(t *testing.T) {
+	var plugin MockPlugin
+	var reply BlockchainReceiptNotification
+	data := fftypes.JSONAnyPtr(`{}`)
+	err := json.Unmarshal(data.Bytes(), &reply)
+	assert.NoError(t, err)
+	updates := []*core.OperationUpdate{}
+
+	err = AddReceiptToBatch(context.Background(), "wrong", &plugin, &reply, &updates)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(updates))
+}
+
 func TestErrorWrappingConflict(t *testing.T) {
 	ctx := context.Background()
 	res := &resty.Response{

@@ -1,4 +1,4 @@
-// Copyright © 2024 Kaleido, Inc.
+// Copyright © 2025 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -43,11 +43,6 @@ import (
 
 const (
 	tezosTxStatusPending string = "Pending"
-)
-
-const (
-	ReceiptTransactionSuccess string = "TransactionSuccess"
-	ReceiptTransactionFailed  string = "TransactionFailed"
 )
 
 type Tezos struct {
@@ -577,9 +572,9 @@ func (t *Tezos) GetTransactionStatus(ctx context.Context, operation *core.Operat
 	if txStatus != "" {
 		var replyType string
 		if txStatus == "Succeeded" {
-			replyType = ReceiptTransactionSuccess
+			replyType = common.ReceiptTransactionSuccess
 		} else {
-			replyType = ReceiptTransactionFailed
+			replyType = common.ReceiptTransactionFailed
 		}
 		// If the status has changed, mock up blockchain receipt as if we'd received it
 		// as a web socket notification

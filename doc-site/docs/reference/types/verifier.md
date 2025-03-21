@@ -22,7 +22,7 @@ title: Verifier
 | `hash` | Hash used as a globally consistent identifier for this namespace + type + value combination on every node in the network | `Bytes32` |
 | `identity` | The UUID of the parent identity that has claimed this verifier | [`UUID`](simpletypes.md#uuid) |
 | `namespace` | The namespace of the verifier | `string` |
-| `type` | The type of the verifier | `FFEnum`:<br/>`"ethereum_address"`<br/>`"tezos_address"`<br/>`"fabric_msp_id"`<br/>`"dx_peer_id"` |
+| `type` | The type of the verifier | `FFEnum`:<br/>`"cardano_address"`<br/>`"ethereum_address"`<br/>`"tezos_address"`<br/>`"fabric_msp_id"`<br/>`"dx_peer_id"` |
 | `value` | The verifier string, such as an Ethereum address, or Fabric MSP identifier | `string` |
 | `created` | The time this verifier was created on this node | [`FFTime`](simpletypes.md#fftime) |
 
