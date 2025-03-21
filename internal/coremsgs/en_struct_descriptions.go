@@ -319,8 +319,8 @@ var (
 	// ContractListenerOptions field descriptions
 	ContractListenerOptionsFirstEvent = ffm("ContractListenerOptions.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest'")
 
-	ListenerFilterInterface = ffm("ListenerFilter.interface", "A reference to an existing FFI, containing pre-registered type information for the event")
-	ListenerFilterEvent     = ffm("ListenerFilter.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI")
+	ListenerFilterInterface = ffm("ListenerFilter.interface", "A reference to an existing FFI, containing pre-registered type information for the event, used in combination with eventPath")
+	ListenerFilterEvent     = ffm("ListenerFilter.event", "The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI when supplied")
 	ListenerFilterEventPath = ffm("ListenerFilter.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
 	ListenerFilterLocation  = ffm("ListenerFilter.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
 	ListenerFilterSignature = ffm("ListenerFilter.signature", "The stringified signature of the event and location, as computed by the blockchain plugin")

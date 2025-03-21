@@ -121,9 +121,9 @@ title: ContractListener
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `event` | The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI | [`FFISerializedEvent`](#ffiserializedevent) |
+| `event` | The definition of the event, either provided in-line when creating the listener, or extracted from the referenced FFI when supplied | [`FFISerializedEvent`](#ffiserializedevent) |
 | `location` | A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel | [`JSONAny`](simpletypes.md#jsonany) |
-| `interface` | A reference to an existing FFI, containing pre-registered type information for the event | [`FFIReference`](#ffireference) |
+| `interface` | A reference to an existing FFI, containing pre-registered type information for the event, used in combination with eventPath | [`FFIReference`](#ffireference) |
 | `signature` | The stringified signature of the event and location, as computed by the blockchain plugin | `string` |
 
 
