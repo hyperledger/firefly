@@ -49,8 +49,6 @@ Like the rest of FireFly, custom onchain logic support are implemented with an a
 - The transaction itself happens asynchronously from the HTTP request that initiated it
 - Blockchain events emitted by the custom onchain logic (Ethereum smart contracts, Fabric chaincodes, Corda flows, etc.) will be stored in FireFly's database if FireFly has a **Event Listener** set up for that specific type of event. FireFly will also emit an event of type `blockchain_event_received` when this happens.
 
-<!-- TODO: Update this diagram -->
-
 ![Smart Contracts Async Flow](../../images/smart_contracts_async_flow.svg "Smart Contracts Async Flow")
 
 <!--nav-->
