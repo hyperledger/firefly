@@ -29,7 +29,7 @@ What's New:
     
 ### Migration consideration
 
-As part of the changes to the metrics to add the new `namespace` label, we changed from using a Prometheus `Counter` to a `CounterVec`. As a result there is no default value of `0` on the counter, which means when users query for a specific metric such as `ff_message_rejected_total` it will not be available until the `CounterVec` associated with that metric is incremented. This has been safely added as part of a patch release and determined to be an easy upgrade for SRE monitoring these metrics. 
+As part of the changes to the metrics to add the new `namespace` label, we changed from using a Prometheus `Counter` to a `CounterVec`. As a result there is no default value of `0` on the counter, which means when users query for a specific metric such as `ff_message_rejected_total` it will not be available until the `CounterVec` associated with that metric is incremented. This has been determined to be an easy upgrade for SRE monitoring these metrics, hence inclusion in a patch release. 
 
 ## [v1.3.2 - Oct 3, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.2)
 
