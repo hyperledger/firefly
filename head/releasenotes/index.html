@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v132-oct-3-2024" class="md-skip">
+        <a href="#release-notes" class="md-skip">
           Skip to content
         </a>
       
@@ -3460,12 +3460,38 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v133-mar-24-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.3.3 - Mar 24, 2025
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v1.3.3 - Mar 24, 2025">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#migration-consideration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Migration consideration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v132-oct-3-2024" class="md-nav__link">
@@ -3504,16 +3530,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#release-notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Release Notes
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Release Notes">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
   <a href="#v110-september-12-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v1.1.0 - September 12, 2022
@@ -3521,8 +3537,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v103-july-07-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v1.0.3 - July 07, 2022
@@ -3530,8 +3546,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v102-may-12-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v1.0.2 - May 12, 2022
@@ -3539,8 +3555,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v101-may-09-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v1.0.1 - May 09, 2022
@@ -3548,8 +3564,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v100-april-28-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v1.0.0 - April 28, 2022
@@ -3557,8 +3573,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v0140-march-22-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v0.14.0 - March 22, 2022
@@ -3566,8 +3582,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v0130-february-14-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v0.13.0 - February 14, 2022
@@ -3575,8 +3591,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v0120-february-02-2022" class="md-nav__link">
     <span class="md-ellipsis">
       v0.12.0 - February 02, 2022
@@ -3584,18 +3600,13 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#v0110-november-22-2021" class="md-nav__link">
     <span class="md-ellipsis">
       v0.11.0 - November 22, 2021
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3618,7 +3629,29 @@
   
 
 
+<h1 id="release-notes">Release Notes<a class="headerlink" href="#release-notes" title="Permanent link">&para;</a></h1>
 <p><a href="https://github.com/hyperledger/firefly/releases">Full release notes</a></p>
+<h2 id="v133-mar-24-2025"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.3.3">v1.3.3 - Mar 24, 2025</a><a class="headerlink" href="#v133-mar-24-2025" title="Permanent link">&para;</a></h2>
+<p>What's New:
+- Add new interface for blockchain plugins to stream receipt notifications in transactional batches
+    - For blockchain connectors that have an <code>ack</code> based reliable receipt stream (or other checkpoint system)
+    - Allows strictly ordered delivery of receipts from blockchain plugins that support it
+    - Allows resilience on receipt delivery to core, against a checkpoint maintained in the connector
+- Changes in metrics: <br />
+    - Added new metrics for Data Exchange for monitoring by a timeseries and alerting system.
+        - <code>ff_multiparty_node_identity_dx_mismatch</code> notify that the certificate in FireFly Core is different to the one stored in Data Exchange
+        - <code>ff_multiparty_node_identity_dx_expiry_epoch</code> emit the timestamp of the certificate of Data Exchange useful for SREs to monitor before it expires 
+    - Added a namespace label to existing metrics to separate metrics more easily 
+    - Added HTTP Response Time and Complete Gauge Support to <code>firefly-common</code>
+    - Allow the <code>metrics</code> server to host additional routes such as status endpoints 
+        - This resulted in a new configuration section of <code>monitoring</code> to be more appropriate than <code>metrics</code> which has now be deprecated. 
+- Fix to issue that resulted in retried private messages using local namespace rather than the network namespace
+- Fix to issue that could result in messages being marked <code>Pending</code> on re-delivery of a batch over the network
+- Miscellaneous bug fixes and minor improvements
+- Documentation updates, new troubleshooting section for multiparty messages
+- CVE fixes and adoption of OpenSSF scorecard on key repositories</p>
+<h3 id="migration-consideration">Migration consideration<a class="headerlink" href="#migration-consideration" title="Permanent link">&para;</a></h3>
+<p>As part of the changes to the metrics to add the new <code>namespace</code> label, we changed from using a Prometheus <code>Counter</code> to a <code>CounterVec</code>. As a result there is no default value of <code>0</code> on the counter, which means when users query for a specific metric such as <code>ff_message_rejected_total</code> it will not be available until the <code>CounterVec</code> associated with that metric is incremented. This has been determined to be an easy upgrade for SRE monitoring these metrics, hence inclusion in a patch release. </p>
 <h2 id="v132-oct-3-2024"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.3.2">v1.3.2 - Oct 3, 2024</a><a class="headerlink" href="#v132-oct-3-2024" title="Permanent link">&para;</a></h2>
 <p>What's New:</p>
 <ul>
@@ -3637,7 +3670,7 @@
     See <a href="../reference/types/contractlistener/">Contract Listeners</a> for details</li>
 <li>New multiparty status API at <code>/status/multiparty</code></li>
 </ul>
-<h2 id="v130-april-25-2024"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.1.0">v1.3.0 - April 25, 2024</a><a class="headerlink" href="#v130-april-25-2024" title="Permanent link">&para;</a></h2>
+<h2 id="v130-april-25-2024"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.3.0">v1.3.0 - April 25, 2024</a><a class="headerlink" href="#v130-april-25-2024" title="Permanent link">&para;</a></h2>
 <p><a href="1.3_migration_guide/">Migration guide</a></p>
 <p>What's New:</p>
 <ul>
@@ -3659,8 +3692,6 @@
 <li>Custom HTTP headers can be passed through to FireFly dependency microservices</li>
 <li>Evmconnect is now the default blockchain connector for Ethereum based FireFly stacks</li>
 </ul>
-<h1 id="release-notes">Release Notes<a class="headerlink" href="#release-notes" title="Permanent link">&para;</a></h1>
-<p><a href="https://github.com/hyperledger/firefly/releases">Full release notes</a></p>
 <h2 id="v110-september-12-2022"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.1.0">v1.1.0 - September 12, 2022</a><a class="headerlink" href="#v110-september-12-2022" title="Permanent link">&para;</a></h2>
 <p><a href="1.1_migration_guide/">Migration guide</a></p>
 <p>What's New:</p>
