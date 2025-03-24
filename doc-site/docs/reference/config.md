@@ -450,7 +450,7 @@ title: Configuration Reference
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |address|The IP address on which the metrics HTTP API should listen|`int`|`127.0.0.1`
-|enabled|Enables the metrics API|`boolean`|`true`
+|enabled|Enables the metrics API|`boolean`|`false`
 |metricsPath|The path from which to serve the Prometheus metrics|`string`|`/metrics`
 |port|The port on which the metrics HTTP API should listen|`int`|`6000`
 |publicURL|The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
