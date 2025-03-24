@@ -19,7 +19,7 @@ What's New:
     - Added `monitoring` configuration section and deprecated `metrics` section
     - Added HTTP Response Time and Complete Gauge Support to `firefly-common`
 - Enhancements to private messaging with callback metric support and fix to use network namespace
-- Fix update handling of duplicate batches to avoid editing existing messages
+- Fix to issue that could result in messages being marked `Pending` on re-delivery of a batch over the network
 - Miscellaneous bug fixes and minor improvements
 - Documentation updates, new troubleshooting section for multiparty messages
 - CVE fixes and adoption of OpenSSF scorecard on key repositories
