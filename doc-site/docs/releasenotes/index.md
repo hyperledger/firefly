@@ -2,7 +2,28 @@
 title: Release Notes
 ---
 
+# Release Notes
+
 [Full release notes](https://github.com/hyperledger/firefly/releases)
+
+## [v1.3.3 - Mar 24, 2025](https://github.com/hyperledger/firefly/releases/tag/v1.3.3)
+
+What's New:
+- Add new method to provide reliable receipt storage for blockchain plugins
+- Changes in metrics:   
+    - Added new metrics for Data Exchange 
+    - Added a namespace label to existing metrics and change gauges to vectors
+    - Added `monitoring` configuration section and deprecated `metrics` section
+    - Added HTTP Response Time and Complete Gauge Support to `firefly-common`
+- Enhancements to private messaging with callback metric support and fix to use network namespace
+- Fix update handling of duplicate batches to avoid editing existing messages
+- Miscellaneous bug fixes and minor improvements
+- Documentation updates, new troubleshooting section for multiparty messages
+- CVE fixes and adoption of OpenSSF scorecard on key repositories
+    
+### Migration consideration
+
+As part of the changes to the metrics to add the new `namespace` label, we changed from using a Prometheus `Counter` to a `CounterVec`. As a result there is no default value of `0` on the counter, which means when users query for a specific metric such as `ff_message_rejected_total` it will not be available until the `CounterVec` associated with that metric is incremented. This has been safely added as part of a patch release and determined to be an easy upgrade for SRE monitoring these metrics. 
 
 ## [v1.3.2 - Oct 3, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.2)
 
@@ -24,7 +45,7 @@ What's New:
     See [Contract Listeners](../reference/types/contractlistener.md) for details
 - New multiparty status API at `/status/multiparty`
 
-## [v1.3.0 - April 25, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.1.0)
+## [v1.3.0 - April 25, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.0)
 
 [Migration guide](1.3_migration_guide.md)
 
@@ -50,9 +71,6 @@ What's New:
 - Custom HTTP headers can be passed through to FireFly dependency microservices
 - Evmconnect is now the default blockchain connector for Ethereum based FireFly stacks
 
-# Release Notes
-
-[Full release notes](https://github.com/hyperledger/firefly/releases)
 
 ## [v1.1.0 - September 12, 2022](https://github.com/hyperledger/firefly/releases/tag/v1.1.0)
 
