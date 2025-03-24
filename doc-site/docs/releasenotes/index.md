@@ -9,7 +9,10 @@ title: Release Notes
 ## [v1.3.3 - Mar 24, 2025](https://github.com/hyperledger/firefly/releases/tag/v1.3.3)
 
 What's New:
-- Add new method to provide reliable receipt storage for blockchain plugins
+- Add new interface for blockchain plugins to stream receipt notifications in transactional batches
+    - For blockchain connectors that have an `ack` based reliable receipt stream (or other checkpoint system)
+    - Allows strictly ordered delivery of receipts from blockchain plugins that support it
+    - Allows resilience on receipt delivery to core, against a checkpoint maintained in the connector
 - Changes in metrics:   
     - Added new metrics for Data Exchange 
     - Added a namespace label to existing metrics and change gauges to vectors
