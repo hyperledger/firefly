@@ -9,6 +9,7 @@ title: Release Notes
 ## [v1.3.3 - Mar 25, 2025](https://github.com/hyperledger/firefly/releases/tag/v1.3.3)
 
 What's New:
+
 - Add new interface for blockchain plugins to stream receipt notifications in transactional batches
     - For blockchain connectors that have an `ack` based reliable receipt stream (or other checkpoint system)
     - Allows strictly ordered delivery of receipts from blockchain plugins that support it
