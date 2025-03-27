@@ -3632,24 +3632,34 @@
 <h1 id="release-notes">Release Notes<a class="headerlink" href="#release-notes" title="Permanent link">&para;</a></h1>
 <p><a href="https://github.com/hyperledger/firefly/releases">Full release notes</a></p>
 <h2 id="v133-mar-25-2025"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.3.3">v1.3.3 - Mar 25, 2025</a><a class="headerlink" href="#v133-mar-25-2025" title="Permanent link">&para;</a></h2>
-<p>What's New:
-- Add new interface for blockchain plugins to stream receipt notifications in transactional batches
-    - For blockchain connectors that have an <code>ack</code> based reliable receipt stream (or other checkpoint system)
-    - Allows strictly ordered delivery of receipts from blockchain plugins that support it
-    - Allows resilience on receipt delivery to core, against a checkpoint maintained in the connector
-- Changes in metrics: <br />
-    - Added new metrics for Data Exchange for monitoring by a timeseries and alerting system.
-        - <code>ff_multiparty_node_identity_dx_mismatch</code> notify that the certificate in FireFly Core is different to the one stored in Data Exchange
-        - <code>ff_multiparty_node_identity_dx_expiry_epoch</code> emit the timestamp of the certificate of Data Exchange useful for SREs to monitor before it expires 
-    - Added a namespace label to existing metrics to separate metrics more easily 
-    - Added HTTP Response Time and Complete Gauge Support to <code>firefly-common</code>
-    - Allow the <code>metrics</code> server to host additional routes such as status endpoints 
-        - This resulted in a new configuration section of <code>monitoring</code> to be more appropriate than <code>metrics</code> which has now be deprecated. 
-- Fix to issue that resulted in retried private messages using local namespace rather than the network namespace
-- Fix to issue that could result in messages being marked <code>Pending</code> on re-delivery of a batch over the network
-- Miscellaneous bug fixes and minor improvements
-- Documentation updates, new troubleshooting section for multiparty messages
-- CVE fixes and adoption of OpenSSF scorecard on key repositories</p>
+<p>What's New:</p>
+<ul>
+<li>Add new interface for blockchain plugins to stream receipt notifications in transactional batches<ul>
+<li>For blockchain connectors that have an <code>ack</code> based reliable receipt stream (or other checkpoint system)</li>
+<li>Allows strictly ordered delivery of receipts from blockchain plugins that support it</li>
+<li>Allows resilience on receipt delivery to core, against a checkpoint maintained in the connector</li>
+</ul>
+</li>
+<li>Changes in metrics:   <ul>
+<li>Added new metrics for Data Exchange for monitoring by a timeseries and alerting system.<ul>
+<li><code>ff_multiparty_node_identity_dx_mismatch</code> notify that the certificate in FireFly Core is different to the one stored in Data Exchange</li>
+<li><code>ff_multiparty_node_identity_dx_expiry_epoch</code> emit the timestamp of the certificate of Data Exchange useful for SREs to monitor before it expires </li>
+</ul>
+</li>
+<li>Added a namespace label to existing metrics to separate metrics more easily </li>
+<li>Added HTTP Response Time and Complete Gauge Support to <code>firefly-common</code></li>
+<li>Allow the <code>metrics</code> server to host additional routes such as status endpoints <ul>
+<li>This resulted in a new configuration section of <code>monitoring</code> to be more appropriate than <code>metrics</code> which has now be deprecated. </li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Fix to issue that resulted in retried private messages using local namespace rather than the network namespace</li>
+<li>Fix to issue that could result in messages being marked <code>Pending</code> on re-delivery of a batch over the network</li>
+<li>Miscellaneous bug fixes and minor improvements</li>
+<li>Documentation updates, new troubleshooting section for multiparty messages</li>
+<li>CVE fixes and adoption of OpenSSF scorecard on key repositories</li>
+</ul>
 <h3 id="migration-consideration">Migration consideration<a class="headerlink" href="#migration-consideration" title="Permanent link">&para;</a></h3>
 <p>As part of the changes to the metrics to add the new <code>namespace</code> label, we changed from using a Prometheus <code>Counter</code> to a <code>CounterVec</code>. As a result there is no default value of <code>0</code> on the counter, which means when users query for a specific metric such as <code>ff_message_rejected_total</code> it will not be available until the <code>CounterVec</code> associated with that metric is incremented. This has been determined to be an easy upgrade for SRE monitoring these metrics, hence inclusion in a patch release. </p>
 <h2 id="v132-oct-3-2024"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.3.2">v1.3.2 - Oct 3, 2024</a><a class="headerlink" href="#v132-oct-3-2024" title="Permanent link">&para;</a></h2>
