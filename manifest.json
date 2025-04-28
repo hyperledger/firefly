@@ -41,17 +41,17 @@
   },
   "build": {
     "firefly-builder": {
-      "image": "golang:1.22-alpine3.19"
+      "image": "golang:1.24-alpine3.21"
     },
     "fabric-builder": {
-      "image": "golang:1.22",
+      "image": "golang:1.24",
       "platform": "linux/x86_64"
     },
     "solidity-builder": {
       "image": "ethereum/solc:0.8.11-alpine"
     },
     "base": {
-      "image": "alpine:3.19.7"
+      "image": "alpine:3.21.3"
     }
   },
   "ui": {
