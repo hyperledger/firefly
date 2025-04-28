@@ -1,11 +1,11 @@
 run:
   tests: false
-  skip-dirs:
+issues:
+  exclude-dirs:
   - "mocks"
   - "ffconfig"
   - "test/e2e"
 linters-settings:
-  golint: {}
   gocritic:
     enabled-checks: []
     disabled-checks:
