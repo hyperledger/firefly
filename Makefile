@@ -23,7 +23,7 @@ lint: ${LINT}
 ${MOCKERY}:
 		$(VGO) install github.com/vektra/mockery/v2@latest
 ${LINT}:
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $($(VGO) env GOPATH)/bin v1.64.8
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(shell $(VGO) env GOPATH)/bin v1.64.8
 ffcommon:
 		$(eval WSCLIENT_PATH := $(shell $(VGO) list -f '{{.Dir}}' github.com/hyperledger/firefly-common/pkg/wsclient))
 
