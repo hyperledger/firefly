@@ -773,7 +773,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -840,7 +844,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -920,7 +928,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -947,7 +959,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -1039,7 +1055,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -1086,7 +1106,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -1538,7 +1562,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -1600,7 +1628,11 @@ paths:
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
                                       nullable: true
+<<<<<<< HEAD
                                       type: object
+=======
+                                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                   type: object
                                 type: array
                             type: object
@@ -1628,7 +1660,11 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -1662,7 +1698,11 @@ paths:
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -1768,7 +1808,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -1777,7 +1821,11 @@ paths:
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -1855,7 +1903,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -1915,7 +1967,11 @@ paths:
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
                                     nullable: true
+<<<<<<< HEAD
                                     type: object
+=======
+                                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                 type: object
                               type: array
                           type: object
@@ -1943,7 +1999,11 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -1977,7 +2037,11 @@ paths:
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -2101,7 +2165,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -2168,7 +2236,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -2248,7 +2320,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -2275,7 +2351,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -2354,7 +2434,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -2421,7 +2505,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -2501,7 +2589,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -2528,7 +2620,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -2614,7 +2710,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 options:
                   additionalProperties:
                     description: A map of named inputs that will be passed through
@@ -2786,7 +2886,11 @@ paths:
                       additionalProperties: true
                       description: The manifest of the batch
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     namespace:
                       description: The namespace of the batch
                       type: string
@@ -2880,7 +2984,11 @@ paths:
                     additionalProperties: true
                     description: The manifest of the batch
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   namespace:
                     description: The namespace of the batch
                     type: string
@@ -3320,12 +3428,20 @@ paths:
                   description: The smart contract to deploy. This should be pre-compiled
                     if required by the blockchain connector
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 definition:
                   additionalProperties: true
                   description: The definition of the smart contract
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 idempotencyKey:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
@@ -3643,7 +3759,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                           pathname:
@@ -3712,7 +3832,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                           pathname:
@@ -3794,7 +3918,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                           pathname:
@@ -3823,7 +3951,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -3916,7 +4048,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -3961,7 +4097,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -4006,7 +4146,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                       returns:
@@ -4028,7 +4172,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -4101,7 +4249,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4168,7 +4320,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4248,7 +4404,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4275,7 +4435,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -4410,7 +4574,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4477,7 +4645,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4557,7 +4729,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4584,7 +4760,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -4699,7 +4879,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4766,7 +4950,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4846,7 +5034,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -4873,7 +5065,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -4998,7 +5194,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5065,7 +5265,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5145,7 +5349,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5172,7 +5380,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -5251,7 +5463,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5318,7 +5534,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5398,7 +5618,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5425,7 +5649,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -5485,7 +5713,11 @@ paths:
                     in Ethereum this is a JSON structure containing an 'abi' array,
                     and optionally a 'devdocs' array.
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: The name of the FFI to generate
                   type: string
@@ -5551,7 +5783,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5618,7 +5854,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5698,7 +5938,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -5725,7 +5969,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -5812,7 +6060,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -5851,7 +6103,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -5898,7 +6154,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -6047,7 +6307,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     returns:
@@ -6069,7 +6333,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -6405,7 +6673,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -6467,7 +6739,11 @@ paths:
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
                                       nullable: true
+<<<<<<< HEAD
                                       type: object
+=======
+                                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                   type: object
                                 type: array
                             type: object
@@ -6495,7 +6771,11 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -6529,7 +6809,11 @@ paths:
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -6622,7 +6906,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -6684,7 +6972,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -6717,7 +7009,11 @@ paths:
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 interface:
@@ -6742,7 +7038,11 @@ paths:
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -6820,7 +7120,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -6880,7 +7184,11 @@ paths:
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
                                     nullable: true
+<<<<<<< HEAD
                                     type: object
+=======
+                                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                 type: object
                               type: array
                           type: object
@@ -6908,7 +7216,11 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -6942,7 +7254,11 @@ paths:
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -7083,7 +7399,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -7143,7 +7463,11 @@ paths:
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
                                     nullable: true
+<<<<<<< HEAD
                                     type: object
+=======
+                                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                 type: object
                               type: array
                           type: object
@@ -7171,7 +7495,11 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -7205,7 +7533,11 @@ paths:
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -7297,7 +7629,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -7359,7 +7695,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -7392,7 +7732,11 @@ paths:
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 interface:
@@ -7417,7 +7761,11 @@ paths:
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -7507,7 +7855,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -7546,7 +7898,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -7586,7 +7942,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     returns:
@@ -7608,7 +7968,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -7830,7 +8194,11 @@ paths:
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   type: object
                 type: array
           description: Success
@@ -7880,7 +8248,11 @@ paths:
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
               type: object
           multipart/form-data:
             schema:
@@ -7986,7 +8358,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -8118,7 +8494,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -8410,7 +8790,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -9050,7 +9434,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -9216,7 +9604,11 @@ paths:
                       description: The definition of the datatype, in the syntax supported
                         by the validator (such as a JSON Schema definition)
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     version:
                       description: The version of the datatype. Multiple versions
                         can exist with the same name. Use of semantic versioning is
@@ -9266,7 +9658,11 @@ paths:
                   description: The definition of the datatype, in the syntax supported
                     by the validator (such as a JSON Schema definition)
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 version:
                   description: The version of the datatype. Multiple versions can
                     exist with the same name. Use of semantic versioning is encourages,
@@ -9323,7 +9719,11 @@ paths:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -9379,7 +9779,11 @@ paths:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -9464,7 +9868,11 @@ paths:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -11425,7 +11833,11 @@ paths:
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                       type: object
                     type: array
                   group:
@@ -11713,7 +12125,11 @@ paths:
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   type: object
                 type: array
           description: Success
@@ -12044,7 +12460,11 @@ paths:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 header:
@@ -12525,7 +12945,11 @@ paths:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 group:
@@ -13056,7 +13480,11 @@ paths:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 group:
@@ -13256,7 +13684,11 @@ paths:
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                       type: object
                     type: array
                   group:
@@ -13660,7 +14092,11 @@ paths:
                         contract identifier. For example an Ethereum contract address,
                         or a Fabric chaincode name and channel
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     message:
                       description: The UUID of the broadcast message that was used
                         to publish this API to the network
@@ -13763,7 +14199,11 @@ paths:
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -13808,7 +14248,11 @@ paths:
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -13880,7 +14324,11 @@ paths:
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -14016,7 +14464,11 @@ paths:
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -14118,7 +14570,11 @@ paths:
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -14163,7 +14619,11 @@ paths:
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -14235,7 +14695,11 @@ paths:
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -14356,7 +14820,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -14423,7 +14891,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -14503,7 +14975,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -14530,7 +15006,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -14637,7 +15117,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -14676,7 +15160,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -14723,7 +15211,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -14872,7 +15364,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     returns:
@@ -14894,7 +15390,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -15250,7 +15750,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -15312,7 +15816,11 @@ paths:
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
                                       nullable: true
+<<<<<<< HEAD
                                       type: object
+=======
+                                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                   type: object
                                 type: array
                             type: object
@@ -15340,7 +15848,11 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -15374,7 +15886,11 @@ paths:
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -15487,7 +16003,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -15545,7 +16065,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -15573,7 +16097,11 @@ paths:
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 interface:
@@ -15598,7 +16126,11 @@ paths:
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -15676,7 +16208,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -15736,7 +16272,11 @@ paths:
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
                                     nullable: true
+<<<<<<< HEAD
                                     type: object
+=======
+                                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                 type: object
                               type: array
                           type: object
@@ -15764,7 +16304,11 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -15798,7 +16342,11 @@ paths:
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -15929,7 +16477,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -15996,7 +16548,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -16076,7 +16632,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -16103,7 +16663,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -16182,7 +16746,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -16249,7 +16817,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -16329,7 +16901,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -16356,7 +16932,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -16457,7 +17037,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -16496,7 +17080,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -16543,7 +17131,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -16692,7 +17284,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     returns:
@@ -16714,7 +17310,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -16899,7 +17499,11 @@ paths:
                       additionalProperties: true
                       description: The manifest of the batch
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     namespace:
                       description: The namespace of the batch
                       type: string
@@ -17000,7 +17604,11 @@ paths:
                     additionalProperties: true
                     description: The manifest of the batch
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   namespace:
                     description: The namespace of the batch
                     type: string
@@ -17475,12 +18083,20 @@ paths:
                   description: The smart contract to deploy. This should be pre-compiled
                     if required by the blockchain connector
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 definition:
                   additionalProperties: true
                   description: The definition of the smart contract
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 idempotencyKey:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
@@ -17805,7 +18421,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                           pathname:
@@ -17874,7 +18494,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                           pathname:
@@ -17956,7 +18580,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                           pathname:
@@ -17985,7 +18613,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -18085,7 +18717,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -18130,7 +18766,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -18175,7 +18815,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                       returns:
@@ -18197,7 +18841,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -18270,7 +18918,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -18337,7 +18989,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -18417,7 +19073,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -18444,7 +19104,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -18593,7 +19257,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -18660,7 +19328,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -18740,7 +19412,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -18767,7 +19443,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -18889,7 +19569,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -18956,7 +19640,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19036,7 +19724,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19063,7 +19755,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -19195,7 +19891,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19262,7 +19962,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19342,7 +20046,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19369,7 +20077,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -19448,7 +20160,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19515,7 +20231,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19595,7 +20315,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19622,7 +20346,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -19689,7 +20417,11 @@ paths:
                     in Ethereum this is a JSON structure containing an 'abi' array,
                     and optionally a 'devdocs' array.
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: The name of the FFI to generate
                   type: string
@@ -19755,7 +20487,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19822,7 +20558,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19902,7 +20642,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                         pathname:
@@ -19929,7 +20673,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -20023,7 +20771,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -20062,7 +20814,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -20109,7 +20865,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -20258,7 +21018,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     returns:
@@ -20280,7 +21044,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -20623,7 +21391,11 @@ paths:
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           type: array
                       type: object
@@ -20685,7 +21457,11 @@ paths:
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
                                       nullable: true
+<<<<<<< HEAD
                                       type: object
+=======
+                                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                   type: object
                                 type: array
                             type: object
@@ -20713,7 +21489,11 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -20747,7 +21527,11 @@ paths:
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -20847,7 +21631,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -20909,7 +21697,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -20942,7 +21734,11 @@ paths:
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 interface:
@@ -20967,7 +21763,11 @@ paths:
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -21045,7 +21845,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -21105,7 +21909,11 @@ paths:
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
                                     nullable: true
+<<<<<<< HEAD
                                     type: object
+=======
+                                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                 type: object
                               type: array
                           type: object
@@ -21133,7 +21941,11 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -21167,7 +21979,11 @@ paths:
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -21322,7 +22138,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -21382,7 +22202,11 @@ paths:
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
                                     nullable: true
+<<<<<<< HEAD
                                     type: object
+=======
+                                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                                 type: object
                               type: array
                           type: object
@@ -21410,7 +22234,11 @@ paths:
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -21444,7 +22272,11 @@ paths:
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -21543,7 +22375,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -21605,7 +22441,11 @@ paths:
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -21638,7 +22478,11 @@ paths:
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 interface:
@@ -21663,7 +22507,11 @@ paths:
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -21760,7 +22608,11 @@ paths:
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -21799,7 +22651,11 @@ paths:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -21846,7 +22702,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -21995,7 +22855,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     returns:
@@ -22017,7 +22881,11 @@ paths:
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                   type: object
@@ -22246,7 +23114,11 @@ paths:
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   type: object
                 type: array
           description: Success
@@ -22303,7 +23175,11 @@ paths:
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
               type: object
           multipart/form-data:
             schema:
@@ -22409,7 +23285,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -22555,7 +23435,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -22861,7 +23745,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -23522,7 +24410,11 @@ paths:
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 type: object
           description: Success
         default:
@@ -23702,7 +24594,11 @@ paths:
                       description: The definition of the datatype, in the syntax supported
                         by the validator (such as a JSON Schema definition)
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     version:
                       description: The version of the datatype. Multiple versions
                         can exist with the same name. Use of semantic versioning is
@@ -23759,7 +24655,11 @@ paths:
                   description: The definition of the datatype, in the syntax supported
                     by the validator (such as a JSON Schema definition)
                   nullable: true
+<<<<<<< HEAD
                   type: object
+=======
+                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                 version:
                   description: The version of the datatype. Multiple versions can
                     exist with the same name. Use of semantic versioning is encourages,
@@ -23816,7 +24716,11 @@ paths:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -23872,7 +24776,11 @@ paths:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -23964,7 +24872,11 @@ paths:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -26009,7 +26921,11 @@ paths:
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                       type: object
                     type: array
                   group:
@@ -26304,7 +27220,11 @@ paths:
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   type: object
                 type: array
           description: Success
@@ -26656,7 +27576,11 @@ paths:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 group:
@@ -27198,7 +28122,11 @@ paths:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 group:
@@ -27736,7 +28664,11 @@ paths:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                         nullable: true
+<<<<<<< HEAD
                         type: object
+=======
+                        type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     type: object
                   type: array
                 group:
@@ -27936,7 +28868,11 @@ paths:
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                           nullable: true
+<<<<<<< HEAD
                           type: object
+=======
+                          type: string
+>>>>>>> 33783aeb4 (Fix tests)
                       type: object
                     type: array
                   group:
@@ -30715,7 +31651,11 @@ paths:
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
@@ -30756,7 +31696,11 @@ paths:
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -31128,7 +32072,11 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           status:
                             description: The status of the contract listener. One
                               of 'syncing', 'synced', or 'unknown'
@@ -31172,7 +32120,11 @@ paths:
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -33812,7 +34764,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -34385,7 +35341,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -34864,7 +35824,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -35423,7 +36387,11 @@ paths:
                       description: The method definitions resolved by the token connector
                         to be used by each token operation
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -35651,7 +36619,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -35776,7 +36748,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -35964,7 +36940,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -36135,7 +37115,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -36260,7 +37244,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -36666,7 +37654,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -40449,7 +41441,11 @@ paths:
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
                                 nullable: true
+<<<<<<< HEAD
                                 type: object
+=======
+                                type: string
+>>>>>>> 33783aeb4 (Fix tests)
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
@@ -40490,7 +41486,11 @@ paths:
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
                                   nullable: true
+<<<<<<< HEAD
                                   type: object
+=======
+                                  type: string
+>>>>>>> 33783aeb4 (Fix tests)
                               type: object
                             type: array
                         type: object
@@ -40848,7 +41848,11 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           status:
                             description: The status of the contract listener. One
                               of 'syncing', 'synced', or 'unknown'
@@ -40892,7 +41896,11 @@ paths:
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
                               nullable: true
+<<<<<<< HEAD
                               type: object
+=======
+                              type: string
+>>>>>>> 33783aeb4 (Fix tests)
                           type: object
                         type: array
                     type: object
@@ -43462,7 +44470,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -44021,7 +45033,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -44478,7 +45494,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
@@ -45030,7 +46050,11 @@ paths:
                       description: The method definitions resolved by the token connector
                         to be used by each token operation
                       nullable: true
+<<<<<<< HEAD
                       type: object
+=======
+                      type: string
+>>>>>>> 33783aeb4 (Fix tests)
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -45251,7 +46275,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -45376,7 +46404,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -45550,7 +46582,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -45714,7 +46750,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -45839,7 +46879,11 @@ paths:
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                     nullable: true
+<<<<<<< HEAD
                     type: object
+=======
+                    type: string
+>>>>>>> 33783aeb4 (Fix tests)
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -46231,7 +47275,11 @@ paths:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                             nullable: true
+<<<<<<< HEAD
                             type: object
+=======
+                            type: string
+>>>>>>> 33783aeb4 (Fix tests)
                         type: object
                       type: array
                     group:
