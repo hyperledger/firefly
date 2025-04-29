@@ -1,6 +1,6 @@
 module github.com/hyperledger/firefly/chaincode-go
 
-go 1.24
+go 1.23
 
 require (
 	github.com/golang/protobuf v1.5.3

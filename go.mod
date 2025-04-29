@@ -1,8 +1,8 @@
 module github.com/hyperledger/firefly
 
-go 1.24
+go 1.23
 
-toolchain go1.24.2
+toolchain go1.23.0
 
 require (
 	blockwatch.cc/tzgo v1.17.1
@@ -17,7 +17,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-	github.com/hyperledger/firefly-common v1.4.15
+	github.com/hyperledger/firefly-common v1.5.1
 	github.com/hyperledger/firefly-signer v1.1.20
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
@@ -30,7 +30,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/hfuss/mux-prometheus v0.0.5
-	golang.org/x/net v0.33.0
+	golang.org/x/net v0.36.0
 	golang.org/x/text v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -85,7 +85,7 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.37.0 // indirect
+	golang.org/x/crypto v0.35.0 // indirect
 	golang.org/x/exp v0.0.0-20240110193028-0dcbfd608b1e // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
