@@ -222,7 +222,7 @@ func TestStartNamespaceStreamQueryError(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = c.StartNamespace(c.ctx, "ns1")
-	assert.Regexp(t, "FF10282.*pop", err)
+	assert.Regexp(t, "FF10484.*pop", err)
 }
 
 func TestStartNamespaceStreamCreateError(t *testing.T) {
@@ -248,7 +248,7 @@ func TestStartNamespaceStreamCreateError(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = c.StartNamespace(c.ctx, "ns1")
-	assert.Regexp(t, "FF10282.*pop", err)
+	assert.Regexp(t, "FF10484.*pop", err)
 }
 
 func TestStartNamespaceStreamUpdateError(t *testing.T) {
@@ -274,7 +274,7 @@ func TestStartNamespaceStreamUpdateError(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = c.StartNamespace(c.ctx, "ns1")
-	assert.Regexp(t, "FF10282.*pop", err)
+	assert.Regexp(t, "FF10484.*pop", err)
 }
 
 func TestStartNamespaceWSConnectFail(t *testing.T) {
@@ -359,7 +359,7 @@ func TestVerifyCardanoAddress(t *testing.T) {
 	assert.Regexp(t, "FF10354", err)
 
 	_, err = c.ResolveSigningKey(context.Background(), "baddr1cafed00d", blockchain.ResolveKeyIntentSign)
-	assert.Regexp(t, "FF10140", err)
+	assert.Regexp(t, "FF10483", err)
 
 	key, err := c.ResolveSigningKey(context.Background(), "addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x", blockchain.ResolveKeyIntentSign)
 	assert.NoError(t, err)
@@ -868,7 +868,7 @@ func TestDeleteContractListenerFail(t *testing.T) {
 		httpmock.NewStringResponder(500, "oops"))
 
 	err := c.DeleteContractListener(context.Background(), sub, true)
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestGetContractListenerStatus(t *testing.T) {
@@ -917,7 +917,7 @@ func TestGetContractListenerErrorNotFound(t *testing.T) {
 		httpmock.NewStringResponder(404, "no"))
 
 	_, _, _, err := c.GetContractListenerStatus(context.Background(), "ns1", "sb-1", false)
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestGetTransactionStatusSuccess(t *testing.T) {
@@ -1062,7 +1062,7 @@ func TestGetTransactionStatusError(t *testing.T) {
 		httpmock.NewStringResponder(500, "uh oh"))
 
 	_, err := c.GetTransactionStatus(context.Background(), op)
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestGetTransactionStatusHandleReceipt(t *testing.T) {
@@ -1226,7 +1226,7 @@ func TestAddFireflySubscriptionListError(t *testing.T) {
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = c.AddFireflySubscription(c.ctx, ns, contract, "")
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestAddFireflySubscriptionAlreadyExists(t *testing.T) {
@@ -1326,7 +1326,7 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 
 	ns := &core.Namespace{Name: "ns1", NetworkName: "ns1"}
 	_, err = c.AddFireflySubscription(c.ctx, ns, contract, "")
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestInvokeContractOK(t *testing.T) {
@@ -1456,7 +1456,7 @@ func TestInvokeContractConnectorError(t *testing.T) {
 
 	rejected, err := c.InvokeContract(context.Background(), "opId", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options, nil)
 	assert.True(t, rejected)
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestQueryContractOK(t *testing.T) {
@@ -1587,7 +1587,7 @@ func TestQueryContractConnectorError(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = c.QueryContract(context.Background(), signingKey, fftypes.JSONAnyPtrBytes(locationBytes), parsedMethod, params, options)
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestQueryContractInvalidJson(t *testing.T) {
@@ -1653,7 +1653,7 @@ func TestDeployContractConnectorError(t *testing.T) {
 
 	rejected, err := c.DeployContract(context.Background(), nsOpId, signingKey, definition, contract, nil, nil)
 	assert.True(t, rejected)
-	assert.Regexp(t, "FF10282", err)
+	assert.Regexp(t, "FF10484", err)
 }
 
 func TestGetFFIParamValidator(t *testing.T) {
