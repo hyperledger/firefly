@@ -94,7 +94,7 @@ func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *c
 func (nm *networkMap) generateCardanoAddressVerifier(identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
 	return &VerificationMethod{
 		ID:                  verifier.Hash.String(),
-		Type:                "PaymentVerificationKeyShelley_ed25519", // hope that it's safe to assume we always use Shelley
+		Type:                "PaymentVerificationKeyShelley_ed25519",
 		Controller:          identity.DID,
 		BlockchainAccountID: verifier.Value,
 	}
