@@ -16,7 +16,9 @@ Cardano dApps typically have two components: off-chain and on-chain.
 
 ## Writing a dApp
 
-First, decide on the contract which your dApp will satisfy. FireFly uses [JSON schema](https://json-schema.org/) to describe its contracts. Create a file named `contract.json`. An example is below:
+> **NOTE:** The source code to this dApp is also available [on GitHub](https://github.com/hyperledger/firefly-cardano/tree/main/wasm/simple-tx).
+
+First, decide on the contract which your dApp will satisfy. FireFly uses [FireFly Interface Format](https://hyperledger.github.io/firefly/latest/reference/firefly_interface_format/) to describe its contracts. Create a file named `contract.json`. An example is below:
 
 ### Contract
 
@@ -492,6 +494,8 @@ After connecting the WebSocket client, send a message to tell FireFly to:
   "autoack": true
 }
 ```
+
+> **NOTE:** Do not use `autoack` in production, as it can cause your application to miss events. For resilience, your app should instead respond with an "ack" message to each incoming event. For more details, see the [Websockets documentation](../../reference/types/subscription/#using-start-and-ack-explicitly).
 
 ### WebSocket event
 
