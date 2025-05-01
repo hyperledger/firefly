@@ -107,6 +107,8 @@ paths:
                         a smart contract, this field can include a blockchain specific
                         contract identifier. For example an Ethereum contract address,
                         or a Fabric chaincode name and channel
+                      nullable: true
+                      type: object
                     message:
                       description: The UUID of the broadcast message that was used
                         to publish this API to the network
@@ -198,6 +200,8 @@ paths:
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
+                  nullable: true
+                  type: object
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -238,6 +242,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -304,6 +310,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -420,6 +428,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -510,6 +520,8 @@ paths:
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
+                  nullable: true
+                  type: object
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -550,6 +562,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -616,6 +630,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -723,6 +739,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -784,6 +802,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -856,6 +876,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -880,6 +902,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -970,6 +994,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -1011,6 +1037,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -1444,6 +1472,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -1501,6 +1531,8 @@ paths:
                                         for native blockchain interface definitions
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
+                                      nullable: true
+                                      type: object
                                   type: object
                                 type: array
                             type: object
@@ -1525,6 +1557,8 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                            nullable: true
+                            type: object
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -1554,6 +1588,8 @@ paths:
                       additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
+                      nullable: true
+                      type: object
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -1655,6 +1691,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -1662,6 +1700,8 @@ paths:
                   additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
+                  nullable: true
+                  type: object
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -1734,6 +1774,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -1789,6 +1831,8 @@ paths:
                                       for native blockchain interface definitions
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
+                                    nullable: true
+                                    type: object
                                 type: object
                               type: array
                           type: object
@@ -1813,6 +1857,8 @@ paths:
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
+                          nullable: true
+                          type: object
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -1842,6 +1888,8 @@ paths:
                     additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
+                    nullable: true
+                    type: object
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -1959,6 +2007,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -2020,6 +2070,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -2092,6 +2144,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -2116,6 +2170,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -2189,6 +2245,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -2250,6 +2308,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -2322,6 +2382,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -2346,6 +2408,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -2430,6 +2494,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 options:
                   additionalProperties:
                     description: A map of named inputs that will be passed through
@@ -2594,6 +2660,8 @@ paths:
                     manifest:
                       additionalProperties: true
                       description: The manifest of the batch
+                      nullable: true
+                      type: object
                     namespace:
                       description: The namespace of the batch
                       type: string
@@ -2679,6 +2747,8 @@ paths:
                   manifest:
                     additionalProperties: true
                     description: The manifest of the batch
+                    nullable: true
+                    type: object
                   namespace:
                     description: The namespace of the batch
                     type: string
@@ -3103,9 +3173,13 @@ paths:
                   additionalProperties: true
                   description: The smart contract to deploy. This should be pre-compiled
                     if required by the blockchain connector
+                  nullable: true
+                  type: object
                 definition:
                   additionalProperties: true
                   description: The definition of the smart contract
+                  nullable: true
+                  type: object
                 idempotencyKey:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
@@ -3407,6 +3481,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                           pathname:
@@ -3470,6 +3546,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                           pathname:
@@ -3544,6 +3622,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                           pathname:
@@ -3570,6 +3650,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -3659,6 +3741,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -3700,6 +3784,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -3741,6 +3827,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                       returns:
@@ -3760,6 +3848,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -3827,6 +3917,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -3888,6 +3980,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -3960,6 +4054,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -3984,6 +4080,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -4113,6 +4211,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4174,6 +4274,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4246,6 +4348,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4270,6 +4374,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -4379,6 +4485,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4440,6 +4548,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4512,6 +4622,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4536,6 +4648,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -4655,6 +4769,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4716,6 +4832,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4788,6 +4906,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4812,6 +4932,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -4885,6 +5007,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -4946,6 +5070,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -5018,6 +5144,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -5042,6 +5170,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -5100,6 +5230,8 @@ paths:
                   description: A blockchain connector specific payload. For example
                     in Ethereum this is a JSON structure containing an 'abi' array,
                     and optionally a 'devdocs' array.
+                  nullable: true
+                  type: object
                 name:
                   description: The name of the FFI to generate
                   type: string
@@ -5160,6 +5292,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -5221,6 +5355,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -5293,6 +5429,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -5317,6 +5455,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -5400,6 +5540,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -5436,6 +5578,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -5477,6 +5621,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -5619,6 +5765,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     returns:
@@ -5638,6 +5786,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -5958,6 +6108,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -6015,6 +6167,8 @@ paths:
                                         for native blockchain interface definitions
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
+                                      nullable: true
+                                      type: object
                                   type: object
                                 type: array
                             type: object
@@ -6039,6 +6193,8 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                            nullable: true
+                            type: object
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -6068,6 +6224,8 @@ paths:
                       additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
+                      nullable: true
+                      type: object
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -6156,6 +6314,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -6213,6 +6373,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -6242,6 +6404,8 @@ paths:
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 interface:
@@ -6263,6 +6427,8 @@ paths:
                   additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
+                  nullable: true
+                  type: object
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -6335,6 +6501,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -6390,6 +6558,8 @@ paths:
                                       for native blockchain interface definitions
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
+                                    nullable: true
+                                    type: object
                                 type: object
                               type: array
                           type: object
@@ -6414,6 +6584,8 @@ paths:
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
+                          nullable: true
+                          type: object
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -6443,6 +6615,8 @@ paths:
                     additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
+                    nullable: true
+                    type: object
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -6578,6 +6752,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -6633,6 +6809,8 @@ paths:
                                       for native blockchain interface definitions
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
+                                    nullable: true
+                                    type: object
                                 type: object
                               type: array
                           type: object
@@ -6657,6 +6835,8 @@ paths:
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
+                          nullable: true
+                          type: object
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -6686,6 +6866,8 @@ paths:
                     additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
+                    nullable: true
+                    type: object
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -6773,6 +6955,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -6830,6 +7014,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -6859,6 +7045,8 @@ paths:
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 interface:
@@ -6880,6 +7068,8 @@ paths:
                   additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
+                  nullable: true
+                  type: object
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -6965,6 +7155,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -7001,6 +7193,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -7037,6 +7231,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     returns:
@@ -7056,6 +7252,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -7269,6 +7467,8 @@ paths:
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
+                      nullable: true
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -7315,6 +7515,8 @@ paths:
                   additionalProperties: true
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
+                  nullable: true
+                  type: object
               type: object
           multipart/form-data:
             schema:
@@ -7413,6 +7615,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -7537,6 +7741,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -7821,6 +8027,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -8439,6 +8647,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -8598,6 +8808,8 @@ paths:
                       additionalProperties: true
                       description: The definition of the datatype, in the syntax supported
                         by the validator (such as a JSON Schema definition)
+                      nullable: true
+                      type: object
                     version:
                       description: The version of the datatype. Multiple versions
                         can exist with the same name. Use of semantic versioning is
@@ -8646,6 +8858,8 @@ paths:
                   additionalProperties: true
                   description: The definition of the datatype, in the syntax supported
                     by the validator (such as a JSON Schema definition)
+                  nullable: true
+                  type: object
                 version:
                   description: The version of the datatype. Multiple versions can
                     exist with the same name. Use of semantic versioning is encourages,
@@ -8697,6 +8911,8 @@ paths:
                     additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
+                    nullable: true
+                    type: object
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -8747,6 +8963,8 @@ paths:
                     additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
+                    nullable: true
+                    type: object
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -8826,6 +9044,8 @@ paths:
                     additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
+                    nullable: true
+                    type: object
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -10691,6 +10911,8 @@ paths:
                           additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
+                          nullable: true
+                          type: object
                       type: object
                     type: array
                   group:
@@ -10960,6 +11182,8 @@ paths:
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
+                      nullable: true
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -11278,6 +11502,8 @@ paths:
                         additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 header:
@@ -11727,6 +11953,8 @@ paths:
                         additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 group:
@@ -12222,6 +12450,8 @@ paths:
                         additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 group:
@@ -12409,6 +12639,8 @@ paths:
                           additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
+                          nullable: true
+                          type: object
                       type: object
                     type: array
                   group:
@@ -12794,6 +13026,8 @@ paths:
                         a smart contract, this field can include a blockchain specific
                         contract identifier. For example an Ethereum contract address,
                         or a Fabric chaincode name and channel
+                      nullable: true
+                      type: object
                     message:
                       description: The UUID of the broadcast message that was used
                         to publish this API to the network
@@ -12892,6 +13126,8 @@ paths:
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
+                  nullable: true
+                  type: object
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -12932,6 +13168,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -12998,6 +13236,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -13128,6 +13368,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -13225,6 +13467,8 @@ paths:
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
+                  nullable: true
+                  type: object
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -13265,6 +13509,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -13331,6 +13577,8 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
+                    nullable: true
+                    type: object
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -13445,6 +13693,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -13506,6 +13756,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -13578,6 +13830,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -13602,6 +13856,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -13705,6 +13961,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -13741,6 +13999,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -13782,6 +14042,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -13924,6 +14186,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     returns:
@@ -13943,6 +14207,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -14283,6 +14549,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -14340,6 +14608,8 @@ paths:
                                         for native blockchain interface definitions
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
+                                      nullable: true
+                                      type: object
                                   type: object
                                 type: array
                             type: object
@@ -14364,6 +14634,8 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                            nullable: true
+                            type: object
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -14393,6 +14665,8 @@ paths:
                       additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
+                      nullable: true
+                      type: object
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -14501,6 +14775,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -14554,6 +14830,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -14578,6 +14856,8 @@ paths:
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 interface:
@@ -14599,6 +14879,8 @@ paths:
                   additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
+                  nullable: true
+                  type: object
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -14671,6 +14953,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -14726,6 +15010,8 @@ paths:
                                       for native blockchain interface definitions
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
+                                    nullable: true
+                                    type: object
                                 type: object
                               type: array
                           type: object
@@ -14750,6 +15036,8 @@ paths:
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
+                          nullable: true
+                          type: object
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -14779,6 +15067,8 @@ paths:
                     additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
+                    nullable: true
+                    type: object
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -14903,6 +15193,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -14964,6 +15256,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -15036,6 +15330,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -15060,6 +15356,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -15133,6 +15431,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -15194,6 +15494,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -15266,6 +15568,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -15290,6 +15594,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -15387,6 +15693,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -15423,6 +15731,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -15464,6 +15774,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -15606,6 +15918,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     returns:
@@ -15625,6 +15939,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -15802,6 +16118,8 @@ paths:
                     manifest:
                       additionalProperties: true
                       description: The manifest of the batch
+                      nullable: true
+                      type: object
                     namespace:
                       description: The namespace of the batch
                       type: string
@@ -15894,6 +16212,8 @@ paths:
                   manifest:
                     additionalProperties: true
                     description: The manifest of the batch
+                    nullable: true
+                    type: object
                   namespace:
                     description: The namespace of the batch
                     type: string
@@ -16353,9 +16673,13 @@ paths:
                   additionalProperties: true
                   description: The smart contract to deploy. This should be pre-compiled
                     if required by the blockchain connector
+                  nullable: true
+                  type: object
                 definition:
                   additionalProperties: true
                   description: The definition of the smart contract
+                  nullable: true
+                  type: object
                 idempotencyKey:
                   description: An optional identifier to allow idempotent submission
                     of requests. Stored on the transaction uniquely within a namespace
@@ -16664,6 +16988,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                           pathname:
@@ -16727,6 +17053,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                           pathname:
@@ -16801,6 +17129,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                           pathname:
@@ -16827,6 +17157,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -16923,6 +17255,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -16964,6 +17298,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -17005,6 +17341,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                       returns:
@@ -17024,6 +17362,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -17091,6 +17431,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17152,6 +17494,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17224,6 +17568,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17248,6 +17594,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -17391,6 +17739,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17452,6 +17802,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17524,6 +17876,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17548,6 +17902,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -17664,6 +18020,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17725,6 +18083,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17797,6 +18157,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -17821,6 +18183,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -17947,6 +18311,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18008,6 +18374,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18080,6 +18448,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18104,6 +18474,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -18177,6 +18549,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18238,6 +18612,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18310,6 +18686,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18334,6 +18712,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -18399,6 +18779,8 @@ paths:
                   description: A blockchain connector specific payload. For example
                     in Ethereum this is a JSON structure containing an 'abi' array,
                     and optionally a 'devdocs' array.
+                  nullable: true
+                  type: object
                 name:
                   description: The name of the FFI to generate
                   type: string
@@ -18459,6 +18841,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18520,6 +18904,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18592,6 +18978,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                         pathname:
@@ -18616,6 +19004,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -18706,6 +19096,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -18742,6 +19134,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -18783,6 +19177,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -18925,6 +19321,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     returns:
@@ -18944,6 +19342,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -19271,6 +19671,8 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
+                                nullable: true
+                                type: object
                             type: object
                           type: array
                       type: object
@@ -19328,6 +19730,8 @@ paths:
                                         for native blockchain interface definitions
                                         / type systems - such as an Ethereum ABI.
                                         See the documentation for more detail
+                                      nullable: true
+                                      type: object
                                   type: object
                                 type: array
                             type: object
@@ -19352,6 +19756,8 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                            nullable: true
+                            type: object
                           signature:
                             description: The stringified signature of the event and
                               location, as computed by the blockchain plugin
@@ -19381,6 +19787,8 @@ paths:
                       additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
+                      nullable: true
+                      type: object
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -19476,6 +19884,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -19533,6 +19943,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -19562,6 +19974,8 @@ paths:
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 interface:
@@ -19583,6 +19997,8 @@ paths:
                   additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
+                  nullable: true
+                  type: object
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -19655,6 +20071,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -19710,6 +20128,8 @@ paths:
                                       for native blockchain interface definitions
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
+                                    nullable: true
+                                    type: object
                                 type: object
                               type: array
                           type: object
@@ -19734,6 +20154,8 @@ paths:
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
+                          nullable: true
+                          type: object
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -19763,6 +20185,8 @@ paths:
                     additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
+                    nullable: true
+                    type: object
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -19912,6 +20336,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -19967,6 +20393,8 @@ paths:
                                       for native blockchain interface definitions
                                       / type systems - such as an Ethereum ABI. See
                                       the documentation for more detail
+                                    nullable: true
+                                    type: object
                                 type: object
                               type: array
                           type: object
@@ -19991,6 +20419,8 @@ paths:
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
+                          nullable: true
+                          type: object
                         signature:
                           description: The stringified signature of the event and
                             location, as computed by the blockchain plugin
@@ -20020,6 +20450,8 @@ paths:
                     additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
+                    nullable: true
+                    type: object
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -20114,6 +20546,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -20171,6 +20605,8 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -20200,6 +20636,8 @@ paths:
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 interface:
@@ -20221,6 +20659,8 @@ paths:
                   additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
+                  nullable: true
+                  type: object
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -20313,6 +20753,8 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -20349,6 +20791,8 @@ paths:
                   additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                  nullable: true
+                  type: object
                 message:
                   description: You can specify a message to correlate with the invocation,
                     which can be of type broadcast or private. Your specified method
@@ -20390,6 +20834,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -20532,6 +20978,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     returns:
@@ -20551,6 +20999,8 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                   type: object
@@ -20771,6 +21221,8 @@ paths:
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
+                      nullable: true
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -20824,6 +21276,8 @@ paths:
                   additionalProperties: true
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
+                  nullable: true
+                  type: object
               type: object
           multipart/form-data:
             schema:
@@ -20922,6 +21376,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -21060,6 +21516,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -21358,6 +21816,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -21997,6 +22457,8 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
+                    nullable: true
+                    type: object
                 type: object
           description: Success
         default:
@@ -22170,6 +22632,8 @@ paths:
                       additionalProperties: true
                       description: The definition of the datatype, in the syntax supported
                         by the validator (such as a JSON Schema definition)
+                      nullable: true
+                      type: object
                     version:
                       description: The version of the datatype. Multiple versions
                         can exist with the same name. Use of semantic versioning is
@@ -22225,6 +22689,8 @@ paths:
                   additionalProperties: true
                   description: The definition of the datatype, in the syntax supported
                     by the validator (such as a JSON Schema definition)
+                  nullable: true
+                  type: object
                 version:
                   description: The version of the datatype. Multiple versions can
                     exist with the same name. Use of semantic versioning is encourages,
@@ -22276,6 +22742,8 @@ paths:
                     additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
+                    nullable: true
+                    type: object
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -22326,6 +22794,8 @@ paths:
                     additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
+                    nullable: true
+                    type: object
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -22412,6 +22882,8 @@ paths:
                     additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
+                    nullable: true
+                    type: object
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -24361,6 +24833,8 @@ paths:
                           additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
+                          nullable: true
+                          type: object
                       type: object
                     type: array
                   group:
@@ -24637,6 +25111,8 @@ paths:
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
+                      nullable: true
+                      type: object
                   type: object
                 type: array
           description: Success
@@ -24976,6 +25452,8 @@ paths:
                         additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 group:
@@ -25482,6 +25960,8 @@ paths:
                         additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 group:
@@ -25984,6 +26464,8 @@ paths:
                         additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
+                        nullable: true
+                        type: object
                     type: object
                   type: array
                 group:
@@ -26171,6 +26653,8 @@ paths:
                           additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
+                          nullable: true
+                          type: object
                       type: object
                     type: array
                   group:
@@ -28822,6 +29306,8 @@ paths:
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
+                                nullable: true
+                                type: object
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
@@ -28860,6 +29346,8 @@ paths:
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -29210,6 +29698,8 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                            nullable: true
+                            type: object
                           status:
                             description: The status of the contract listener. One
                               of 'syncing', 'synced', or 'unknown'
@@ -29251,6 +29741,8 @@ paths:
                               description: A blockchain specific contract identifier.
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -31817,6 +32309,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -32363,6 +32857,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -32818,6 +33314,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -33352,6 +33850,8 @@ paths:
                       additionalProperties: true
                       description: The method definitions resolved by the token connector
                         to be used by each token operation
+                      nullable: true
+                      type: object
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -33570,6 +34070,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -33687,6 +34189,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -33867,6 +34371,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -34030,6 +34536,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -34147,6 +34655,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -34538,6 +35048,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -38153,6 +38665,8 @@ paths:
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
+                                nullable: true
+                                type: object
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
@@ -38191,6 +38705,8 @@ paths:
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
+                                  nullable: true
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -38527,6 +39043,8 @@ paths:
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
+                            nullable: true
+                            type: object
                           status:
                             description: The status of the contract listener. One
                               of 'syncing', 'synced', or 'unknown'
@@ -38568,6 +39086,8 @@ paths:
                               description: A blockchain specific contract identifier.
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
+                              nullable: true
+                              type: object
                           type: object
                         type: array
                     type: object
@@ -41064,6 +41584,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -41596,6 +42118,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -42029,6 +42553,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
@@ -42556,6 +43082,8 @@ paths:
                       additionalProperties: true
                       description: The method definitions resolved by the token connector
                         to be used by each token operation
+                      nullable: true
+                      type: object
                     name:
                       description: The name of the token pool. Note the name is not
                         validated against the description of the token on the blockchain
@@ -42767,6 +43295,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -42884,6 +43414,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -43050,6 +43582,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -43206,6 +43740,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -43323,6 +43859,8 @@ paths:
                     additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
+                    nullable: true
+                    type: object
                   name:
                     description: The name of the token pool. Note the name is not
                       validated against the description of the token on the blockchain
@@ -43700,6 +44238,8 @@ paths:
                             additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
+                            nullable: true
+                            type: object
                         type: object
                       type: array
                     group:
