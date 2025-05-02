@@ -102,6 +102,7 @@ paths:
                           type: string
                       type: object
                     location:
+                      additionalProperties: true
                       description: If this API is tied to an individual instance of
                         a smart contract, this field can include a blockchain specific
                         contract identifier. For example an Ethereum contract address,
@@ -192,6 +193,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: If this API is tied to an individual instance of a
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
@@ -204,6 +206,7 @@ paths:
                     network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -230,6 +233,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -295,6 +299,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -410,6 +415,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -499,6 +505,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: If this API is tied to an individual instance of a
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
@@ -511,6 +518,7 @@ paths:
                     network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -537,6 +545,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -602,6 +611,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -707,6 +717,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -767,6 +778,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -838,6 +850,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -861,6 +874,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -953,6 +967,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 message:
@@ -993,6 +1008,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -1109,6 +1125,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -1421,6 +1438,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -1476,6 +1494,7 @@ paths:
                                         blockchain smart contract
                                       type: string
                                     schema:
+                                      additionalProperties: true
                                       description: FireFly uses an extended subset
                                         of JSON Schema to describe parameters, similar
                                         to OpenAPI/Swagger. Converters are available
@@ -1502,6 +1521,7 @@ paths:
                                 type: string
                             type: object
                           location:
+                            additionalProperties: true
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
@@ -1531,6 +1551,7 @@ paths:
                           type: string
                       type: object
                     location:
+                      additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                     name:
@@ -1628,6 +1649,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -1637,6 +1659,7 @@ paths:
                       type: array
                   type: object
                 location:
+                  additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                 name:
@@ -1660,6 +1683,7 @@ paths:
                     to easily subscribe to all events they need
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -1704,6 +1728,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -1757,6 +1782,7 @@ paths:
                                       smart contract
                                     type: string
                                   schema:
+                                    additionalProperties: true
                                     description: FireFly uses an extended subset of
                                       JSON Schema to describe parameters, similar
                                       to OpenAPI/Swagger. Converters are available
@@ -1783,6 +1809,7 @@ paths:
                               type: string
                           type: object
                         location:
+                          additionalProperties: true
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
@@ -1812,6 +1839,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                   name:
@@ -1881,6 +1909,7 @@ paths:
                     to the multiparty network, which may differ from the local name
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -1924,6 +1953,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -1984,6 +2014,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -2055,6 +2086,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -2078,6 +2110,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -2150,6 +2183,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -2210,6 +2244,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -2281,6 +2316,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -2304,6 +2340,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -2390,6 +2427,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 options:
@@ -2400,6 +2438,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -2553,6 +2592,7 @@ paths:
                       description: The on-chain signing key used to sign the transaction
                       type: string
                     manifest:
+                      additionalProperties: true
                       description: The manifest of the batch
                     namespace:
                       description: The namespace of the batch
@@ -2637,6 +2677,7 @@ paths:
                     description: The on-chain signing key used to sign the transaction
                     type: string
                   manifest:
+                    additionalProperties: true
                     description: The manifest of the batch
                   namespace:
                     description: The namespace of the batch
@@ -2689,6 +2730,7 @@ paths:
       requestBody:
         content:
           application/json: {}
+        required: true
       responses:
         "204":
           content:
@@ -3058,9 +3100,11 @@ paths:
             schema:
               properties:
                 contract:
+                  additionalProperties: true
                   description: The smart contract to deploy. This should be pre-compiled
                     if required by the blockchain connector
                 definition:
+                  additionalProperties: true
                   description: The definition of the smart contract
                 idempotencyKey:
                   description: An optional identifier to allow idempotent submission
@@ -3086,6 +3130,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -3355,6 +3400,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -3417,6 +3463,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -3490,6 +3537,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -3515,6 +3563,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -3604,6 +3653,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -3644,6 +3694,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -3684,6 +3735,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -3702,6 +3754,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -3724,6 +3777,7 @@ paths:
                     such as 'v1.0.1' is encouraged
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -3767,6 +3821,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -3827,6 +3882,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -3898,6 +3954,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -3921,6 +3978,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4049,6 +4107,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4109,6 +4168,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4180,6 +4240,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4203,6 +4264,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4311,6 +4373,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4371,6 +4434,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4442,6 +4506,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4465,6 +4530,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4539,6 +4605,7 @@ paths:
                     to the multiparty network, which may differ from the local name
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -4582,6 +4649,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4642,6 +4710,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4713,6 +4782,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4736,6 +4806,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4808,6 +4879,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4868,6 +4940,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4939,6 +5012,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -4962,6 +5036,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -5021,6 +5096,7 @@ paths:
                     utility
                   type: string
                 input:
+                  additionalProperties: true
                   description: A blockchain connector specific payload. For example
                     in Ethereum this is a JSON structure containing an 'abi' array,
                     and optionally a 'devdocs' array.
@@ -5034,6 +5110,7 @@ paths:
                   description: The version of the FFI to generate
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -5077,6 +5154,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -5137,6 +5215,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -5208,6 +5287,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -5231,6 +5311,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -5313,6 +5394,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -5351,6 +5433,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 message:
@@ -5391,6 +5474,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -5529,6 +5613,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -5547,6 +5632,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -5566,6 +5652,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -5865,6 +5952,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -5920,6 +6008,7 @@ paths:
                                         blockchain smart contract
                                       type: string
                                     schema:
+                                      additionalProperties: true
                                       description: FireFly uses an extended subset
                                         of JSON Schema to describe parameters, similar
                                         to OpenAPI/Swagger. Converters are available
@@ -5946,6 +6035,7 @@ paths:
                                 type: string
                             type: object
                           location:
+                            additionalProperties: true
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
@@ -5975,6 +6065,7 @@ paths:
                           type: string
                       type: object
                     location:
+                      additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                     name:
@@ -6059,6 +6150,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -6114,6 +6206,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -6145,6 +6238,7 @@ paths:
                             type: string
                         type: object
                       location:
+                        additionalProperties: true
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
@@ -6166,6 +6260,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                 name:
@@ -6189,6 +6284,7 @@ paths:
                     to easily subscribe to all events they need
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -6233,6 +6329,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -6286,6 +6383,7 @@ paths:
                                       smart contract
                                     type: string
                                   schema:
+                                    additionalProperties: true
                                     description: FireFly uses an extended subset of
                                       JSON Schema to describe parameters, similar
                                       to OpenAPI/Swagger. Converters are available
@@ -6312,6 +6410,7 @@ paths:
                               type: string
                           type: object
                         location:
+                          additionalProperties: true
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
@@ -6341,6 +6440,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                   name:
@@ -6472,6 +6572,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -6525,6 +6626,7 @@ paths:
                                       smart contract
                                     type: string
                                   schema:
+                                    additionalProperties: true
                                     description: FireFly uses an extended subset of
                                       JSON Schema to describe parameters, similar
                                       to OpenAPI/Swagger. Converters are available
@@ -6551,6 +6653,7 @@ paths:
                               type: string
                           type: object
                         location:
+                          additionalProperties: true
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
@@ -6580,6 +6683,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                   name:
@@ -6663,6 +6767,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -6718,6 +6823,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -6749,6 +6855,7 @@ paths:
                             type: string
                         type: object
                       location:
+                        additionalProperties: true
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
@@ -6770,6 +6877,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                 name:
@@ -6793,6 +6901,7 @@ paths:
                     to easily subscribe to all events they need
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -6850,6 +6959,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -6888,6 +6998,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 method:
@@ -6920,6 +7031,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -6938,6 +7050,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -6957,6 +7070,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -7151,6 +7265,7 @@ paths:
                       description: The data validator type
                       type: string
                     value:
+                      additionalProperties: true
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
@@ -7197,6 +7312,7 @@ paths:
                   description: The data validator type to use for in-line data
                   type: string
                 value:
+                  additionalProperties: true
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
               type: object
@@ -7222,6 +7338,7 @@ paths:
                   description: Success
                   type: string
               type: object
+        required: true
       responses:
         "201":
           content:
@@ -7292,6 +7409,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -7415,6 +7533,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -7627,6 +7746,7 @@ paths:
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -7697,6 +7817,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -8243,6 +8364,7 @@ paths:
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -8313,6 +8435,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -8472,6 +8595,7 @@ paths:
                       - definition
                       type: string
                     value:
+                      additionalProperties: true
                       description: The definition of the datatype, in the syntax supported
                         by the validator (such as a JSON Schema definition)
                     version:
@@ -8519,6 +8643,7 @@ paths:
                   - definition
                   type: string
                 value:
+                  additionalProperties: true
                   description: The definition of the datatype, in the syntax supported
                     by the validator (such as a JSON Schema definition)
                 version:
@@ -8527,6 +8652,7 @@ paths:
                     such as v1.0.1
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -8568,6 +8694,7 @@ paths:
                     - definition
                     type: string
                   value:
+                    additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                   version:
@@ -8617,6 +8744,7 @@ paths:
                     - definition
                     type: string
                   value:
+                    additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                   version:
@@ -8695,6 +8823,7 @@ paths:
                     - definition
                     type: string
                   value:
+                    additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                   version:
@@ -9473,6 +9602,7 @@ paths:
                   description: The type of the identity
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -9769,6 +9899,7 @@ paths:
                     profile information of an identity
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -10557,6 +10688,7 @@ paths:
                             data
                           type: string
                         value:
+                          additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                       type: object
@@ -10824,6 +10956,7 @@ paths:
                       description: The data validator type
                       type: string
                     value:
+                      additionalProperties: true
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
@@ -11142,6 +11275,7 @@ paths:
                         description: The data validator type to use for in-line data
                         type: string
                       value:
+                        additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                     type: object
@@ -11211,6 +11345,7 @@ paths:
                     message is sent to other members of the network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -11589,6 +11724,7 @@ paths:
                         description: The data validator type to use for in-line data
                         type: string
                       value:
+                        additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                     type: object
@@ -11696,6 +11832,7 @@ paths:
                     message is sent to other members of the network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -12082,6 +12219,7 @@ paths:
                         description: The data validator type to use for in-line data
                         type: string
                       value:
+                        additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                     type: object
@@ -12189,6 +12327,7 @@ paths:
                     message is sent to other members of the network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -12267,6 +12406,7 @@ paths:
                             data
                           type: string
                         value:
+                          additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                       type: object
@@ -12649,6 +12789,7 @@ paths:
                           type: string
                       type: object
                     location:
+                      additionalProperties: true
                       description: If this API is tied to an individual instance of
                         a smart contract, this field can include a blockchain specific
                         contract identifier. For example an Ethereum contract address,
@@ -12746,6 +12887,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: If this API is tied to an individual instance of a
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
@@ -12758,6 +12900,7 @@ paths:
                     network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -12784,6 +12927,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -12849,6 +12993,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -12978,6 +13123,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -13074,6 +13220,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: If this API is tied to an individual instance of a
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
@@ -13086,6 +13233,7 @@ paths:
                     network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -13112,6 +13260,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -13177,6 +13326,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: If this API is tied to an individual instance of
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
@@ -13289,6 +13439,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -13349,6 +13500,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -13420,6 +13572,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -13443,6 +13596,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -13545,6 +13699,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -13583,6 +13738,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 message:
@@ -13623,6 +13779,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -13761,6 +13918,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -13779,6 +13937,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -13798,6 +13957,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -14117,6 +14277,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -14172,6 +14333,7 @@ paths:
                                         blockchain smart contract
                                       type: string
                                     schema:
+                                      additionalProperties: true
                                       description: FireFly uses an extended subset
                                         of JSON Schema to describe parameters, similar
                                         to OpenAPI/Swagger. Converters are available
@@ -14198,6 +14360,7 @@ paths:
                                 type: string
                             type: object
                           location:
+                            additionalProperties: true
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
@@ -14227,6 +14390,7 @@ paths:
                           type: string
                       type: object
                     location:
+                      additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                     name:
@@ -14331,6 +14495,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -14382,6 +14547,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -14408,6 +14574,7 @@ paths:
                             type: string
                         type: object
                       location:
+                        additionalProperties: true
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
@@ -14429,6 +14596,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                 name:
@@ -14452,6 +14620,7 @@ paths:
                     to easily subscribe to all events they need
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -14496,6 +14665,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -14549,6 +14719,7 @@ paths:
                                       smart contract
                                     type: string
                                   schema:
+                                    additionalProperties: true
                                     description: FireFly uses an extended subset of
                                       JSON Schema to describe parameters, similar
                                       to OpenAPI/Swagger. Converters are available
@@ -14575,6 +14746,7 @@ paths:
                               type: string
                           type: object
                         location:
+                          additionalProperties: true
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
@@ -14604,6 +14776,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                   name:
@@ -14680,6 +14853,7 @@ paths:
                     to the multiparty network, which may differ from the local name
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -14723,6 +14897,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -14783,6 +14958,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -14854,6 +15030,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -14877,6 +15054,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -14949,6 +15127,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -15009,6 +15188,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -15080,6 +15260,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -15103,6 +15284,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -15199,6 +15381,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -15237,6 +15420,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 message:
@@ -15277,6 +15461,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -15415,6 +15600,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -15433,6 +15619,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -15452,6 +15639,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -15612,6 +15800,7 @@ paths:
                       description: The on-chain signing key used to sign the transaction
                       type: string
                     manifest:
+                      additionalProperties: true
                       description: The manifest of the batch
                     namespace:
                       description: The namespace of the batch
@@ -15703,6 +15892,7 @@ paths:
                     description: The on-chain signing key used to sign the transaction
                     type: string
                   manifest:
+                    additionalProperties: true
                     description: The manifest of the batch
                   namespace:
                     description: The namespace of the batch
@@ -15762,6 +15952,7 @@ paths:
       requestBody:
         content:
           application/json: {}
+        required: true
       responses:
         "204":
           content:
@@ -16159,9 +16350,11 @@ paths:
             schema:
               properties:
                 contract:
+                  additionalProperties: true
                   description: The smart contract to deploy. This should be pre-compiled
                     if required by the blockchain connector
                 definition:
+                  additionalProperties: true
                   description: The definition of the smart contract
                 idempotencyKey:
                   description: An optional identifier to allow idempotent submission
@@ -16187,6 +16380,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -16463,6 +16657,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -16525,6 +16720,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -16598,6 +16794,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -16623,6 +16820,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -16719,6 +16917,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -16759,6 +16958,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -16799,6 +16999,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -16817,6 +17018,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -16839,6 +17041,7 @@ paths:
                     such as 'v1.0.1' is encouraged
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -16882,6 +17085,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -16942,6 +17146,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17013,6 +17218,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17036,6 +17242,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17178,6 +17385,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17238,6 +17446,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17309,6 +17518,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17332,6 +17542,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17447,6 +17658,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17507,6 +17719,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17578,6 +17791,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17601,6 +17815,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17682,6 +17897,7 @@ paths:
                     to the multiparty network, which may differ from the local name
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -17725,6 +17941,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17785,6 +18002,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17856,6 +18074,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17879,6 +18098,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -17951,6 +18171,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18011,6 +18232,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18082,6 +18304,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18105,6 +18328,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18171,6 +18395,7 @@ paths:
                     utility
                   type: string
                 input:
+                  additionalProperties: true
                   description: A blockchain connector specific payload. For example
                     in Ethereum this is a JSON structure containing an 'abi' array,
                     and optionally a 'devdocs' array.
@@ -18184,6 +18409,7 @@ paths:
                   description: The version of the FFI to generate
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -18227,6 +18453,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18287,6 +18514,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18358,6 +18586,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18381,6 +18610,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -18470,6 +18700,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -18508,6 +18739,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 message:
@@ -18548,6 +18780,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -18686,6 +18919,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -18704,6 +18938,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -18723,6 +18958,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -19029,6 +19265,7 @@ paths:
                                   according to the order in the blockchain smart contract
                                 type: string
                               schema:
+                                additionalProperties: true
                                 description: FireFly uses an extended subset of JSON
                                   Schema to describe parameters, similar to OpenAPI/Swagger.
                                   Converters are available for native blockchain interface
@@ -19084,6 +19321,7 @@ paths:
                                         blockchain smart contract
                                       type: string
                                     schema:
+                                      additionalProperties: true
                                       description: FireFly uses an extended subset
                                         of JSON Schema to describe parameters, similar
                                         to OpenAPI/Swagger. Converters are available
@@ -19110,6 +19348,7 @@ paths:
                                 type: string
                             type: object
                           location:
+                            additionalProperties: true
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
@@ -19139,6 +19378,7 @@ paths:
                           type: string
                       type: object
                     location:
+                      additionalProperties: true
                       description: 'Deprecated: Please use ''location'' in the array
                         of ''filters'' instead'
                     name:
@@ -19230,6 +19470,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -19285,6 +19526,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -19316,6 +19558,7 @@ paths:
                             type: string
                         type: object
                       location:
+                        additionalProperties: true
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
@@ -19337,6 +19580,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                 name:
@@ -19360,6 +19604,7 @@ paths:
                     to easily subscribe to all events they need
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -19404,6 +19649,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -19457,6 +19703,7 @@ paths:
                                       smart contract
                                     type: string
                                   schema:
+                                    additionalProperties: true
                                     description: FireFly uses an extended subset of
                                       JSON Schema to describe parameters, similar
                                       to OpenAPI/Swagger. Converters are available
@@ -19483,6 +19730,7 @@ paths:
                               type: string
                           type: object
                         location:
+                          additionalProperties: true
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
@@ -19512,6 +19760,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                   name:
@@ -19657,6 +19906,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -19710,6 +19960,7 @@ paths:
                                       smart contract
                                     type: string
                                   schema:
+                                    additionalProperties: true
                                     description: FireFly uses an extended subset of
                                       JSON Schema to describe parameters, similar
                                       to OpenAPI/Swagger. Converters are available
@@ -19736,6 +19987,7 @@ paths:
                               type: string
                           type: object
                         location:
+                          additionalProperties: true
                           description: A blockchain specific contract identifier.
                             For example an Ethereum contract address, or a Fabric
                             chaincode name and channel
@@ -19765,6 +20017,7 @@ paths:
                         type: string
                     type: object
                   location:
+                    additionalProperties: true
                     description: 'Deprecated: Please use ''location'' in the array
                       of ''filters'' instead'
                   name:
@@ -19855,6 +20108,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -19910,6 +20164,7 @@ paths:
                                     contract
                                   type: string
                                 schema:
+                                  additionalProperties: true
                                   description: FireFly uses an extended subset of
                                     JSON Schema to describe parameters, similar to
                                     OpenAPI/Swagger. Converters are available for
@@ -19941,6 +20196,7 @@ paths:
                             type: string
                         type: object
                       location:
+                        additionalProperties: true
                         description: A blockchain specific contract identifier. For
                           example an Ethereum contract address, or a Fabric chaincode
                           name and channel
@@ -19962,6 +20218,7 @@ paths:
                       type: string
                   type: object
                 location:
+                  additionalProperties: true
                   description: 'Deprecated: Please use ''location'' in the array of
                     ''filters'' instead'
                 name:
@@ -19985,6 +20242,7 @@ paths:
                     to easily subscribe to all events they need
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -20049,6 +20307,7 @@ paths:
                                 the order in the blockchain smart contract
                               type: string
                             schema:
+                              additionalProperties: true
                               description: FireFly uses an extended subset of JSON
                                 Schema to describe parameters, similar to OpenAPI/Swagger.
                                 Converters are available for native blockchain interface
@@ -20087,6 +20346,7 @@ paths:
                     the node
                   type: string
                 location:
+                  additionalProperties: true
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
                 message:
@@ -20127,6 +20387,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -20265,6 +20526,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -20283,6 +20545,7 @@ paths:
                               order in the blockchain smart contract
                             type: string
                           schema:
+                            additionalProperties: true
                             description: FireFly uses an extended subset of JSON Schema
                               to describe parameters, similar to OpenAPI/Swagger.
                               Converters are available for native blockchain interface
@@ -20302,6 +20565,7 @@ paths:
                     the blockchain connector
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -20503,6 +20767,7 @@ paths:
                       description: The data validator type
                       type: string
                     value:
+                      additionalProperties: true
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
@@ -20556,6 +20821,7 @@ paths:
                   description: The data validator type to use for in-line data
                   type: string
                 value:
+                  additionalProperties: true
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
               type: object
@@ -20581,6 +20847,7 @@ paths:
                   description: Success
                   type: string
               type: object
+        required: true
       responses:
         "201":
           content:
@@ -20651,6 +20918,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -20788,6 +21056,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -21014,6 +21283,7 @@ paths:
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -21084,6 +21354,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -21651,6 +21922,7 @@ paths:
                     of requests. Stored on the transaction uniquely within a namespace
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -21721,6 +21993,7 @@ paths:
                     description: The data validator type
                     type: string
                   value:
+                    additionalProperties: true
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
@@ -21894,6 +22167,7 @@ paths:
                       - definition
                       type: string
                     value:
+                      additionalProperties: true
                       description: The definition of the datatype, in the syntax supported
                         by the validator (such as a JSON Schema definition)
                     version:
@@ -21948,6 +22222,7 @@ paths:
                   - definition
                   type: string
                 value:
+                  additionalProperties: true
                   description: The definition of the datatype, in the syntax supported
                     by the validator (such as a JSON Schema definition)
                 version:
@@ -21956,6 +22231,7 @@ paths:
                     such as v1.0.1
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -21997,6 +22273,7 @@ paths:
                     - definition
                     type: string
                   value:
+                    additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                   version:
@@ -22046,6 +22323,7 @@ paths:
                     - definition
                     type: string
                   value:
+                    additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                   version:
@@ -22131,6 +22409,7 @@ paths:
                     - definition
                     type: string
                   value:
+                    additionalProperties: true
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
                   version:
@@ -22951,6 +23230,7 @@ paths:
                   description: The type of the identity
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -23261,6 +23541,7 @@ paths:
                     profile information of an identity
                   type: object
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -24077,6 +24358,7 @@ paths:
                             data
                           type: string
                         value:
+                          additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                       type: object
@@ -24351,6 +24633,7 @@ paths:
                       description: The data validator type
                       type: string
                     value:
+                      additionalProperties: true
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
@@ -24690,6 +24973,7 @@ paths:
                         description: The data validator type to use for in-line data
                         type: string
                       value:
+                        additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                     type: object
@@ -24797,6 +25081,7 @@ paths:
                     message is sent to other members of the network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -25194,6 +25479,7 @@ paths:
                         description: The data validator type to use for in-line data
                         type: string
                       value:
+                        additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                     type: object
@@ -25301,6 +25587,7 @@ paths:
                     message is sent to other members of the network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -25694,6 +25981,7 @@ paths:
                         description: The data validator type to use for in-line data
                         type: string
                       value:
+                        additionalProperties: true
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
                     type: object
@@ -25801,6 +26089,7 @@ paths:
                     message is sent to other members of the network
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -25879,6 +26168,7 @@ paths:
                             data
                           type: string
                         value:
+                          additionalProperties: true
                           description: The in-line value for the data. Can be any
                             JSON type - object, array, string, number or boolean
                       type: object
@@ -26087,6 +26377,7 @@ paths:
                   - terminate
                   type: string
               type: object
+        required: true
       responses:
         "202":
           content:
@@ -26875,6 +27166,7 @@ paths:
             schema:
               additionalProperties: {}
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -27282,6 +27574,7 @@ paths:
                   description: The type of the identity
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -27570,6 +27863,7 @@ paths:
             schema:
               additionalProperties: {}
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -28169,6 +28463,7 @@ paths:
             schema:
               additionalProperties: {}
               type: object
+        required: true
       responses:
         "202":
           content:
@@ -28437,6 +28732,7 @@ paths:
                   format: int64
                   type: integer
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -28522,6 +28818,7 @@ paths:
                                     type: integer
                                 type: object
                               location:
+                                additionalProperties: true
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
@@ -28559,6 +28856,7 @@ paths:
                                       type: integer
                                   type: object
                                 location:
+                                  additionalProperties: true
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
@@ -28908,6 +29206,7 @@ paths:
                                 type: integer
                             type: object
                           location:
+                            additionalProperties: true
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
@@ -28948,6 +29247,7 @@ paths:
                                   type: integer
                               type: object
                             location:
+                              additionalProperties: true
                               description: A blockchain specific contract identifier.
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
@@ -29640,6 +29940,7 @@ paths:
                     (WebSockets, Webhooks, JMS, NATS etc.)
                   type: string
               type: object
+        required: true
       responses:
         "201":
           content:
@@ -30194,6 +30495,7 @@ paths:
                     (WebSockets, Webhooks, JMS, NATS etc.)
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -31512,6 +31814,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -31628,6 +31931,7 @@ paths:
                   format: uuid
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -32056,6 +32360,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -32179,6 +32484,7 @@ paths:
                   description: The URI of the token this transfer applies to
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -32509,6 +32815,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -32632,6 +32939,7 @@ paths:
                   description: The URI of the token this transfer applies to
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -33041,6 +33349,7 @@ paths:
                       format: uuid
                       type: string
                     methods:
+                      additionalProperties: true
                       description: The method definitions resolved by the token connector
                         to be used by each token operation
                     name:
@@ -33185,6 +33494,7 @@ paths:
                   - nonfungible
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -33257,6 +33567,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -33373,6 +33684,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -33552,6 +33864,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -33641,6 +33954,7 @@ paths:
                     to the multiparty network, which may differ from the local name
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -33713,6 +34027,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -33829,6 +34144,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -34219,6 +34535,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -34342,6 +34659,7 @@ paths:
                   description: The URI of the token this transfer applies to
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -35461,6 +35779,7 @@ paths:
                     Fabric MSP identifier
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -35508,6 +35827,7 @@ paths:
                   - terminate
                   type: string
               type: object
+        required: true
       responses:
         "202":
           content:
@@ -36254,6 +36574,7 @@ paths:
             schema:
               additionalProperties: {}
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -36647,6 +36968,7 @@ paths:
                   description: The type of the identity
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -36921,6 +37243,7 @@ paths:
             schema:
               additionalProperties: {}
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -37492,6 +37815,7 @@ paths:
             schema:
               additionalProperties: {}
               type: object
+        required: true
       responses:
         "202":
           content:
@@ -37746,6 +38070,7 @@ paths:
                   format: int64
                   type: integer
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -37824,6 +38149,7 @@ paths:
                                     type: integer
                                 type: object
                               location:
+                                additionalProperties: true
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
@@ -37861,6 +38187,7 @@ paths:
                                       type: integer
                                   type: object
                                 location:
+                                  additionalProperties: true
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
@@ -38196,6 +38523,7 @@ paths:
                                 type: integer
                             type: object
                           location:
+                            additionalProperties: true
                             description: A blockchain specific contract identifier.
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
@@ -38236,6 +38564,7 @@ paths:
                                   type: integer
                               type: object
                             location:
+                              additionalProperties: true
                               description: A blockchain specific contract identifier.
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
@@ -38914,6 +39243,7 @@ paths:
                     (WebSockets, Webhooks, JMS, NATS etc.)
                   type: string
               type: object
+        required: true
       responses:
         "201":
           content:
@@ -39461,6 +39791,7 @@ paths:
                     (WebSockets, Webhooks, JMS, NATS etc.)
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -40730,6 +41061,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -40846,6 +41178,7 @@ paths:
                   format: uuid
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -41260,6 +41593,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -41379,6 +41713,7 @@ paths:
                   description: The URI of the token this transfer applies to
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -41691,6 +42026,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -41814,6 +42150,7 @@ paths:
                   description: The URI of the token this transfer applies to
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -42216,6 +42553,7 @@ paths:
                       format: uuid
                       type: string
                     methods:
+                      additionalProperties: true
                       description: The method definitions resolved by the token connector
                         to be used by each token operation
                     name:
@@ -42353,6 +42691,7 @@ paths:
                   - nonfungible
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -42425,6 +42764,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -42541,6 +42881,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -42706,6 +43047,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -42788,6 +43130,7 @@ paths:
                     to the multiparty network, which may differ from the local name
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -42860,6 +43203,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -42976,6 +43320,7 @@ paths:
                     format: uuid
                     type: string
                   methods:
+                    additionalProperties: true
                     description: The method definitions resolved by the token connector
                       to be used by each token operation
                   name:
@@ -43352,6 +43697,7 @@ paths:
                               data
                             type: string
                           value:
+                            additionalProperties: true
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
                         type: object
@@ -43475,6 +43821,7 @@ paths:
                   description: The URI of the token this transfer applies to
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
@@ -44531,6 +44878,7 @@ paths:
                     Fabric MSP identifier
                   type: string
               type: object
+        required: true
       responses:
         "200":
           content:
