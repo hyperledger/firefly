@@ -17,7 +17,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-	github.com/hyperledger/firefly-common v1.5.1
+	github.com/hyperledger/firefly-common v1.5.4
 	github.com/hyperledger/firefly-signer v1.1.21
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
@@ -51,7 +51,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/karlseguin/ccache v2.0.3+incompatible // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
