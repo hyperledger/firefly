@@ -62,7 +62,7 @@ RUN mkdir -p build/contracts \
   && mv combined.json Firefly.json
 
 # SBOM
-FROM alpine:3.19 AS sbom
+FROM alpine:3.21 AS sbom
 WORKDIR /
 ADD . /SBOM
 RUN apk add --no-cache curl

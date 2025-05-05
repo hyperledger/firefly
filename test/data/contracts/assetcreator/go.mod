@@ -1,8 +1,8 @@
 module github.com/hyperledger/firefly/test/data/assetcreator
 
-go 1.22
+go 1.23
 
-toolchain go1.22.0
+toolchain go1.23.0
 
 require github.com/hyperledger/fabric-contract-api-go v1.2.2
 
