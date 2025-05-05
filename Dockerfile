@@ -14,11 +14,12 @@ ARG GIT_REF
 FROM $FIREFLY_BUILDER_TAG AS firefly-builder
 ARG BUILD_VERSION
 ARG GIT_REF
-RUN apk add make=4.4.1-r2 \
-  gcc=14.2.0-r4 \
-  build-base=0.5-r3 \
-  curl=8.12.1-r1 \
-  git=2.47.2-r0
+
+# Makes an assumption that that base image is debian based 
+# so it uses apt
+RUN apt update -y \
+    && apt install -y make gcc curl git
+
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
   && chmod -R g+rwX /firefly \
@@ -73,11 +74,12 @@ RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository 
 FROM $BASE_TAG
 ARG UI_TAG
 ARG UI_RELEASE
-RUN apk add --update --no-cache \
-  sqlite=3.48.0-r1 \
-  postgresql16-client=16.8-r0 \
-  curl=8.12.1-r1 \
-  jq=1.7.1-r0
+# Makes an assumption that that base image is ubuntu based 
+# so it uses apt
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt update -y \
+  && apt install -y curl jq sqlite postgresql \
+  && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly/ \
   && chmod -R g+rwX /firefly/ \
