@@ -2,7 +2,7 @@ module github.com/hyperledger/firefly
 
 go 1.23.0
 
-toolchain go1.24.1
+toolchain go1.23.8
 
 require (
 	blockwatch.cc/tzgo v1.17.1
@@ -46,6 +46,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
