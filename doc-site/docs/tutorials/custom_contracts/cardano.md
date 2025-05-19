@@ -121,7 +121,7 @@ edition = "2021"
 
 [dependencies]
 # The version of firefly-balius should match the version of firefly-cardano which you are using.
-firefly-balius = { git = "https://github.com/hyperledger/firefly-cardano", rev = "0.4.1" }
+firefly-balius = { git = "https://github.com/hyperledger/firefly-cardano", rev = "0.4.2" }
 pallas-addresses = "0.32"
 serde = { version = "1", features = ["derive"] }
 
