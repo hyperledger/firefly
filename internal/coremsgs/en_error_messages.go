@@ -321,4 +321,6 @@ var (
 	MsgInvalidIdentityPatch                    = ffe("FF10480", "A profile must be provided when updating an identity", 400)
 	MsgNodeNotProvidedForCheck                 = ffe("FF10481", "Node not provided for check", 500)
 	MsgNodeMissingProfile                      = ffe("FF10482", "Node provided for check does not have a profile", 500)
+	MsgInvalidCardanoAddress                   = ffe("FF10483", "Supplied cardano address is invalid", 400)
+	MsgCardanoconnectRESTErr                   = ffe("FF10484", "Error from cardano connector: %s")
 )
