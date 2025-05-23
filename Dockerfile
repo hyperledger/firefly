@@ -74,8 +74,8 @@ FROM $BASE_TAG
 ARG UI_TAG
 ARG UI_RELEASE
 RUN apk add --update --no-cache \
-  sqlite=3.48.0-r1 \
-  postgresql16-client=16.8-r0 \
+  sqlite=3.48.0-r2 \
+  postgresql16-client=16.9-r0 \
   curl=8.12.1-r1 \
   jq=1.7.1-r0
 WORKDIR /firefly
