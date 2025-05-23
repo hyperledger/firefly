@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"slices"
 	"sync"
 	"time"
 
@@ -66,36 +67,18 @@ func newWebSocket(ae *adminEventManager, wsConn *websocket.Conn) *webSocket {
 }
 
 func (wc *webSocket) eventMatches(changeEvent *core.ChangeEvent) bool {
-	collectionMatches := false
-	for _, c := range wc.collections {
-		if c == changeEvent.Collection {
-			collectionMatches = true
-			break
-		}
-	}
+	collectionMatches := slices.Contains(wc.collections, changeEvent.Collection)
 	if !collectionMatches {
 		return false
 	}
 	if len(wc.filter.Namespaces) > 0 {
-		namespaceMatches := false
-		for _, ns := range wc.filter.Namespaces {
-			if ns == changeEvent.Namespace {
-				namespaceMatches = true
-				break
-			}
-		}
+		namespaceMatches := slices.Contains(wc.filter.Namespaces, changeEvent.Namespace)
 		if !namespaceMatches {
 			return false
 		}
 	}
 	if len(wc.filter.Types) > 0 {
-		typeMatches := false
-		for _, t := range wc.filter.Types {
-			if t == changeEvent.Type {
-				typeMatches = true
-				break
-			}
-		}
+		typeMatches := slices.Contains(wc.filter.Types, changeEvent.Type)
 		if !typeMatches {
 			return false
 		}
