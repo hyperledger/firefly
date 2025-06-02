@@ -74,6 +74,7 @@ func TestTwoSeparateCacheWorksIndependently(t *testing.T) {
 }
 
 func TestReturnsDummyCacheWhenCacheDisabled(t *testing.T) {
+	coreconfig.Reset()
 	config.Set(coreconfig.CacheEnabled, false)
 	ctx := context.Background()
 	cacheManager := NewCacheManager(ctx)

@@ -359,3 +359,7 @@ var (
 	// UIPath the path on which to serve the UI
 	UIPath = ffc("ui.path")
 )
+
+func Reset() {
+	config.RootConfigReset(setDefaults)
+}
