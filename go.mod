@@ -17,11 +17,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-<<<<<<< HEAD
-	github.com/hyperledger/firefly-common v1.4.14
-=======
 	github.com/hyperledger/firefly-common v1.4.15
->>>>>>> b4d7987111328448ef17752c2785b42fb31c8478
 	github.com/hyperledger/firefly-signer v1.1.19
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
