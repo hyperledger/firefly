@@ -27,7 +27,6 @@ import (
 )
 
 func TestNewCacheCreationFail(t *testing.T) {
-	coreconfig.Reset()
 	ctx := context.Background()
 	cacheManager := NewCacheManager(ctx)
 	_, err := cacheManager.GetCache(NewCacheConfig(ctx, "", "", ""))
@@ -41,7 +40,6 @@ func TestNewCacheCreationFail(t *testing.T) {
 }
 
 func TestGetCacheReturnsSameCacheForSameConfig(t *testing.T) {
-	coreconfig.Reset()
 	ctx := context.Background()
 	cacheManager := NewCacheManager(ctx)
 	cache0, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", "testnamespace"))
@@ -57,7 +55,6 @@ func TestGetCacheReturnsSameCacheForSameConfig(t *testing.T) {
 }
 
 func TestTwoSeparateCacheWorksIndependently(t *testing.T) {
-	coreconfig.Reset()
 	ctx := context.Background()
 	cacheManager := NewCacheManager(ctx)
 	cache0, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", ""))
@@ -93,7 +90,6 @@ func TestUmmanagedCacheInstance(t *testing.T) {
 }
 
 func TestResetCachesForNamespace(t *testing.T) {
-	coreconfig.Reset()
 	ctx := context.Background()
 	cacheManager := NewCacheManager(ctx)
 	cacheNS1, _ := cacheManager.GetCache(NewCacheConfig(ctx, "cache.batch.limit", "cache.batch.ttl", "ns1"))
