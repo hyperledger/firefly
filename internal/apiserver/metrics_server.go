@@ -32,6 +32,6 @@ func initDeprecatedMetricsConfig(config config.Section) {
 }
 
 func initMonitoringConfig(config config.Section) {
-	config.AddKnownKey(Enabled, true)
+	config.AddKnownKey(Enabled, false)
 	config.AddKnownKey(MetricsPath, "/metrics")
 }

@@ -1,57 +1,67 @@
 {
+  "cardanoconnect": {
+    "image": "ghcr.io/hyperledger/firefly-cardanoconnect",
+    "tag": "v0.4.2",
+    "sha": "4f877755dd9130653cfee3f6ddc950e4908e45080627c9f106a12c52cd6ca8c1"
+  },
+  "cardanosigner": {
+    "image": "ghcr.io/hyperledger/firefly-cardanosigner",
+    "tag": "v0.4.2",
+    "sha": "9a859ce0020851e7a5474085fbfb34b0a027feeeae38455613bbfdfb33a75ddc"
+  },
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
-    "tag": "v3.3.2",
-    "sha": "bdbfa05a0bc1610813ba0ef65b2c8f9f7df4a5ead5643a580e3ba5927747c2cf"
+    "tag": "v3.3.3",
+    "sha": "250509a54bbd3251598a807071b388492c0157df02a3b06bfa64e14e791c0633"
   },
   "evmconnect": {
     "image": "ghcr.io/hyperledger/firefly-evmconnect",
-    "tag": "v1.3.18",
-    "sha": "11a782c778227d198c0bff2fc94ad7e52ceea5a9994728ba05e781541680c32d"
+    "tag": "v1.3.20",
+    "sha": "514ee0e0d3f6054e1f2c46a474c968f18725af5edd4dc6dac85dc104004c1272"
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "v0.9.21",
-    "sha": "394262c5888fb6647a7b8b1f3f8d652e1db941b67e3c68bccfbedfa53c4d874d"
+    "tag": "v0.9.22",
+    "sha": "1984166545d476b9f8ea8eb04120fed406beb936cb95c97a728bbf4585860523"
   },
   "tezosconnect": {
     "image": "ghcr.io/hyperledger/firefly-tezosconnect",
-    "tag": "v0.2.7",
-    "sha": "cee6ecda8208e24989a6db2c1a2dd1b0defb89363e7728571b8858e794a295be"
+    "tag": "v0.2.8",
+    "sha": "895c0a22b64fbe42ecaf3e017b40b71c8911c4c7032728c778723cbef987b5de"
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v1.3.0",
-    "sha": "1e01b0d5fc3cfd95de150d47c09ba419b8ec98345d105a6d67d7bc7101aeea89"
+    "tag": "v1.3.1",
+    "sha": "5688fd57c52588f55230800e2a13743626da6ce4b40eb7ce3dd4578494418479"
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v1.3.3",
-    "sha": "5efbe76ce2c484d86e9e3cc2cfe3cee85d91ee8712b31dfc592a2de771749e78"
+    "tag": "v1.3.4",
+    "sha": "700d1d0d461b55641ea21e4028456e904a6f652798335ad0e067d7e6ab1438f1"
   },
   "tokens-erc20-erc721": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc20-erc721",
-    "tag": "v1.3.3",
-    "sha": "5cfa10432c1cd885f3cbe5934799d692ba7186013e03a6b92bd6aa53ddf4f414"
+    "tag": "v1.3.4",
+    "sha": "d93b55daf9a4404a3d26996cb2dffcc3660b3ef3cbe3b0be5bab03a8f745d952"
   },
   "signer": {
     "image": "ghcr.io/hyperledger/firefly-signer",
-    "tag": "v1.1.17",
-    "sha": "4391674f66dadb42ef29f3ea0ac62b130bad041675ff25ad3f8c7c0c8eda3854"
+    "tag": "v1.1.20",
+    "sha": "270f3749f8fa4326de08890d667651a80ff3dfe86c05ad5387671ad0d5b17fe9"
   },
   "build": {
     "firefly-builder": {
-      "image": "golang:1.22-alpine3.19"
+      "image": "golang:1.23-alpine3.21"
     },
     "fabric-builder": {
-      "image": "golang:1.22",
+      "image": "golang:1.23",
       "platform": "linux/x86_64"
     },
     "solidity-builder": {
       "image": "ethereum/solc:0.8.11-alpine"
     },
     "base": {
-      "image": "alpine:3.19.7"
+      "image": "alpine:3.21.3"
     }
   },
   "ui": {
@@ -59,6 +69,6 @@
     "release": "v1.3.1"
   },
   "cli": {
-    "tag": "v1.3.2"
+    "tag": "v1.3.3"
   }
 }

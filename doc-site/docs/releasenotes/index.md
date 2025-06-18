@@ -2,7 +2,35 @@
 title: Release Notes
 ---
 
+# Release Notes
+
 [Full release notes](https://github.com/hyperledger/firefly/releases)
+
+## [v1.3.3 - Mar 25, 2025](https://github.com/hyperledger/firefly/releases/tag/v1.3.3)
+
+What's New:
+
+- Add new interface for blockchain plugins to stream receipt notifications in transactional batches
+    - For blockchain connectors that have an `ack` based reliable receipt stream (or other checkpoint system)
+    - Allows strictly ordered delivery of receipts from blockchain plugins that support it
+    - Allows resilience on receipt delivery to core, against a checkpoint maintained in the connector
+- Changes in metrics:   
+    - Added new metrics for Data Exchange for monitoring by a timeseries and alerting system.
+        - `ff_multiparty_node_identity_dx_mismatch` notify that the certificate in FireFly Core is different to the one stored in Data Exchange
+        - `ff_multiparty_node_identity_dx_expiry_epoch` emit the timestamp of the certificate of Data Exchange useful for SREs to monitor before it expires 
+    - Added a namespace label to existing metrics to separate metrics more easily 
+    - Added HTTP Response Time and Complete Gauge Support to `firefly-common`
+    - Allow the `metrics` server to host additional routes such as status endpoints 
+        - This resulted in a new configuration section of `monitoring` to be more appropriate than `metrics` which has now be deprecated. 
+- Fix to issue that resulted in retried private messages using local namespace rather than the network namespace
+- Fix to issue that could result in messages being marked `Pending` on re-delivery of a batch over the network
+- Miscellaneous bug fixes and minor improvements
+- Documentation updates, new troubleshooting section for multiparty messages
+- CVE fixes and adoption of OpenSSF scorecard on key repositories
+    
+### Migration consideration
+
+As part of the changes to the metrics to add the new `namespace` label, we changed from using a Prometheus `Counter` to a `CounterVec`. As a result there is no default value of `0` on the counter, which means when users query for a specific metric such as `ff_message_rejected_total` it will not be available until the `CounterVec` associated with that metric is incremented. This has been determined to be an easy upgrade for SRE monitoring these metrics, hence inclusion in a patch release. 
 
 ## [v1.3.2 - Oct 3, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.2)
 
@@ -24,7 +52,7 @@ What's New:
     See [Contract Listeners](../reference/types/contractlistener.md) for details
 - New multiparty status API at `/status/multiparty`
 
-## [v1.3.0 - April 25, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.1.0)
+## [v1.3.0 - April 25, 2024](https://github.com/hyperledger/firefly/releases/tag/v1.3.0)
 
 [Migration guide](1.3_migration_guide.md)
 
@@ -50,9 +78,6 @@ What's New:
 - Custom HTTP headers can be passed through to FireFly dependency microservices
 - Evmconnect is now the default blockchain connector for Ethereum based FireFly stacks
 
-# Release Notes
-
-[Full release notes](https://github.com/hyperledger/firefly/releases)
 
 ## [v1.1.0 - September 12, 2022](https://github.com/hyperledger/firefly/releases/tag/v1.1.0)
 
