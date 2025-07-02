@@ -34,6 +34,15 @@ func TestDIDGenerationOK(t *testing.T) {
 
 	org1 := testOrg("org1")
 
+	verifierCardano := (&core.Verifier{
+		Identity:  org1.ID,
+		Namespace: org1.Namespace,
+		VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeCardanoAddress,
+			Value: "addr_test1vqhkukz0285zvk0xrwk9jlq0075tx6furuzcjvzpnhtgelsuhhqc4",
+		},
+		Created: fftypes.Now(),
+	})
 	verifierEth := (&core.Verifier{
 		Identity:  org1.ID,
 		Namespace: org1.Namespace,
@@ -83,6 +92,7 @@ func TestDIDGenerationOK(t *testing.T) {
 	mdi := nm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", nm.ctx, "ns1", mock.Anything).Return(org1, nil)
 	mdi.On("GetVerifiers", nm.ctx, "ns1", mock.Anything).Return([]*core.Verifier{
+		verifierCardano,
 		verifierEth,
 		verifierTezos,
 		verifierMSP,
@@ -99,6 +109,12 @@ func TestDIDGenerationOK(t *testing.T) {
 		},
 		ID: org1.DID,
 		VerificationMethods: []*VerificationMethod{
+			{
+				ID:                  verifierCardano.Hash.String(),
+				Type:                "PaymentVerificationKeyShelley_ed25519",
+				Controller:          org1.DID,
+				BlockchainAccountID: verifierCardano.Value,
+			},
 			{
 				ID:                  verifierEth.Hash.String(),
 				Type:                "EcdsaSecp256k1VerificationKey2019",
@@ -125,6 +141,7 @@ func TestDIDGenerationOK(t *testing.T) {
 			},
 		},
 		Authentication: []string{
+			fmt.Sprintf("#%s", verifierCardano.Hash.String()),
 			fmt.Sprintf("#%s", verifierEth.Hash.String()),
 			fmt.Sprintf("#%s", verifierTezos.Hash.String()),
 			fmt.Sprintf("#%s", verifierMSP.Hash.String()),

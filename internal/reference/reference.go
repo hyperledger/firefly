@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -892,17 +893,11 @@ func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpl
 
 		fieldInRootPages := false
 		fieldInSimpleTypes := false
-		for _, rootPageName := range rootPageNames {
-			if strings.ToLower(fieldType.Name()) == rootPageName {
-				fieldInRootPages = true
-				break
-			}
+		if slices.Contains(rootPageNames, strings.ToLower(fieldType.Name())) {
+			fieldInRootPages = true
 		}
-		for _, simpleTypeName := range simpleTypeNames {
-			if strings.ToLower(fieldType.Name()) == simpleTypeName {
-				fieldInSimpleTypes = true
-				break
-			}
+		if slices.Contains(simpleTypeNames, strings.ToLower(fieldType.Name())) {
+			fieldInSimpleTypes = true
 		}
 
 		link := ""
@@ -920,13 +915,7 @@ func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpl
 			fireflyType = fmt.Sprintf("[%s](%s)", fireflyType, link)
 
 			// Generate the table for the sub type
-			tableAlreadyGenerated := false
-			for _, tableName := range generatedTableNames {
-				if strings.ToLower(fieldType.Name()) == tableName {
-					tableAlreadyGenerated = true
-					break
-				}
-			}
+			tableAlreadyGenerated := slices.Contains(generatedTableNames, strings.ToLower(fieldType.Name()))
 			if isStruct && !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
 				subFieldBuff.WriteString(fmt.Sprintf("## %s\n\n", fieldType.Name()))
 				subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, false, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)

@@ -69,6 +69,7 @@ Other repositories you might be interested in containing those microservice comp
   - Private/permissioned: Hyperledger Besu / Quorum
 - Hyperledger Fabric connector - <https://github.com/hyperledger/firefly-fabconnect>
 - Tezos connector - <https://github.com/hyperledger/firefly-tezosconnect>
+- Cardano connector - <https://github.com/hyperledger/firefly-cardano>
 - Corda connector starter: <https://github.com/hyperledger/firefly-cordaconnect>
   - CorDapp specific customization is required
 
@@ -249,10 +250,10 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ interface     │    * Standardized operations, and custom on-chain coupling
   │           └─────┬─────────┘
   │                 │
-  │                 ├─────────────────────┬───────────────────┬-───────────────────┐
-  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐   ┌───────┴────────┐
-  │           │ ethereum      │   │ fabric        │   │ corda/cordapps │   │ tezos          │
-  │           └─────┬─────────┘   └───────────────┘   └────────────────┘   └────────────────┘
+  │                 ├─────────────────────┬───────────────────┬-───────────────────┬-───────────────────┐
+  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐   ┌───────┴────────┐   ┌───────┴────────┐
+  │           │ ethereum      │   │ fabric        │   │ corda/cordapps │   │ tezos          │   │ cardano        │
+  │           └─────┬─────────┘   └───────────────┘   └────────────────┘   └────────────────┘   └────────────────┘
   │           [REST/WebSockets]
   │           ┌─────┴────────────────────┐   ┌────────────────────────┐   ┌─ 
   │           │ transaction manager [Tm] ├───┤ Connector API [ffcapi] ├───┤  Simple framework for building blockchain connectors
