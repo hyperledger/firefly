@@ -98,3 +98,7 @@ The response will look like
 ```
 
 If you're developing against a testnet such as preview, you can receive funds from the [testnet faucet](https://docs.cardano.org/cardano-testnets/tools/faucet). Pass the `address` from that response to the faucet.
+
+## Next steps: Develop a contract
+
+Now that you have a stack running, you're ready to start developing contracts for it. See the [Cardano custom contract guide](../custom_contracts/cardano.md) for more information.
