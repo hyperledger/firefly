@@ -17,7 +17,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.1
-	github.com/hyperledger/firefly-common v1.5.4
+	github.com/hyperledger/firefly-common v1.5.6
 	github.com/hyperledger/firefly-signer v1.1.21
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/lib/pq v1.10.9
@@ -97,5 +97,3 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/hyperledger/firefly-common v1.5.4 => ../firefly-common
