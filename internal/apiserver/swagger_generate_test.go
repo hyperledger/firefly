@@ -37,7 +37,6 @@ import (
 )
 
 func TestDownloadSwaggerYAML(t *testing.T) {
-	coreconfig.Reset()
 	config.Set(coreconfig.APIOASPanicOnMissingDescription, true)
 	as := &apiServer{}
 	hf := as.handlerFactory()

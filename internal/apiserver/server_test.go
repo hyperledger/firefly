@@ -53,7 +53,6 @@ import (
 const configDir = "../../test/data/config"
 
 func newTestServer() (*namespacemocks.Manager, *orchestratormocks.Orchestrator, *apiServer) {
-	coreconfig.Reset()
 	InitConfig()
 	mgr := &namespacemocks.Manager{}
 	o := &orchestratormocks.Orchestrator{}
@@ -81,7 +80,6 @@ func newTestSPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 }
 
 func TestStartStopServer(t *testing.T) {
-	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	apiConfig.Set(httpserver.HTTPConfPort, 0)
@@ -100,7 +98,6 @@ func TestStartStopServer(t *testing.T) {
 }
 
 func TestStartLegacyAdminConfig(t *testing.T) {
-	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	apiConfig.Set(httpserver.HTTPConfPort, 0)
@@ -119,7 +116,6 @@ func TestStartLegacyAdminConfig(t *testing.T) {
 }
 
 func TestStartAPIFail(t *testing.T) {
-	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	apiConfig.Set(httpserver.HTTPConfAddress, "...://")
@@ -132,7 +128,6 @@ func TestStartAPIFail(t *testing.T) {
 }
 
 func TestStartAdminFail(t *testing.T) {
-	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	spiConfig.Set(httpserver.HTTPConfAddress, "...://")
@@ -148,7 +143,6 @@ func TestStartAdminFail(t *testing.T) {
 }
 
 func TestStartAdminWSHandler(t *testing.T) {
-	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	spiConfig.Set(httpserver.HTTPConfAddress, "...://")
@@ -167,7 +161,6 @@ func TestStartAdminWSHandler(t *testing.T) {
 }
 
 func TestStartMetricsFail(t *testing.T) {
-	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
 	monitoringConfig.Set(httpserver.HTTPConfAddress, "...://")
