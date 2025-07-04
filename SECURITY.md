@@ -52,9 +52,9 @@ contributors have agreed to follow.
 
 The current Hyperledger Firefly security team is:
 
-| Name             | Email ID           | Discord ID | Area/Specialty  |
-| ---------------- | ------------------ | ---------- | --------------- |
-
+| Name             | Email ID                 | Discord ID | Area/Specialty |
+| ---------------- | ------------------------ | ---------- | ---------------|
+| Enrique Lacal    | enrique.lacal@kaleido.io | @enriquel8 | Everything     | 
 
 The security team for Hyperledger Firefly must include at least three project
 Maintainers that agree to carry out the following duties and responsibilities.
