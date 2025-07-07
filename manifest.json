@@ -1,4 +1,14 @@
 {
+  "cardanoconnect": {
+    "image": "ghcr.io/hyperledger/firefly-cardanoconnect",
+    "tag": "v0.4.2",
+    "sha": "4f877755dd9130653cfee3f6ddc950e4908e45080627c9f106a12c52cd6ca8c1"
+  },
+  "cardanosigner": {
+    "image": "ghcr.io/hyperledger/firefly-cardanosigner",
+    "tag": "v0.4.2",
+    "sha": "9a859ce0020851e7a5474085fbfb34b0a027feeeae38455613bbfdfb33a75ddc"
+  },
   "ethconnect": {
     "image": "ghcr.io/hyperledger/firefly-ethconnect",
     "tag": "v3.3.3",
@@ -56,7 +66,7 @@
   },
   "ui": {
     "tag": "v1.3.1",
-    "release": "v1.3.1" 
+    "release": "v1.3.1"
   },
   "cli": {
     "tag": "v1.3.3"
