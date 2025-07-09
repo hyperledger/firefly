@@ -18,7 +18,7 @@ RUN apk add make=4.4.1-r2 \
   gcc=14.2.0-r4 \
   build-base=0.5-r3 \
   curl=8.12.1-r1 \
-  git=2.47.2-r0
+  git=2.47.3-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
   && chmod -R g+rwX /firefly \
