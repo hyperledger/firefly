@@ -1,5 +1,7 @@
 smart_contracts/ethereum/solidity_firefly/node_modules
 smart_contracts/ethereum/solidity_firefly/build
+smart_contracts/fabric/custompin-sample/custompin_sample
+smart_contracts/fabric/firefly-go/chaincode-go
 utils/kat-client/node_modules
 **/*.jar
 /firefly

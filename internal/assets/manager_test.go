@@ -53,7 +53,6 @@ func newTestAssetsWithMetrics(t *testing.T) (*assetManager, func()) {
 }
 
 func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
-	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
@@ -91,7 +90,6 @@ func TestInitFail(t *testing.T) {
 
 func TestCacheInitFail(t *testing.T) {
 	cacheInitError := errors.New("Initialization error.")
-	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
@@ -163,7 +161,6 @@ func TestGetTokenConnectors(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
@@ -193,7 +190,6 @@ func TestStart(t *testing.T) {
 }
 
 func TestStartDBError(t *testing.T) {
-	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
@@ -216,7 +212,6 @@ func TestStartDBError(t *testing.T) {
 }
 
 func TestStartError(t *testing.T) {
-	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
