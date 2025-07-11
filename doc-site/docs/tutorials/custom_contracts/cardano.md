@@ -121,7 +121,7 @@ edition = "2021"
 
 [dependencies]
 # The version of firefly-balius should match the version of firefly-cardano which you are using.
-firefly-balius = { git = "https://github.com/hyperledger/firefly-cardano", rev = "0.4.2" }
+firefly-balius = { git = "https://github.com/hyperledger/firefly-cardano", rev = "<firefly cardano version>" }
 pallas-addresses = "0.32"
 serde = { version = "1", features = ["derive"] }
 
@@ -243,7 +243,7 @@ This tool will
 
 ```sh
 # The version here should match the version of firefly-cardano which you are using.
-cargo install --git https://github.com/hyperledger/firefly-cardano --version 0.3.1 firefly-cardano-deploy
+cargo install --git https://github.com/hyperledger/firefly-cardano --version <firefly cardano version> firefly-cardano-deploy
 
 CONTRACT_PATH="/path/to/your/dapp"
 FIREFLY_URL="http://localhost:5000"
