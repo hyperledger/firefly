@@ -101,6 +101,7 @@ First, decide on the contract which your dApp will satisfy. FireFly uses [FireFl
 This is describing a contract with a single method, named `send_ada`. This method takes three parameters: a `fromAddress`, a `toAddress`, and an `amount`.
 
 It also emits three events: 
+
  - `TransactionAccepted(string)` is emitted when the transaction is included in a block.
  - `TransactionRolledBack(string)` is emitted if the transaction was included in a block, and that block got rolled back. This happens maybe once or twice a day on the Cardano network, which is more likely than some other chains, so your code must be able to gracefully handle rollbacks.
  - `TransactionFinalized(string)` is emitted when the transaction has been on the chain for "long enough" that it is effectively immutable. It is up to your tolerance risk.
@@ -236,6 +237,7 @@ fn main() -> Worker {
 
 You can use the `firefly-cardano-deploy` tool to deploy this dApp to your running FireFly instance.
 This tool will
+
  - Compile your dApp to WebAssembly
  - Deploy that WebAssembly to a running FireFly node 
  - Deploy your interface to that FireFly node
