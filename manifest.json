@@ -6,7 +6,7 @@
   },
   "cardanosigner": {
     "image": "ghcr.io/hyperledger/firefly-cardanosigner",
-    "tag": "null",
+    "tag": "v0.6.1",
     "sha": "b950c1d902d58f132f69f5b10aeb1623732de8db4d223534797be87766f123e9"
   },
   "ethconnect": {
