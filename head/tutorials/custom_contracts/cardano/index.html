@@ -4148,10 +4148,12 @@
 <a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a><span class="p">}</span>
 </code></pre></div>
 <p>This is describing a contract with a single method, named <code>send_ada</code>. This method takes three parameters: a <code>fromAddress</code>, a <code>toAddress</code>, and an <code>amount</code>.</p>
-<p>It also emits three events: 
- - <code>TransactionAccepted(string)</code> is emitted when the transaction is included in a block.
- - <code>TransactionRolledBack(string)</code> is emitted if the transaction was included in a block, and that block got rolled back. This happens maybe once or twice a day on the Cardano network, which is more likely than some other chains, so your code must be able to gracefully handle rollbacks.
- - <code>TransactionFinalized(string)</code> is emitted when the transaction has been on the chain for "long enough" that it is effectively immutable. It is up to your tolerance risk.</p>
+<p>It also emits three events: </p>
+<ul>
+<li><code>TransactionAccepted(string)</code> is emitted when the transaction is included in a block.</li>
+<li><code>TransactionRolledBack(string)</code> is emitted if the transaction was included in a block, and that block got rolled back. This happens maybe once or twice a day on the Cardano network, which is more likely than some other chains, so your code must be able to gracefully handle rollbacks.</li>
+<li><code>TransactionFinalized(string)</code> is emitted when the transaction has been on the chain for "long enough" that it is effectively immutable. It is up to your tolerance risk.</li>
+</ul>
 <p>These three events are all automatically handled by the connector.</p>
 <h3 id="the-dapp-itself">The dApp itself<a class="headerlink" href="#the-dapp-itself" title="Permanent link">&para;</a></h3>
 <p>The Balius framework requires you to write your dApp in Rust, and compile it to WebAssembly.
@@ -4164,7 +4166,7 @@ Set up a new Rust project with the contents below:</p>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">[dependencies]</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># The version of firefly-balius should match the version of firefly-cardano which you are using.</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">firefly-balius</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">git</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/hyperledger/firefly-cardano&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">rev</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;0.4.2&quot;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">firefly-balius</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">git</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;https://github.com/hyperledger/firefly-cardano&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">rev</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;&lt;firefly cardano version&gt;&quot;</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">pallas-addresses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0.32&quot;</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">serde</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;derive&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
@@ -4272,13 +4274,15 @@ Set up a new Rust project with the contents below:</p>
 </code></pre></div></p>
 <h2 id="deploying-the-dapp">Deploying the dApp<a class="headerlink" href="#deploying-the-dapp" title="Permanent link">&para;</a></h2>
 <p>You can use the <code>firefly-cardano-deploy</code> tool to deploy this dApp to your running FireFly instance.
-This tool will
- - Compile your dApp to WebAssembly
- - Deploy that WebAssembly to a running FireFly node 
- - Deploy your interface to that FireFly node
- - Create an API for that interface</p>
+This tool will</p>
+<ul>
+<li>Compile your dApp to WebAssembly</li>
+<li>Deploy that WebAssembly to a running FireFly node </li>
+<li>Deploy your interface to that FireFly node</li>
+<li>Create an API for that interface</li>
+</ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># The version here should match the version of firefly-cardano which you are using.</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>cargo<span class="w"> </span>install<span class="w"> </span>--git<span class="w"> </span>https://github.com/hyperledger/firefly-cardano<span class="w"> </span>--version<span class="w"> </span><span class="m">0</span>.3.1<span class="w"> </span>firefly-cardano-deploy
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>cargo<span class="w"> </span>install<span class="w"> </span>--git<span class="w"> </span>https://github.com/hyperledger/firefly-cardano<span class="w"> </span>--version<span class="w"> </span>&lt;firefly<span class="w"> </span>cardano<span class="w"> </span>version&gt;<span class="w"> </span>firefly-cardano-deploy
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nv">CONTRACT_PATH</span><span class="o">=</span><span class="s2">&quot;/path/to/your/dapp&quot;</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nv">FIREFLY_URL</span><span class="o">=</span><span class="s2">&quot;http://localhost:5000&quot;</span>
@@ -4299,8 +4303,9 @@ This tool will
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">&quot;fromAddress&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;wallet address you set up before&gt;&quot;</span><span class="p">,</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">&quot;toAddress&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;addr_test1vqeux7xwusdju9dvsj8h7mca9aup2k439kfmwy773xxc2hcu7zy99&quot;</span><span class="p">,</span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="nt">&quot;amount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1000000</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">}</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">&quot;key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;wallet address you set up before&gt;&quot;</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="p">}</span>
 </code></pre></div>
 <h3 id="response">Response<a class="headerlink" href="#response" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
