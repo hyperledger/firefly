@@ -274,7 +274,8 @@ Now that we've set everything up, let's prove it works by sending 1 ADA back to 
     "fromAddress": "<wallet address you set up before>",
     "toAddress": "addr_test1vqeux7xwusdju9dvsj8h7mca9aup2k439kfmwy773xxc2hcu7zy99",
     "amount": 1000000
-  }
+  },
+  "key": "<wallet address you set up before>"
 }
 ```
 
