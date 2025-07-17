@@ -3645,6 +3645,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v140-jul-17-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      v1.4.0 - Jul 17, 2025
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v133-mar-25-2025" class="md-nav__link">
     <span class="md-ellipsis">
       v1.3.3 - Mar 25, 2025
@@ -3806,6 +3815,19 @@
 
 <h1 id="release-notes">Release Notes<a class="headerlink" href="#release-notes" title="Permanent link">&para;</a></h1>
 <p><a href="https://github.com/hyperledger/firefly/releases">Full release notes</a></p>
+<h2 id="v140-jul-17-2025"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.4.0">v1.4.0 - Jul 17, 2025</a><a class="headerlink" href="#v140-jul-17-2025" title="Permanent link">&para;</a></h2>
+<p>What's New:
+- New Cardano connector <a href="https://github.com/hyperledger/firefly-cardano">https://github.com/hyperledger/firefly-cardano</a>
+    - Powers a reliable event-stream-based API for applications to react to custom Cardano events
+    - Own signer module for managing keys 
+    - Incorporates it's own Balius wrapper framework for smart contracts
+    - Includes in depth documentation section on developing Cardano smart contracts and listening to events
+    - Support in FireFly CLI to create a Cardano stack and connect to a remote provider
+    - Rust based framework for building FireFly Connectors
+- Enhancements to the connector framework to expose internal event listeners to consume directly instead of using external listeners
+- Miscellaneous bug fixes and minor improvements 
+- Documentation updates, new Cardano section in the tutorials
+- CVE fixes across the board</p>
 <h2 id="v133-mar-25-2025"><a href="https://github.com/hyperledger/firefly/releases/tag/v1.3.3">v1.3.3 - Mar 25, 2025</a><a class="headerlink" href="#v133-mar-25-2025" title="Permanent link">&para;</a></h2>
 <p>What's New:</p>
 <ul>
