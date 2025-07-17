@@ -9,6 +9,7 @@ title: Release Notes
 ## [v1.4.0 - Jul 17, 2025](https://github.com/hyperledger/firefly/releases/tag/v1.4.0)
 
 What's New:
+
 - New Cardano connector https://github.com/hyperledger/firefly-cardano
     - Powers a reliable event-stream-based API for applications to react to custom Cardano events
     - Own signer module for managing keys 
