@@ -40,7 +40,6 @@ import (
 )
 
 func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
-	coreconfig.Reset()
 	config.Set(coreconfig.DownloadWorkerCount, 1)
 	config.Set(coreconfig.DownloadRetryMaxAttempts, 0 /* bumps to 1 */)
 

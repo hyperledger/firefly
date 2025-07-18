@@ -57,7 +57,6 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 	u.Scheme = "http"
 	httpURL = u.String()
 
-	coreconfig.Reset()
 	h = &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
@@ -95,7 +94,6 @@ func TestUnsetHandler(t *testing.T) {
 }
 
 func TestInitBadURL(t *testing.T) {
-	coreconfig.Reset()
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
@@ -110,7 +108,6 @@ func TestInitBadURL(t *testing.T) {
 }
 
 func TestStartNamespaceConnectFail(t *testing.T) {
-	coreconfig.Reset()
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
@@ -139,7 +136,6 @@ func TestStopNamespace(t *testing.T) {
 }
 
 func TestInitBadTLS(t *testing.T) {
-	coreconfig.Reset()
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
@@ -154,7 +150,6 @@ func TestInitBadTLS(t *testing.T) {
 }
 
 func TestInitMissingURL(t *testing.T) {
-	coreconfig.Reset()
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 

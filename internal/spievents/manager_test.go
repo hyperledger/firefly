@@ -35,7 +35,6 @@ import (
 )
 
 func newTestSPIEventsManager(t *testing.T) (ae *adminEventManager, ws *webSocket, wsc wsclient.WSClient, cancel func()) {
-	coreconfig.Reset()
 
 	ae = NewAdminEventManager(context.Background()).(*adminEventManager)
 	svr := httptest.NewServer(http.HandlerFunc(ae.ServeHTTPWebSocketListener))
@@ -136,7 +135,6 @@ func TestSPIEventsE2E(t *testing.T) {
 }
 
 func TestBadUpgrade(t *testing.T) {
-	coreconfig.Reset()
 
 	ae := NewAdminEventManager(context.Background()).(*adminEventManager)
 	svr := httptest.NewServer(http.HandlerFunc(ae.ServeHTTPWebSocketListener))
