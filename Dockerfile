@@ -86,7 +86,8 @@ FROM $BASE_TAG
 # so it uses apt
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y \
-  && apt-get install -y sqlite postgresql \
+  && apt-get install -y postgresql \
+  && apt-get install -y sqlite \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly/ \
