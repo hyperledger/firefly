@@ -72,7 +72,9 @@ RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository 
 
 # UI
 FROM alpine:3.21 AS uidownloader
-WORKDIR /
+ARG UI_TAG
+ARG UI_RELEASE
+WORKDIR /firefly
 RUN apk add --no-cache curl
 ENV UI_RELEASE=https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
 RUN mkdir /firefly/frontend \
@@ -80,8 +82,6 @@ RUN mkdir /firefly/frontend \
 
 # Final executable build
 FROM $BASE_TAG
-ARG UI_TAG
-ARG UI_RELEASE
 # Makes an assumption that that base image is ubuntu based 
 # so it uses apt
 ARG DEBIAN_FRONTEND=noninteractive
