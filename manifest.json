@@ -51,7 +51,7 @@
       "image": "ethereum/solc:0.8.11-alpine"
     },
     "base": {
-      "image": "ubuntu:22.04"
+      "image": "ubuntu:24.04"
     }
   },
   "ui": {
