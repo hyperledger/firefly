@@ -86,6 +86,8 @@ FROM $BASE_TAG
 # so it uses apt
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends \
+     ca-certificates \
   && apt-get install -y sqlite3 postgresql \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
