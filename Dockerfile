@@ -70,15 +70,25 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
 
-# Final executable build
-FROM $BASE_TAG
+# UI
+FROM alpine:3.21 AS uidownloader
 ARG UI_TAG
 ARG UI_RELEASE
+WORKDIR /firefly
+RUN apk add --no-cache curl
+ENV UI_RELEASE=https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
+RUN mkdir /firefly/frontend \
+  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
+
+# Final executable build
+FROM $BASE_TAG
 # Makes an assumption that that base image is ubuntu based 
 # so it uses apt
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt update -y \
-  && apt install -y curl jq sqlite postgresql \
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends \
+     ca-certificates \
+  && apt-get install -y sqlite3 postgresql \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly/ \
@@ -90,9 +100,7 @@ COPY --from=firefly-builder --chown=1001:0 /firefly/firefly ./firefly
 COPY --from=firefly-builder --chown=1001:0 /firefly/db ./db
 COPY --from=solidity-builder --chown=1001:0 /firefly/solidity_firefly/build/contracts ./contracts
 COPY --from=fabric-builder --chown=1001:0 /firefly/smart_contracts/fabric/firefly-go/firefly_fabric.tar.gz ./contracts/firefly_fabric.tar.gz
-ENV UI_RELEASE=https://github.com/hyperledger/firefly-ui/releases/download/$UI_TAG/$UI_RELEASE.tgz
-RUN mkdir /firefly/frontend \
-  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
+COPY --from=uidownloader /firefly/frontend /firefly/frontend
 COPY --from=sbom /sbom.spdx.json /sbom.spdx.json
 RUN ln -s /firefly/firefly /usr/bin/firefly
 USER 1001
