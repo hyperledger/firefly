@@ -41,10 +41,10 @@
   },
   "build": {
     "firefly-builder": {
-      "image": "golang:1.23-bookworm"
+      "image": "golang:1.25-bookworm"
     },
     "fabric-builder": {
-      "image": "golang:1.23-bookworm",
+      "image": "golang:1.25-bookworm",
       "platform": "linux/x86_64"
     },
     "solidity-builder": {
