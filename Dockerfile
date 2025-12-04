@@ -14,10 +14,11 @@ ARG GIT_REF
 FROM $FIREFLY_BUILDER_TAG AS firefly-builder
 ARG BUILD_VERSION
 ARG GIT_REF
-RUN apk add make=4.4.1-r2 \
+RUN apk add --no-cache \
+  make=4.4.1-r2 \
   gcc=14.2.0-r4 \
   build-base=0.5-r3 \
-  curl=8.12.1-r1 \
+  curl=8.14.1-r2 \
   git=2.47.3-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
@@ -74,9 +75,9 @@ FROM $BASE_TAG
 ARG UI_TAG
 ARG UI_RELEASE
 RUN apk add --update --no-cache \
-  sqlite=3.48.0-r3 \
-  postgresql16-client=16.9-r0 \
-  curl=8.12.1-r1 \
+  sqlite=3.48.0-r4 \
+  postgresql16-client=16.11-r0 \
+  curl=8.14.1-r2 \
   jq=1.7.1-r0
 WORKDIR /firefly
 RUN chgrp -R 0 /firefly \
