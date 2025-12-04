@@ -118,7 +118,6 @@ func (tor *testOrchestrator) cleanup(t *testing.T) {
 }
 
 func newTestOrchestrator() *testOrchestrator {
-	coreconfig.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
 	tor := &testOrchestrator{
 		orchestrator: orchestrator{
@@ -454,7 +453,6 @@ func TestInitOperationsComponentFail(t *testing.T) {
 }
 
 func TestStartBatchFail(t *testing.T) {
-	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.mdm.On("Start").Return(nil)
@@ -475,7 +473,6 @@ func TestInitTXWriter(t *testing.T) {
 }
 
 func TestStartStopOk(t *testing.T) {
-	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.mdm.On("Start").Return(nil)
@@ -527,7 +524,6 @@ func TestStartStopOk(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	// Note additional testing of this happens in namespace manager
@@ -545,7 +541,6 @@ func TestPurge(t *testing.T) {
 }
 
 func TestPurgeBlockchainError(t *testing.T) {
-	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	// Note additional testing of this happens in namespace manager
@@ -561,7 +556,6 @@ func TestPurgeBlockchainError(t *testing.T) {
 }
 
 func TestPurgeTokenError(t *testing.T) {
-	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	// Note additional testing of this happens in namespace manager
