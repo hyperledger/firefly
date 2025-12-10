@@ -57,7 +57,6 @@ var (
 )
 
 func resetConf(e *Fabric) {
-	coreconfig.Reset()
 	e.InitConfig(utConfig)
 }
 

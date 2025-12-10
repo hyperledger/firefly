@@ -162,7 +162,6 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	u.Scheme = "http"
 	httpURL = u.String()
 
-	coreconfig.Reset()
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
 	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -217,7 +216,6 @@ func TestJoinBlobPath(t *testing.T) {
 }
 
 func TestInitBadURL(t *testing.T) {
-	coreconfig.Reset()
 	h := &FFDX{}
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
@@ -227,7 +225,6 @@ func TestInitBadURL(t *testing.T) {
 }
 
 func TestInitBadTLS(t *testing.T) {
-	coreconfig.Reset()
 	h := &FFDX{}
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -240,7 +237,6 @@ func TestInitBadTLS(t *testing.T) {
 }
 
 func TestInitMissingURL(t *testing.T) {
-	coreconfig.Reset()
 	h := &FFDX{}
 	h.InitConfig(utConfig)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -546,7 +542,6 @@ func TestBadEvents(t *testing.T) {
 
 func TestBackgroundStartWSFail(t *testing.T) {
 	h := &FFDX{initialized: true}
-	coreconfig.Reset()
 
 	u, _ := url.Parse("http://localhost:12345")
 	u.Scheme = "http"
@@ -888,7 +883,6 @@ func TestWebsocketWithReinit(t *testing.T) {
 	httpURL := u.String()
 	h := &FFDX{}
 
-	coreconfig.Reset()
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
 	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -944,7 +938,6 @@ func TestWebsocketWithEmptyNodesInit(t *testing.T) {
 	httpURL := u.String()
 	h := &FFDX{}
 
-	coreconfig.Reset()
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
 	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)

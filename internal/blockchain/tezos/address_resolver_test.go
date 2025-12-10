@@ -38,7 +38,6 @@ import (
 )
 
 func utAddresResolverConfig() config.Section {
-	coreconfig.Reset()
 	config := config.RootSection("utaddressresovler")
 	(&Tezos{}).InitConfig(config)
 	return config.SubSection(AddressResolverConfigKey)

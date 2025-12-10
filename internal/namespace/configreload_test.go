@@ -473,7 +473,6 @@ func TestConfigListenerE2E(t *testing.T) {
 	configFilename := fmt.Sprintf("%s/firefly.core", testDir)
 	renameWriteFile(t, configFilename, []byte(exampleConfig1base))
 
-	coreconfig.Reset()
 	InitConfig()
 	err := config.ReadConfig("core", configFilename)
 	assert.NoError(t, err)
@@ -486,7 +485,7 @@ func TestConfigListenerE2E(t *testing.T) {
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err = nm.Init(ctx, cancelCtx, make(chan bool), func() error {
-		coreconfig.Reset()
+
 		return config.ReadConfig("core", configFilename)
 	})
 	assert.NoError(t, err)
@@ -514,7 +513,6 @@ func TestConfigListenerUnreadableYAML(t *testing.T) {
 	configFilename := fmt.Sprintf("%s/firefly.core", testDir)
 	viper.SetConfigFile(configFilename)
 
-	coreconfig.Reset()
 	InitConfig()
 	config.Set(coreconfig.ConfigAutoReload, true)
 
@@ -524,7 +522,7 @@ func TestConfigListenerUnreadableYAML(t *testing.T) {
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx, make(chan bool), func() error {
-		coreconfig.Reset()
+
 		return config.ReadConfig("core", configFilename)
 	})
 	assert.NoError(t, err)
@@ -576,7 +574,6 @@ func TestConfigReload1to2(t *testing.T) {
 		originalNSHashes[k] = v.configHash
 	}
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(exampleConfig2extraNS))
@@ -652,7 +649,6 @@ func TestConfigReload1to3(t *testing.T) {
 	}
 
 	waitInit = namespaceInitWaiter(t, nmm, []string{"ns1", "ns2"})
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(exampleConfig3NSchanges))
@@ -714,7 +710,6 @@ func TestConfigReloadBadNewConfigPlugins(t *testing.T) {
 
 	waitInit.Wait()
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(`
@@ -766,7 +761,6 @@ func TestConfigReloadBadNSMissingRequiredPlugins(t *testing.T) {
 
 	waitInit.Wait()
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(`
@@ -846,7 +840,6 @@ func TestConfigDownToNothingOk(t *testing.T) {
 	assert.NoError(t, err)
 	waitInit.Wait()
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	// Nothing - no plugins, no namespaces
@@ -896,7 +889,6 @@ func TestConfigStartPluginsFails(t *testing.T) {
 	assert.NoError(t, err)
 	waitInit.Wait()
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	// Nothing - no plugins, no namespaces
@@ -940,7 +932,6 @@ func TestConfigReloadInitPluginsFailOnReload(t *testing.T) {
 	err = nm.Start()
 	assert.NoError(t, err)
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(`
@@ -983,7 +974,6 @@ func TestConfigReloadInitNamespacesFailOnReload(t *testing.T) {
 	err = nm.Start()
 	assert.NoError(t, err)
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(`
@@ -1035,7 +1025,6 @@ func TestConfigReloadInitNamespacesFailOnStart(t *testing.T) {
 	err = nm.Start()
 	assert.NoError(t, err)
 
-	coreconfig.Reset()
 	InitConfig()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(`

@@ -47,7 +47,6 @@ func newTestOperationUpdaterNoConcurrency(t *testing.T) *operationUpdater {
 }
 
 func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabilities) *operationUpdater {
-	coreconfig.Reset()
 	config.Set(coreconfig.OpUpdateWorkerCount, 1)
 	config.Set(coreconfig.OpUpdateWorkerBatchTimeout, "1s")
 	config.Set(coreconfig.OpUpdateWorkerBatchMaxInserts, 200)

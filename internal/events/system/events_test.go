@@ -32,7 +32,6 @@ import (
 )
 
 func newTestEvents(t *testing.T) (se *Events, cancel func()) {
-	coreconfig.Reset()
 
 	cbs := &eventsmocks.Callbacks{}
 	rc := cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)

@@ -39,7 +39,6 @@ import (
 func newTestTransactionWriter(t *testing.T, dbCaps *database.Capabilities, mods ...func()) (context.Context, *txWriter, func()) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 
-	coreconfig.Reset()
 	config.Set(coreconfig.TransactionWriterCount, 1)
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(dbCaps)

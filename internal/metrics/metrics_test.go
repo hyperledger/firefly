@@ -49,7 +49,6 @@ var TokenTransfer = &core.TokenTransfer{
 }
 
 func newTestMetricsManager(t *testing.T) (*metricsManager, func()) {
-	coreconfig.Reset()
 	Clear()
 	Registry()
 	ctx, cancel := context.WithCancel(context.Background())

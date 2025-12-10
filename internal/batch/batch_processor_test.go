@@ -89,7 +89,6 @@ func (tce *testConflictError) IsConflictError() bool {
 
 func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
-	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchPayload)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
@@ -154,7 +153,6 @@ func TestHandleDispatchConflictError(t *testing.T) {
 
 func TestBatchSizeOverflow(t *testing.T) {
 	log.SetLevel("debug")
-	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchPayload)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
@@ -553,7 +551,6 @@ func TestStartQuiesceNonBlocking(t *testing.T) {
 
 func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	log.SetLevel("debug")
-	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchPayload)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
@@ -611,7 +608,6 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 
 func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	log.SetLevel("debug")
-	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchPayload)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
@@ -681,7 +677,6 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 
 func TestMaskContextsUpdateMessageFail(t *testing.T) {
 	log.SetLevel("debug")
-	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchPayload)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
@@ -720,7 +715,6 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 }
 
 func TestSealBatchTXAlreadyAssigned(t *testing.T) {
-	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchPayload)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchPayload) error {
@@ -831,7 +825,6 @@ func TestCalculateContextsLoadPinsFail(t *testing.T) {
 
 func TestBigBatchEstimate(t *testing.T) {
 	log.SetLevel("debug")
-	coreconfig.Reset()
 
 	bd := []byte(`{
 		"id": "37ba893b-fcfa-4cf9-8ce8-34cd8bc9bc72",

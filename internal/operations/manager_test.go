@@ -75,7 +75,6 @@ func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *core.Operation,
 }
 
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
-	coreconfig.Reset()
 	config.Set(coreconfig.OpUpdateWorkerCount, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
@@ -113,7 +112,6 @@ func TestInitFail(t *testing.T) {
 
 func TestCacheInitFail(t *testing.T) {
 	cacheInitError := errors.New("Initialization error.")
-	coreconfig.Reset()
 	config.Set(coreconfig.OpUpdateWorkerCount, 1)
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(&database.Capabilities{

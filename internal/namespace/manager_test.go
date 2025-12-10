@@ -238,7 +238,6 @@ func mockPluginFactories(inm Manager) (nmm *nmMocks) {
 }
 
 func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, *nmMocks, func()) {
-	coreconfig.Reset()
 	InitConfig()
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	nm := &namespaceManager{
@@ -246,7 +245,7 @@ func newTestNamespaceManager(t *testing.T, initConfig bool) (*namespaceManager, 
 		cancelCtx: cancelCtx,
 		reset:     make(chan bool, 1),
 		reloadConfig: func() error {
-			coreconfig.Reset()
+	
 			InitConfig()
 			viper.SetConfigType("yaml")
 			return viper.ReadConfig(strings.NewReader(testBaseConfig))
@@ -949,7 +948,6 @@ func TestTokensPluginDuplicateBroadcastName(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	tifactory.InitConfig(tokensConfig)
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
@@ -977,7 +975,6 @@ func TestMultipleTokensPluginsWithBroadcastName(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	tifactory.InitConfig(tokensConfig)
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
@@ -1152,7 +1149,6 @@ func TestInitBadNamespace(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1171,7 +1167,6 @@ func TestLoadNamespacesReservedName(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1189,7 +1184,6 @@ func TestLoadNamespacesNetworkName(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1212,7 +1206,6 @@ func TestLoadNamespacesReservedNetworkName(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1233,7 +1226,6 @@ func TestLoadNamespacesDuplicate(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1255,7 +1247,6 @@ func TestLoadNamespacesNoName(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1272,7 +1263,6 @@ func TestLoadNamespacesNoDefault(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1291,7 +1281,6 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1319,7 +1308,6 @@ func TestLoadTLSConfigsBadTLS(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
 namespaces:
@@ -1347,7 +1335,6 @@ func TestLoadTLSConfigsNotEnabled(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
 namespaces:
@@ -1424,7 +1411,6 @@ func TestLoadTLSConfigs(t *testing.T) {
 		Certificates: []tls.Certificate{cert},
 	}
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err = viper.ReadConfig(strings.NewReader(fmt.Sprintf(`
 namespaces:
@@ -1460,7 +1446,6 @@ func TestLoadTLSConfigsDuplicateConfigs(t *testing.T) {
 	publicKeyFile, privateKeyFile, cleanCertificates := generateTestCertificates()
 	defer cleanCertificates()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(fmt.Sprintf(`
 namespaces:
@@ -1495,7 +1480,6 @@ func TestLoadNamespacesWithErrorTLSConfigs(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
 namespaces:
@@ -1521,7 +1505,6 @@ func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1541,7 +1524,6 @@ func TestLoadNamespacesMultipartyUnknownPlugin(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1562,7 +1544,6 @@ func TestLoadNamespacesMultipartyMultipleBlockchains(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1583,7 +1564,6 @@ func TestLoadNamespacesMultipartyMultipleDX(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1604,7 +1584,6 @@ func TestLoadNamespacesMultipartyMultipleSS(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1625,7 +1604,6 @@ func TestLoadNamespacesMultipartyMultipleDB(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1646,7 +1624,6 @@ func TestLoadNamespacesMultipartyMultipleAuths(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1667,7 +1644,6 @@ func TestLoadNamespacesMultipartyMultipleIdentity(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1688,7 +1664,6 @@ func TestInitNamespacesMultipartyWithAuth(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1709,7 +1684,6 @@ func TestLoadNamespacesNonMultipartyWithAuth(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1730,7 +1704,6 @@ func TestLoadNamespacesMultipartyContract(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1754,7 +1727,6 @@ func TestLoadNamespacesNonMultipartyMultipleDB(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1773,7 +1745,6 @@ func TestLoadNamespacesNonMultipartyMultipleBlockchains(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1792,7 +1763,6 @@ func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1813,7 +1783,6 @@ func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1832,7 +1801,6 @@ func TestLoadNamespacesNonMultipartyTokens(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
   namespaces:
@@ -1943,7 +1911,6 @@ func TestReset(t *testing.T) {
 }
 
 func TestResetRejectIfConfigAutoReload(t *testing.T) {
-	coreconfig.Reset()
 	config.Set(coreconfig.ConfigAutoReload, true)
 
 	nm, _, cleanup := newTestNamespaceManager(t, true)
@@ -2113,7 +2080,6 @@ func TestValidateNonMultipartyConfig(t *testing.T) {
 	nm, _, cleanup := newTestNamespaceManager(t, true)
 	defer cleanup()
 
-	coreconfig.Reset()
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
     namespaces:

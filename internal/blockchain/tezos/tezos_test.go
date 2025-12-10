@@ -89,7 +89,6 @@ func testFFIMethod() *fftypes.FFIMethod {
 }
 
 func resetConf(t *Tezos) {
-	coreconfig.Reset()
 	t.InitConfig(utConfig)
 }
 

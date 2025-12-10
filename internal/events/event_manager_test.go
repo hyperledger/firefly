@@ -114,7 +114,6 @@ func newTestEventManagerWithDBConcurrency(t *testing.T) *testEventManager {
 }
 
 func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) *testEventManager {
-	coreconfig.Reset()
 	config.Set(coreconfig.BlobReceiverWorkerCount, 1)
 	config.Set(coreconfig.BlobReceiverWorkerBatchTimeout, "1s")
 	logrus.SetLevel(logrus.DebugLevel)
@@ -215,7 +214,6 @@ func TestStartStopBadDependencies(t *testing.T) {
 func TestAggregatorCacheInitFail(t *testing.T) {
 	cacheInitError := errors.New("Initialization error.")
 	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
-	defer coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
@@ -270,7 +268,6 @@ func TestAggregatorCacheInitFail(t *testing.T) {
 func TestEventCacheInitFail(t *testing.T) {
 	cacheInitError := errors.New("Initialization error.")
 	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
-	defer coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
@@ -318,7 +315,6 @@ func TestEventCacheInitFail(t *testing.T) {
 
 func TestStartStopEventListenerFail(t *testing.T) {
 	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
-	defer coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
