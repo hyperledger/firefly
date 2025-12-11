@@ -310,20 +310,32 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.Operation
 	}
 
 	// Match a TX we already retrieved, if found add a specified Blockchain Transaction ID to it
+	var txnIDStr string
+	var idempotencyKeyStr string
 	var tx *core.Transaction
-	if op.Transaction != nil && update.BlockchainTXID != "" {
+	if op.Transaction != nil {
 		for _, candidate := range transactions {
 			if op.Transaction.Equals(candidate.ID) {
 				tx = candidate
+				txnIDStr = candidate.ID.String()
+				idempotencyKeyStr = string(candidate.IdempotencyKey)
 				break
 			}
 		}
 	}
-	if tx != nil {
+	if tx != nil && update.BlockchainTXID != "" {
 		if err := ou.txHelper.AddBlockchainTX(ctx, tx, update.BlockchainTXID); err != nil {
 			return err
 		}
 	}
+
+	// This is a key log line, where we can provide all pieces of correlation data a user needs:
+	// - The type of the operation
+	// - The plugin/connector
+	// - The idempotencyKey
+	// - The FF Transaction ID
+	// - The Operation ID
+	log.L(ctx).Infof("FF_OPERATION_UPDATE: plugin=%s type=%s status=%s operationId=%s transactionId=%s idempotencyKey='%s'", op.Plugin, op.Type, update.Status, op.ID, txnIDStr, idempotencyKeyStr)
 
 	if handler, ok := ou.manager.handlers[op.Type]; ok {
 		if err := handler.OnOperationUpdate(ctx, op, update); err != nil {
