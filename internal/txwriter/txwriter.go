@@ -219,7 +219,7 @@ func (tw *txWriter) processBatch(ctx context.Context, batch *txWriterBatch) erro
 				// - The idempotencyKey
 				// - The FF Transaction ID
 				// - The Operation ID
-				log.L(ctx).Infof("FF_NEW_TRANSACTION_OPERATION: plugin=%s type=%s operationId=%s transactionId=%s idempotencyKey='%s'", op.Plugin, op.Type, op.ID, txn.ID, txn.IdempotencyKey)
+				log.L(ctx).Infof("FF_NEW_TRANSACTION_OPERATION: namespace=%s plugin=%s type=%s operationId=%s transactionId=%s idempotencyKey='%s'", op.Namespace, op.Plugin, op.Type, op.ID, txn.ID, txn.IdempotencyKey)
 			}
 		}
 	}

@@ -335,7 +335,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *core.Operation
 	// - The idempotencyKey
 	// - The FF Transaction ID
 	// - The Operation ID
-	log.L(ctx).Infof("FF_OPERATION_UPDATE: plugin=%s type=%s status=%s operationId=%s transactionId=%s idempotencyKey='%s'", op.Plugin, op.Type, update.Status, op.ID, txnIDStr, idempotencyKeyStr)
+	log.L(ctx).Infof("FF_OPERATION_UPDATE: namespace=%s plugin=%s type=%s status=%s operationId=%s transactionId=%s idempotencyKey='%s'", op.Namespace, op.Plugin, op.Type, update.Status, op.ID, txnIDStr, idempotencyKeyStr)
 
 	if handler, ok := ou.manager.handlers[op.Type]; ok {
 		if err := handler.OnOperationUpdate(ctx, op, update); err != nil {
