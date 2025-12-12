@@ -270,7 +270,9 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*core.O
 			if err != nil {
 				return err
 			}
-			transactions = append(transactions, transaction)
+			if transaction != nil {
+				transactions = append(transactions, transaction)
+			}
 		}
 	}
 
