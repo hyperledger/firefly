@@ -1,12 +1,12 @@
-# Hyperledger Firefly, an LF Decentralized Trust Project Security Policy
+# Hyperledger FireFly, an LF Decentralized Trust Project Security Policy
 
 [LF Decentralized Trust Security Policy]: https://lf-decentralized-trust.github.io/governance/governing-documents/security
 
 ## About this document
 
-This document defines how security vulnerability reporting is handled in Hyperledger Firefly, an LF Decentralized Trust Project. 
+This document defines how security vulnerability reporting is handled in Hyperledger FireFly, an LF Decentralized Trust Project. 
 The approach aligns with the [LF Decentralized Trust Security Policy] . Please
-review that document to understand the basis of the security reporting for Hyperledger Firefly.
+review that document to understand the basis of the security reporting for Hyperledger FireFly.
 
 This vulnerability policy borrows heavily from the
 recommendations of the OpenSSF Vulnerability Disclosure working group. For
@@ -14,14 +14,14 @@ up-to-date information on the latest recommendations related to vulnerability
 disclosures, please visit the [GitHub of that working
 group](https://github.com/ossf/wg-vulnerability-disclosures).
 
-If you are already familiar with the security policies of Hyperledger Firefly, and
+If you are already familiar with the security policies of Hyperledger FireFly, and
 ready to report a vulnerability, please jump to [Report Intakes](#report-intakes).
 
 ## Outline
 
 This document has the following sections:
 
-- [Hyperledger Firefly Security Policy](#project-an-lf-decentralized-trust-project-security-policy)
+- [Hyperledger FireFly Security Policy](#project-an-lf-decentralized-trust-project-security-policy)
   - [Instructions](#instructions)
   - [About this document](#about-this-document)
   - [Outline](#outline)
@@ -43,20 +43,22 @@ vulnerability disclosure policy explains how this process functions from the
 perspective of the project.
 
 This vulnerability disclosure policy explains the rules and guidelines for
-Hyperledger Firefly. It is intended to act as both a reference for
+Hyperledger FireFly. It is intended to act as both a reference for
 outsiders–including both bug reporters and those looking for information on the
 project’s security practices–as well as a set of rules that maintainers and
 contributors have agreed to follow.
 
 ## Security Team
 
-The current Hyperledger Firefly security team is:
+The current Hyperledger FireFly security team is:
 
-| Name             | Email ID                 | Discord ID | Area/Specialty |
-| ---------------- | ------------------------ | ---------- | ---------------|
-| Enrique Lacal    | enrique.lacal@kaleido.io | @enriquel8 | Everything     | 
+| Name             | Email ID                            | Discord ID       | Area/Specialty    |
+| ---------------- | ----------------------------------- | ---------------- | ----------------- |
+| Enrique Lacal    | enrique.lacal@kaleido.io            | @enriquel8       | FireFly Core      | 
+| Simon Gellis     | simon@sundae.fi                     | @SonicSwordcane  | Cardano connector | 
+| Alexey Semenyuk  | aliaksei.semianiuk@instinctools.com | @alexey_semenyuk | Tezos connector   | 
 
-The security team for Hyperledger Firefly must include at least three project
+The security team for Hyperledger FireFly must include at least three project
 Maintainers that agree to carry out the following duties and responsibilities.
 Members are added and removed from the team via approved Pull Requests to this
 repository. For additional background into the role of the security team, see
@@ -112,7 +114,7 @@ with invited participants added to the discussion.
 
 ## Report Intakes
 
-Hyperledger Firefly has the following ways to submit security
+Hyperledger FireFly has the following ways to submit security
 vulnerabilities. While the security team members will do their best to
 respond to bugs disclosed in all possible ways, it is encouraged for bug
 finders to report through the following approved channels:
@@ -133,18 +135,18 @@ infrastructure in GitHub.
 
 ## CNA/CVE Reporting
 
-Hyperledger Firefly maintains a list of **Common Vulnerabilities and Exposures
+Hyperledger FireFly maintains a list of **Common Vulnerabilities and Exposures
 (CVE)** and uses GitHub as its **CVE numbering authority (CNA)** for issuing
 CVEs.
 
 ## Embargo List
 
-Hyperledger Firefly does **NOT** currently maintain a private embargo list.
+Hyperledger FireFly does **NOT** currently maintain a private embargo list.
 
 If you wish to be added to the embargo list, please email the [LF Decentralized Trust Foundation security
 mailing list](mailto:security@lists.lfdecentralizedtrust.org), including the project name
-(Hyperledger Firefly) and reason for being added to the embargo list. Requests
-will be assessed by the Hyperledger Firefly security team in conjunction with the
+(Hyperledger FireFly) and reason for being added to the embargo list. Requests
+will be assessed by the Hyperledger FireFly security team in conjunction with the
 appropriate LF Decentralized Trust Staff, and a decision will be made to accommodate or not
 the request.
 
@@ -154,13 +156,13 @@ Policy](https://lf-decentralized-trust.github.io/governance/governing-documents/
 
 ## (GitHub) Security Advisories
 
-Hyperledger Firefly uses GitHub Security Advisories to manage the public
+Hyperledger FireFly uses GitHub Security Advisories to manage the public
 disclosure of security vulnerabilities.
 
 ## Private Patch Deployment Infrastructure
 
 In creating patches and new releases that address security vulnerabilities,
-Hyperledger Firefly uses the private development features of GitHub for security
+Hyperledger FireFly uses the private development features of GitHub for security
 vulnerabilities. GitHub has [extensive
 documentation](https://docs.github.com/en/code-security/security-advisories/repository-security-advisories)
 about these features.
