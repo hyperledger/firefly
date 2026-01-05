@@ -620,6 +620,13 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
+		// client is configured not to retry on 409s, so we need to handle them here
+		if res.StatusCode() == 409 && !resErr.SubmissionRejected {
+			// 409 is a conflict error, so that means the transaction was already submitted / exists
+			// so we can return a success w/o error
+			return resErr.SubmissionRejected, nil
+		}
+
 		return resErr.SubmissionRejected, common.WrapRESTError(ctx, &resErr, res, err, coremsgs.MsgEthConnectorRESTErr)
 	}
 	return false, nil
@@ -761,6 +768,12 @@ func (e *Ethereum) DeployContract(ctx context.Context, nsOpID, signingKey string
 		SetError(&resErr).
 		Post("/")
 	if err != nil || !res.IsSuccess() {
+		// client is configured not to retry on 409s, so we need to handle them here
+		if res.StatusCode() == 409 && !resErr.SubmissionRejected {
+			// 409 is a conflict error, so that means the transaction was already submitted / exists
+			// so we can return a success w/o error
+			return resErr.SubmissionRejected, nil
+		}
 		if strings.Contains(string(res.Body()), "FFEC100130") {
 			// This error is returned by ethconnect because it does not support deploying contracts with this syntax
 			// Return a more helpful and clear error message

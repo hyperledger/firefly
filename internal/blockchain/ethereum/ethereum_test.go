@@ -3222,6 +3222,8 @@ func TestInvokeContractEVMConnectRejectErr(t *testing.T) {
 	assert.True(t, submissionRejected)
 }
 
+// TODO 409 conflict error test
+
 func TestInvokeContractPrepareFail(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
