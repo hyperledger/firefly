@@ -232,7 +232,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), res)
 
-	time.Sleep(1 * time.Second) // Wait for the operation to be processed ?
+	time.Sleep(1 * time.Second) // Wait for the operation to be processed
 
 	// Idempotency check
 	_, err = suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest, 409)
