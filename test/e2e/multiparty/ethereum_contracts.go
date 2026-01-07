@@ -190,9 +190,9 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   simpleStorageFFIGet(),
 	}
-	res, err = suite.testState.client1.QueryContractMethod(suite.T(), queryContractRequest)
+	queryRes, err := suite.testState.client1.QueryContractMethod(suite.T(), queryContractRequest)
 	assert.NoError(suite.T(), err)
-	resJSON, err := json.Marshal(res)
+	resJSON, err := json.Marshal(queryRes)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), `{"output":"2"}`, string(resJSON))
 	suite.testState.client1.DeleteContractListener(suite.T(), listener.ID)
@@ -232,7 +232,18 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), res)
 
-	time.Sleep(1 * time.Second) // Wait for the operation to be processed
+	// Wait for the operation to succeed before idempotency check
+	// If the operation never succeeds, the larger test timeout will fail
+	for {
+		suite.T().Logf("Waiting for invoke operation to succeed: %s", res.ID.String())
+		op := suite.testState.client1.GetOperation(suite.T(), res.ID.String())
+		if op.Status == core.OpStatusSucceeded {
+			suite.T().Logf("Invoke operation succeeded: %s", res.ID.String())
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+		suite.T().Logf("Retrying, invoke operation status: %s", op.Status)
+	}
 
 	// Idempotency check
 	_, err = suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest, 409)
@@ -256,9 +267,9 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		Interface:  suite.interfaceID,
 		MethodPath: "get",
 	}
-	res, err = suite.testState.client1.QueryContractMethod(suite.T(), queryContractRequest)
+	queryRes, err := suite.testState.client1.QueryContractMethod(suite.T(), queryContractRequest)
 	assert.NoError(suite.T(), err)
-	resJSON, err := json.Marshal(res)
+	resJSON, err := json.Marshal(queryRes)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), `{"output":"42"}`, string(resJSON))
 	suite.testState.client1.DeleteContractListener(suite.T(), listener.ID)
