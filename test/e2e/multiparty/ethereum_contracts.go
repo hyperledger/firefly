@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
@@ -230,6 +231,8 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	res, err := suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest)
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), res)
+
+	time.Sleep(1 * time.Second) // Wait for the operation to be processed ?
 
 	// Idempotency check
 	_, err = suite.testState.client1.InvokeContractMethod(suite.T(), invokeContractRequest, 409)
