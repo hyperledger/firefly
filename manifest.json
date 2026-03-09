@@ -69,6 +69,6 @@
     "release": "v1.3.3"
   },
   "cli": {
-    "tag": "v1.4.0"
+    "commit": "aeb9fff8e79b3b4ede9eb216cef4e29daa49e7bd"
   }
 }
