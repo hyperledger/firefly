@@ -156,6 +156,11 @@ jobs:
       - name: Load Docker image
         run: docker load --input firefly.tar.gz
 
+      # Pre-pull fabric-ccenv so the Fabric peer's chaincode build finds it. Required on
+      # GitHub Actions with Docker 29: the peer invokes the host Docker build API to build
+      # chaincode (FROM hyperledger/fabric-ccenv:2.5); with Docker 29/containerd image store
+      # the base image is not always pulled automatically, causing "No such image" (see
+      # GitHub runner Docker 29 upgrade and moby/moby#51779 re multi-arch/image identity).
       - name: Pull Fabric chaincode build image
         if: matrix.stack-type == 'fabric'
         run: docker pull hyperledger/fabric-ccenv:2.5
