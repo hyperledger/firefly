@@ -66,7 +66,7 @@ FROM alpine:3.21 AS sbom
 WORKDIR /
 ADD . /SBOM
 RUN apk add --no-cache curl
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.68.1
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.69.3
 RUN trivy fs --format spdx-json --output /sbom.spdx.json /SBOM
 RUN trivy sbom /sbom.spdx.json --severity UNKNOWN,HIGH,CRITICAL --db-repository public.ecr.aws/aquasecurity/trivy-db --exit-code 1
 
@@ -76,7 +76,7 @@ ARG UI_TAG
 ARG UI_RELEASE
 RUN apk add --update --no-cache \
   sqlite=3.48.0-r4 \
-  postgresql16-client=16.11-r0 \
+  postgresql16-client=16.12-r0 \
   curl=8.14.1-r2 \
   jq=1.7.1-r0
 WORKDIR /firefly
