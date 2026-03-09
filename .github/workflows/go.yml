@@ -156,6 +156,10 @@ jobs:
       - name: Load Docker image
         run: docker load --input firefly.tar.gz
 
+      - name: Pull Fabric chaincode build image
+        if: matrix.stack-type == 'fabric'
+        run: docker pull hyperledger/fabric-ccenv:2.5
+
       - name: Run E2E tests
         env:
           BUILD_FIREFLY: false
