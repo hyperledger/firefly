@@ -6,8 +6,7 @@ if [[ ! -x `which jq` ]]; then echo "Please install \"jq\" to continue"; exit 1;
 
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
-# Use cli.commit if set (e.g. for testing a specific commit), otherwise cli.tag
-CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r 'if .cli.commit != null and .cli.commit != "" then .cli.commit else .cli.tag end')
+CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
 
 create_accounts() {
   if [ "$TEST_SUITE" == "TestEthereumMultipartyE2ESuite" ]; then
