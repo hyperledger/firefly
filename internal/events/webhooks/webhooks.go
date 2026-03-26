@@ -87,7 +87,7 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error)
 	client := ffresty.NewWithConfig(ctx, *ffrestyConfig)
 
 	*wh = WebHooks{
-		ctx: log.WithLogField(ctx, "webhook", wh.connID),
+		ctx: log.WithLogField(ctx, "webhook", connID),
 		capabilities: &events.Capabilities{
 			BatchDelivery: true,
 		},
@@ -139,7 +139,7 @@ func (p *whPayload) firstData() fftypes.JSONObject {
 }
 
 func (wh *WebHooks) buildPayload(ctx context.Context, sub *core.Subscription, event *core.CombinedEventDataDelivery) *whPayload {
-	log.L(wh.ctx).Debugf("Webhook-> %s event %s on subscription %s", sub.Options.URL, event.Event.ID, sub.ID)
+	log.L(ctx).Debugf("Webhook-> %s event %s on subscription %s", sub.Options.URL, event.Event.ID, sub.ID)
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	options := sub.Options.TransportOptions()
 	p := &whPayload{
@@ -402,7 +402,7 @@ func (wh *WebHooks) attemptRequest(ctx context.Context, sub *core.Subscription, 
 		Status:  resp.StatusCode(),
 		Headers: fftypes.JSONObject{},
 	}
-	log.L(wh.ctx).Debugf("Webhook<- %s %s on subscription %s returned %d", req.method, req.url, sub.ID, res.Status)
+	log.L(ctx).Debugf("Webhook<- %s %s on subscription %s returned %d", req.method, req.url, sub.ID, res.Status)
 	header := resp.Header()
 	for h := range header {
 		res.Headers[h] = header.Get(h)
@@ -440,7 +440,7 @@ func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, s
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
-		log.L(wh.ctx).Errorf("Failed to invoke webhook: %s", gwErr)
+		log.L(ctx).Errorf("Failed to invoke webhook: %s on subscription %s", gwErr, sub.ID)
 		b, _ := json.Marshal(&fftypes.RESTError{
 			Error: gwErr.Error(),
 		})
@@ -453,7 +453,7 @@ func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, s
 		}
 	}
 	b, _ := json.Marshal(&res)
-	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
+	log.L(ctx).Tracef("Webhook response: %s for subscription %s", string(b), sub.ID)
 
 	// For each event emit a response
 	for _, combinedEvent := range events {
@@ -465,7 +465,7 @@ func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, s
 				txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
 			}
 			if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
-				log.L(wh.ctx).Debugf("Sending reply message for %s CID=%s", event.ID, event.Message.Header.ID)
+				log.L(ctx).Debugf("Sending reply message for %s CID=%s", event.ID, event.Message.Header.ID)
 				cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 					ID:           event.ID,
 					Rejected:     false,
@@ -501,12 +501,13 @@ func (wh *WebHooks) doDelivery(ctx context.Context, connID string, reply bool, s
 }
 
 func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
+	ctx = log.WithLogField(ctx, "webhook", wh.connID)
 	reply := sub.Options.TransportOptions().GetBool("reply")
 	if reply && event.Message != nil && event.Message.Header.CID != nil {
 		// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
 		// avoid loops - and there's no way for us to detect here if a user has configured correctly
 		// to avoid a loop.
-		log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
+		log.L(ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
 		if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
 			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 				ID:           event.ID,
@@ -540,6 +541,7 @@ func (wh *WebHooks) DeliveryRequest(ctx context.Context, connID string, sub *cor
 }
 
 func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub *core.Subscription, events []*core.CombinedEventDataDelivery) error {
+	ctx = log.WithLogField(ctx, "webhook", wh.connID)
 	reply := sub.Options.TransportOptions().GetBool("reply")
 	if reply {
 		nonReplyEvents := []*core.CombinedEventDataDelivery{}
@@ -549,7 +551,7 @@ func (wh *WebHooks) BatchDeliveryRequest(ctx context.Context, connID string, sub
 			// avoid loops - and there's no way for us to detect here if a user has configured correctly
 			// to avoid a loop.
 			if event.Message != nil && event.Message.Header.CID != nil {
-				log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
+				log.L(ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
 				if cb, ok := wh.callbacks.handlers[sub.Namespace]; ok {
 					cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
 						ID:           event.ID,
