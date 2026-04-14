@@ -25,18 +25,18 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 )
 
-// DBSafeUTF8StringFromPtr returns a DB-safe UTF-8 string from a pointer, and true if the pointer
-// was non-nil. Strings containing invalid UTF-8 sequences or null bytes (which PostgreSQL rejects
-// in text columns even though null bytes are technically valid UTF-8) are hex-encoded instead,
-// with a warning logged.
-func DBSafeUTF8StringFromPtr(ctx context.Context, s *string) (string, bool) {
+// DBSafeUTF8StringFromPtr returns a DB-safe UTF-8 string from a pointer.
+// Nil pointers return "". Strings containing invalid UTF-8 sequences or null
+// bytes (which PostgreSQL rejects in text columns even though null bytes are
+// technically valid UTF-8) are hex-encoded instead, with a warning logged.
+func DBSafeUTF8StringFromPtr(ctx context.Context, s *string) string {
 	if s == nil {
-		return "", false
+		return ""
 	}
 	if !utf8.ValidString(*s) || strings.ContainsRune(*s, 0) {
 		hexString := hex.EncodeToString([]byte(*s))
 		log.L(ctx).Warnf("String contains invalid UTF-8 or null bytes - encoding as hex: %s", hexString)
-		return hexString, true
+		return hexString
 	}
-	return *s, true
+	return *s
 }

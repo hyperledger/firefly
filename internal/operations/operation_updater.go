@@ -422,8 +422,8 @@ func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id 
 	if status != "" {
 		update = update.Set("status", status)
 	}
-	if safeErr, ok := utils.DBSafeUTF8StringFromPtr(ctx, errorMsg); ok {
-		update = update.Set("error", safeErr)
+	if errorMsg != nil {
+		update = update.Set("error", utils.DBSafeUTF8StringFromPtr(ctx, errorMsg))
 	}
 	if output != nil {
 		update = update.Set("output", output)
