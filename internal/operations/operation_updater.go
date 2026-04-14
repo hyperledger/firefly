@@ -18,11 +18,8 @@ package operations
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
@@ -35,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/utils"
 )
 
 type operationUpdaterBatch struct {
@@ -424,16 +422,8 @@ func (ou *operationUpdater) resolveOperation(ctx context.Context, ns string, id 
 	if status != "" {
 		update = update.Set("status", status)
 	}
-	if errorMsg != nil {
-		// PostgreSQL text columns reject null bytes and invalid UTF-8 sequences.
-		// Null bytes (0x00) are valid UTF-8 but rejected by PostgreSQL, so check both.
-		if !utf8.ValidString(*errorMsg) || strings.ContainsRune(*errorMsg, 0) {
-			hexString := hex.EncodeToString([]byte(*errorMsg))
-			log.L(ctx).Warnf("Error message contains invalid UTF-8 or null bytes - encoding as hex: %s", hexString)
-			update = update.Set("error", hexString)
-		} else {
-			update = update.Set("error", *errorMsg)
-		}
+	if safeErr, ok := utils.DBSafeUTF8StringFromPtr(ctx, errorMsg); ok {
+		update = update.Set("error", safeErr)
 	}
 	if output != nil {
 		update = update.Set("output", output)
