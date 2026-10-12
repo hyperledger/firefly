@@ -42,7 +42,7 @@ contract SimpleStorage {
 
 If you need to deploy an Ethereum smart contract with a signing key that FireFly will use for submitting future transactions it is recommended to use FireFly's built in contract deployment API. This is useful in many cases. For example, you may want to deploy a token contract and have FireFly mint some tokens. Many token contracts only allow the contract deployer to mint, so the contract would need to be deployed with a FireFly signing key.
 
-You will need compile the contract yourself using [solc](https://docs.soliditylang.org/en/latest/installing-solidity.md) or some other tool. After you have compiled the contract, look in the JSON output file for the fields to build the request below.
+You will need compile the contract yourself using [solc](https://docs.soliditylang.org/en/latest/installing-solidity.html) or some other tool. After you have compiled the contract, look in the JSON output file for the fields to build the request below.
 
 ### Request
 

@@ -778,6 +778,7 @@ func (cm *contractManager) validateFFIError(ctx context.Context, errorDef *fftyp
 		return "", i18n.NewError(ctx, coremsgs.MsgErrorNameMustBeSet)
 	}
 	cacheKeyBuff := new(strings.Builder) // Build a big string of aggregate hashes
+	cacheKeyBuff.WriteString(errorDef.Name)
 	for _, param := range errorDef.Params {
 		paramCacheKey, _, err := cm.validateFFIParam(ctx, param)
 		if err != nil {

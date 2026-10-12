@@ -24,7 +24,7 @@ For details about the Fabric Test Network and how to set it up, please see the [
 
 ## Deploy FireFly Chaincode
 
-Next we will need to package and deploy the FireFly chaincode to `mychannel` in our new network. For more details on packaging and deploying chaincode, please see the [Fabric chaincode lifecycle documentation](https://hyperledger-fabric.readthedocs.io/en/latest/chaincode_lifecycle.md). If you already have the [FireFly repo](https://github.com/hyperledger-firefly/firefly) cloned in the same directory as your `fabric-samples` repo, you can run the following script from your `test-network` directory:
+Next we will need to package and deploy the FireFly chaincode to `mychannel` in our new network. For more details on packaging and deploying chaincode, please see the [Fabric chaincode lifecycle documentation](https://hyperledger-fabric.readthedocs.io/en/latest/chaincode_lifecycle.html). If you already have the [FireFly repo](https://github.com/hyperledger-firefly/firefly) cloned in the same directory as your `fabric-samples` repo, you can run the following script from your `test-network` directory:
 
 > **NOTE**: This script is provided as a convenience only, and you are not required to use it. You are welcome to package and deploy the chaincode to your test-network any way you would like.
 
@@ -75,7 +75,7 @@ peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride o
 
 ## Create `ccp.yml` documents
 
-Each FireFly Supernode (specifically the Fabconnect instance in each) will need to know how to connect to the Fabric network. Fabconnect will use a [Fabric Connection Profile](https://hyperledger-fabric.readthedocs.io/en/release-2.2/developapps/connectionprofile.md) which describes the network and tells it where the certs and keys are that it needs. Below is a `ccp.yml` for each organization. You will need to fill in one line by replacing the string `FILL_IN_KEY_NAME_HERE`, because the file name of the private key for each user is randomly generated.
+Each FireFly Supernode (specifically the Fabconnect instance in each) will need to know how to connect to the Fabric network. Fabconnect will use a [Fabric Connection Profile](https://hyperledger-fabric.readthedocs.io/en/release-2.2/developapps/connectionprofile.html) which describes the network and tells it where the certs and keys are that it needs. Below is a `ccp.yml` for each organization. You will need to fill in one line by replacing the string `FILL_IN_KEY_NAME_HERE`, because the file name of the private key for each user is randomly generated.
 
 ### Organization 1 connection profile
 
