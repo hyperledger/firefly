@@ -499,6 +499,11 @@ func TestEventDispatcherBatchDispatchFail(t *testing.T) {
 		eventDeliveries <- a.Get(3).([]*core.CombinedEventDataDelivery)
 	}
 
+	// Setup enrichment before starting bufferedDelivery below, as it calls this mock
+	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(&core.Message{
+		Header: core.MessageHeader{ID: fftypes.NewUUID()},
+	}, nil, true, nil)
+
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
 	go func() {
@@ -510,10 +515,6 @@ func TestEventDispatcherBatchDispatchFail(t *testing.T) {
 		assert.True(t, repoll)
 		close(batch1Done)
 	}()
-
-	mdm.On("GetMessageWithDataCached", mock.Anything, mock.Anything).Return(&core.Message{
-		Header: core.MessageHeader{ID: fftypes.NewUUID()},
-	}, nil, true, nil)
 
 	// Expect to get the batch dispatched - with the three matching events
 	events := <-eventDeliveries
